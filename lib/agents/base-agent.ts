@@ -121,14 +121,11 @@ function runClaudeWithTempPrompt(
 
     if (isWindows) {
       // PowerShell: read system prompt from file, pass to claude CLI
+      // NOTE: $input is reserved in PS, using $msg instead
       const toolsArg = webSearch ? " --allowedTools 'web_search'" : "";
-      const psScript = `
-$sp = Get-Content -Path '${systemPromptFile.replace(/'/g, "''")}' -Raw -Encoding UTF8
-$input = '${userMessage.replace(/'/g, "''").replace(/\n/g, "`n")}'
-$input | & '${cliPath}' -p --model '${model}' --max-turns ${maxTurns} --system-prompt $sp${toolsArg}
-`.trim();
+      const psScript = `$sp = Get-Content -Path '${systemPromptFile.replace(/'/g, "''")}' -Raw -Encoding UTF8; $msg = '${userMessage.replace(/'/g, "''").replace(/\\/g, "\\\\").replace(/\n/g, "`n").replace(/\r/g, "")}'; Write-Output $msg | & '${cliPath}' -p --model '${model}' --max-turns ${maxTurns} --system-prompt $sp${toolsArg}`;
 
-      const child = spawn("powershell", ["-NoProfile", "-NonInteractive", "-Command", psScript], {
+      const child = spawn("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", psScript], {
         stdio: ["pipe", "pipe", "pipe"],
         env: { ...process.env },
         timeout: 15 * 60 * 1000,
