@@ -36,6 +36,12 @@ yarn-error.log*
 # vercel
 .vercel
 
+# project data
+/data/
+/base_conocimiento/
+/agents-source/cursos-src/
+/agents-source/scripts/__pycache__/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
