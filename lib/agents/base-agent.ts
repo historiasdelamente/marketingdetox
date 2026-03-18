@@ -1,17 +1,19 @@
 import { spawn } from "child_process";
-import { readFileSync } from "fs";
+import { readFileSync, writeFileSync, unlinkSync, mkdirSync } from "fs";
 import path from "path";
+import { tmpdir } from "os";
 
 const PROMPTS_DIR = path.join(process.cwd(), "agents-source", "prompts");
 const SCRIPTS_DIR = path.join(process.cwd(), "agents-source", "scripts");
+const TEMP_DIR = path.join(tmpdir(), "marketingdetox-prompts");
 
 const promptCache = new Map<string, string>();
 
 export type AgentModel = "sonnet" | "opus" | "haiku";
 
-// Ollama config - if OLLAMA_MODEL is set, haiku-level tasks will use Ollama instead of CLI
+// Ollama config
 const OLLAMA_URL = process.env.OLLAMA_URL || "http://localhost:11434";
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || ""; // e.g. "llama3", "mistral"
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "";
 
 /**
  * Load a prompt .md file from agents-source/prompts/{folder}/{name}.md
@@ -24,7 +26,6 @@ export function loadPrompt(folder: string, name: string): string {
   const filePath = path.join(PROMPTS_DIR, folder, `${name}.md`);
   const content = readFileSync(filePath, "utf-8");
 
-  // Replace knowledge base placeholder with actual path
   const kbPath = path.join(process.cwd(), "base_conocimiento");
   const resolved = content.replace(/\{\{BASE_CONOCIMIENTO_PATH\}\}/g, kbPath);
 
@@ -33,9 +34,8 @@ export function loadPrompt(folder: string, name: string): string {
 }
 
 /**
- * Call Claude CLI in print mode with a system prompt and user message.
- * The system prompt is embedded in the stdin message to avoid Windows
- * command-line length limits (~8000 chars). Your prompts stay 100% intact.
+ * Call Claude CLI with system prompt via temp file to avoid Windows limits.
+ * Uses PowerShell to read the file and pass it as --system-prompt argument.
  */
 export async function callClaudeCli(
   userMessage: string,
@@ -56,29 +56,25 @@ export async function callClaudeCli(
   }
 
   const model = options.model || "sonnet";
-  const maxTurns = String(options.maxTurns || 5);
+  const maxTurns = options.maxTurns || 5;
 
-  const args = [
-    "-p",
-    "--model", model,
-    "--max-turns", maxTurns,
-  ];
+  // Write system prompt to temp file
+  mkdirSync(TEMP_DIR, { recursive: true });
+  const tempFile = path.join(TEMP_DIR, `sp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.md`);
+  writeFileSync(tempFile, options.systemPrompt, "utf-8");
 
-  if (options.webSearch) {
-    args.push("--allowedTools", "web_search");
+  try {
+    const result = await runClaudeWithTempPrompt(
+      tempFile,
+      userMessage,
+      model,
+      maxTurns,
+      options.webSearch || false
+    );
+    return result;
+  } finally {
+    try { unlinkSync(tempFile); } catch { /* ignore */ }
   }
-
-  // Combine system prompt + user message into stdin
-  // This avoids Windows command-line length limits while keeping prompts intact
-  const combinedMessage = [
-    "<instructions>",
-    options.systemPrompt,
-    "</instructions>",
-    "",
-    userMessage,
-  ].join("\n");
-
-  return runClaude(args, combinedMessage);
 }
 
 /**
@@ -96,15 +92,12 @@ async function callOllama(
       prompt: userMessage,
       system: systemPrompt,
       stream: false,
-      options: {
-        temperature: 0.7,
-        num_predict: 4096,
-      },
+      options: { temperature: 0.7, num_predict: 4096 },
     }),
   });
 
   if (!response.ok) {
-    throw new Error(`Ollama error: ${response.status} ${response.statusText}`);
+    throw new Error(`Ollama error: ${response.status}`);
   }
 
   const data = await response.json();
@@ -112,45 +105,85 @@ async function callOllama(
 }
 
 /**
- * Run Claude CLI. Uses spawn to avoid shell argument length limits.
+ * Run Claude CLI using PowerShell to read system prompt from temp file.
+ * This bypasses the Windows command-line 8191 char limit.
  */
-function runClaude(args: string[], stdinData: string): Promise<string> {
+function runClaudeWithTempPrompt(
+  systemPromptFile: string,
+  userMessage: string,
+  model: string,
+  maxTurns: number,
+  webSearch: boolean
+): Promise<string> {
   return new Promise((resolve, reject) => {
     const cliPath = process.env.CLAUDE_CLI_PATH || "claude";
+    const isWindows = process.platform === "win32";
 
-    const child = spawn(cliPath, args, {
-      stdio: ["pipe", "pipe", "pipe"],
-      shell: true, // Needed on Windows to resolve .cmd files
-      env: { ...process.env },
-      timeout: 15 * 60 * 1000, // 15 minutes
-    });
+    if (isWindows) {
+      // PowerShell: read system prompt from file, pass to claude CLI
+      const toolsArg = webSearch ? " --allowedTools 'web_search'" : "";
+      const psScript = `
+$sp = Get-Content -Path '${systemPromptFile.replace(/'/g, "''")}' -Raw -Encoding UTF8
+$input = '${userMessage.replace(/'/g, "''").replace(/\n/g, "`n")}'
+$input | & '${cliPath}' -p --model '${model}' --max-turns ${maxTurns} --system-prompt $sp${toolsArg}
+`.trim();
 
-    let stdout = "";
-    let stderr = "";
+      const child = spawn("powershell", ["-NoProfile", "-NonInteractive", "-Command", psScript], {
+        stdio: ["pipe", "pipe", "pipe"],
+        env: { ...process.env },
+        timeout: 15 * 60 * 1000,
+      });
 
-    child.stdout.on("data", (data: Buffer) => {
-      stdout += data.toString();
-    });
+      let stdout = "";
+      let stderr = "";
 
-    child.stderr.on("data", (data: Buffer) => {
-      stderr += data.toString();
-    });
+      child.stdout.on("data", (data: Buffer) => { stdout += data.toString(); });
+      child.stderr.on("data", (data: Buffer) => { stderr += data.toString(); });
 
-    child.on("error", (error) => {
-      reject(new Error(`Claude CLI error: ${error.message}`));
-    });
+      child.on("error", (error) => {
+        reject(new Error(`Claude CLI error: ${error.message}`));
+      });
 
-    child.on("close", (code) => {
-      if (code !== 0) {
-        reject(new Error(`Claude CLI exited with code ${code}: ${stderr.slice(0, 500)}`));
-        return;
-      }
-      resolve(stdout);
-    });
+      child.on("close", (code) => {
+        if (code !== 0) {
+          reject(new Error(`Claude CLI exited with code ${code}: ${stderr.slice(0, 300)}`));
+          return;
+        }
+        resolve(stdout);
+      });
+    } else {
+      // Unix: use shell to read file into --system-prompt
+      const escapedFile = systemPromptFile.replace(/'/g, "'\\''");
+      const toolsArg = webSearch ? " --allowedTools web_search" : "";
+      const command = `'${cliPath}' -p --model '${model}' --max-turns ${maxTurns} --system-prompt "$(cat '${escapedFile}')"${toolsArg}`;
 
-    // Send combined message via stdin (no length limit)
-    child.stdin.write(stdinData);
-    child.stdin.end();
+      const child = spawn("/bin/sh", ["-c", command], {
+        stdio: ["pipe", "pipe", "pipe"],
+        env: { ...process.env },
+        timeout: 15 * 60 * 1000,
+      });
+
+      let stdout = "";
+      let stderr = "";
+
+      child.stdout.on("data", (data: Buffer) => { stdout += data.toString(); });
+      child.stderr.on("data", (data: Buffer) => { stderr += data.toString(); });
+
+      child.on("error", (error) => {
+        reject(new Error(`Claude CLI error: ${error.message}`));
+      });
+
+      child.on("close", (code) => {
+        if (code !== 0) {
+          reject(new Error(`Claude CLI exited with code ${code}: ${stderr.slice(0, 300)}`));
+          return;
+        }
+        resolve(stdout);
+      });
+
+      child.stdin.write(userMessage);
+      child.stdin.end();
+    }
   });
 }
 
