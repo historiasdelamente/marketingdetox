@@ -125,9 +125,10 @@ function runClaudeWithTempPrompt(
       const toolsArg = webSearch ? " --allowedTools 'web_search'" : "";
       const psScript = `$sp = Get-Content -Path '${systemPromptFile.replace(/'/g, "''")}' -Raw -Encoding UTF8; $msg = '${userMessage.replace(/'/g, "''").replace(/\\/g, "\\\\").replace(/\n/g, "`n").replace(/\r/g, "")}'; Write-Output $msg | & '${cliPath}' -p --model '${model}' --max-turns ${maxTurns} --system-prompt $sp${toolsArg}`;
 
+      const { CLAUDECODE, ...cleanEnv } = process.env;
       const child = spawn("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", psScript], {
         stdio: ["pipe", "pipe", "pipe"],
-        env: { ...process.env },
+        env: cleanEnv,
         timeout: 15 * 60 * 1000,
       });
 
@@ -154,9 +155,10 @@ function runClaudeWithTempPrompt(
       const toolsArg = webSearch ? " --allowedTools web_search" : "";
       const command = `'${cliPath}' -p --model '${model}' --max-turns ${maxTurns} --system-prompt "$(cat '${escapedFile}')"${toolsArg}`;
 
+      const { CLAUDECODE: _cc, ...cleanEnvUnix } = process.env;
       const child = spawn("/bin/sh", ["-c", command], {
         stdio: ["pipe", "pipe", "pipe"],
-        env: { ...process.env },
+        env: cleanEnvUnix,
         timeout: 15 * 60 * 1000,
       });
 
