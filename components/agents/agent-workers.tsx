@@ -22,8 +22,8 @@ const STATE_LABELS: Record<RobotState, string> = {
   hugging: "completado",
 };
 
-const AURA_COLORS = ["#a78bfa", "#5eead4", "#fb923c", "#f472b6", "#818cf8"];
-const BODY_COLORS = ["#a78bfa", "#7dd3fc", "#f472b6", "#5eead4", "#c084fc"];
+const AURA_COLORS = ["#ffd700", "#5eead4", "#fb923c", "#f472b6", "#fbbf24"];
+const BODY_COLORS = ["#fbbf24", "#7dd3fc", "#f472b6", "#5eead4", "#fcd34d"];
 
 function Aura({ cx, cy, color, delay }: { cx: number; cy: number; color: string; delay: number }) {
   return (
@@ -126,7 +126,7 @@ function ReadingRobot({ cx, deskY, delay, color, aura }: { cx: number; deskY: nu
       <line x1={cx - 6} y1={deskY - 18} x2={cx - 8} y2={deskY - 10} stroke={color} strokeWidth="1.8" strokeLinecap="round" opacity="0.7" />
       <line x1={cx + 6} y1={deskY - 18} x2={cx + 8} y2={deskY - 10} stroke={color} strokeWidth="1.8" strokeLinecap="round" opacity="0.7" />
       {/* Document */}
-      <rect x={cx - 6} y={deskY - 12} width="12" height="9" rx="1.5" fill="rgba(167,139,250,0.06)" stroke={aura} strokeWidth="0.4" opacity="0.5" />
+      <rect x={cx - 6} y={deskY - 12} width="12" height="9" rx="1.5" fill="rgba(255,215,0,0.06)" stroke={aura} strokeWidth="0.4" opacity="0.5" />
       {[0, 1, 2].map((l) => (
         <line key={l} x1={cx - 4} y1={deskY - 9 + l * 2.5} x2={cx + 3 - l} y2={deskY - 9 + l * 2.5} stroke={aura} strokeWidth="0.4" opacity="0.2" />
       ))}
@@ -219,15 +219,15 @@ function HuggingRobots({ cx, deskY, delay, color1, color2, aura1, aura2 }: {
 function DeskWithLaptop({ cx, deskY }: { cx: number; deskY: number }) {
   return (
     <g>
-      <rect x={cx - 18} y={deskY} width="36" height="3" rx="1" fill="rgba(167,139,250,0.03)" />
-      <line x1={cx - 15} y1={deskY + 3} x2={cx - 15} y2={deskY + 12} stroke="rgba(167,139,250,0.02)" strokeWidth="1.5" />
-      <line x1={cx + 15} y1={deskY + 3} x2={cx + 15} y2={deskY + 12} stroke="rgba(167,139,250,0.02)" strokeWidth="1.5" />
-      <rect x={cx - 9} y={deskY - 11} width="18" height="11" rx="1.5" fill="rgba(10,8,18,0.6)" stroke="rgba(167,139,250,0.08)" strokeWidth="0.4" />
-      <line x1={cx - 6} y1={deskY - 8} x2={cx + 3} y2={deskY - 8} stroke="rgba(167,139,250,0.15)" strokeWidth="0.5">
+      <rect x={cx - 18} y={deskY} width="36" height="3" rx="1" fill="rgba(255,215,0,0.03)" />
+      <line x1={cx - 15} y1={deskY + 3} x2={cx - 15} y2={deskY + 12} stroke="rgba(255,215,0,0.02)" strokeWidth="1.5" />
+      <line x1={cx + 15} y1={deskY + 3} x2={cx + 15} y2={deskY + 12} stroke="rgba(255,215,0,0.02)" strokeWidth="1.5" />
+      <rect x={cx - 9} y={deskY - 11} width="18" height="11" rx="1.5" fill="rgba(10,8,18,0.6)" stroke="rgba(255,215,0,0.08)" strokeWidth="0.4" />
+      <line x1={cx - 6} y1={deskY - 8} x2={cx + 3} y2={deskY - 8} stroke="rgba(255,215,0,0.15)" strokeWidth="0.5">
         <animate attributeName="x2" values={`${cx - 1};${cx + 5};${cx - 1}`} dur="2s" repeatCount="indefinite" />
       </line>
       <line x1={cx - 6} y1={deskY - 5.5} x2={cx + 1} y2={deskY - 5.5} stroke="rgba(94,234,212,0.1)" strokeWidth="0.5" />
-      <rect x={cx - 10} y={deskY - 0.5} width="20" height="1.5" rx="0.5" fill="rgba(167,139,250,0.02)" />
+      <rect x={cx - 10} y={deskY - 0.5} width="20" height="1.5" rx="0.5" fill="rgba(255,215,0,0.02)" />
     </g>
   );
 }
@@ -265,12 +265,12 @@ export function AgentWorkers({
       <svg viewBox="0 0 300 100" className="w-full h-auto" style={{ maxHeight: "180px" }}>
         <defs>
           <linearGradient id="barGradMind" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#7c3aed" />
-            <stop offset="50%" stopColor="#a78bfa" />
+            <stop offset="0%" stopColor="#d4a000" />
+            <stop offset="50%" stopColor="#ffd700" />
             <stop offset="100%" stopColor="#5eead4" />
           </linearGradient>
           <radialGradient id="hugAura">
-            <stop offset="0%" stopColor="#a78bfa" />
+            <stop offset="0%" stopColor="#ffd700" />
             <stop offset="50%" stopColor="#5eead4" />
             <stop offset="100%" stopColor="transparent" />
           </radialGradient>
@@ -304,7 +304,7 @@ export function AgentWorkers({
                 <HuggingRobots cx={cx + spacing * 0.5} deskY={deskY} delay={delay} color1={color} color2={BODY_COLORS[(i + 1) % BODY_COLORS.length]} aura1={aura} aura2={AURA_COLORS[(i + 1) % AURA_COLORS.length]} />
               )}
 
-              <text x={cx} y={deskY + 20} textAnchor="middle" fontSize="4" fill="rgba(167,139,250,0.2)" fontFamily="sans-serif">
+              <text x={cx} y={deskY + 20} textAnchor="middle" fontSize="4" fill="rgba(255,215,0,0.2)" fontFamily="sans-serif">
                 {STATE_LABELS[robotState]}
               </text>
             </g>
@@ -312,26 +312,26 @@ export function AgentWorkers({
         })}
 
         {/* Progress bar */}
-        <rect x={barX} y={barY} width={barWidth} height="4" rx="2" fill="rgba(167,139,250,0.04)" />
+        <rect x={barX} y={barY} width={barWidth} height="4" rx="2" fill="rgba(255,215,0,0.04)" />
         <rect x={barX} y={barY} width={filledWidth} height="4" rx="2" fill="url(#barGradMind)" opacity="0.7">
           <animate attributeName="opacity" values="0.6;0.8;0.6" dur="2.5s" repeatCount="indefinite" />
         </rect>
 
         {filledWidth > 5 && (
-          <circle cx={barX + filledWidth} cy={barY + 2} r="3" fill="rgba(167,139,250,0.25)" filter="url(#softGlow)">
+          <circle cx={barX + filledWidth} cy={barY + 2} r="3" fill="rgba(255,215,0,0.25)" filter="url(#softGlow)">
             <animate attributeName="r" values="2;5;2" dur="1.5s" repeatCount="indefinite" />
           </circle>
         )}
 
-        <text x={barX + barWidth / 2} y={barY + 13} textAnchor="middle" fontSize="4.5" fill="rgba(167,139,250,0.2)" fontFamily="sans-serif">
+        <text x={barX + barWidth / 2} y={barY + 13} textAnchor="middle" fontSize="4.5" fill="rgba(255,215,0,0.2)" fontFamily="sans-serif">
           {Math.round(progress)}%
         </text>
       </svg>
 
       <div className="flex items-center justify-between mt-1">
         <div className="flex items-center gap-2">
-          <span className="inline-block w-2 h-2 rounded-full bg-violet-400/50 animate-pulse" />
-          <span className="text-[11px] text-violet-300/40">
+          <span className="inline-block w-2 h-2 rounded-full bg-yellow-400/50 animate-pulse" />
+          <span className="text-[11px] text-yellow-400/40">
             {visibleAgents} agente{visibleAgents > 1 ? "s" : ""} {STATE_LABELS[robotState]}
           </span>
         </div>

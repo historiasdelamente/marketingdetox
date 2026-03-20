@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { ChatMessage } from "@/lib/chat/types";
+import { AgentWorkers } from "@/components/agents/agent-workers";
 
 function AgentAvatar() {
   return (
@@ -139,25 +140,23 @@ export function ChatMessageBubble({
   }
 
   if (message.type === "progress") {
+    const agentCount = 5;
+    const pct = message.progress?.percentage || 0;
     return (
       <div className="flex gap-3 mb-4 chat-msg-agent">
         <AgentAvatar />
-        <div className="flex-1 max-w-[80%]">
+        <div className="flex-1 max-w-[85%]">
           <div className="chat-bubble-agent rounded-2xl rounded-bl-md px-4 py-3">
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-3">
               <span className="w-2 h-2 rounded-full bg-yellow-400/60 animate-pulse" />
-              <span className="text-xs text-yellow-400/70 font-medium">Procesando...</span>
+              <span className="text-xs text-yellow-400/70 font-medium">Agentes trabajando...</span>
             </div>
-            <p className="text-sm text-foreground/60 mb-2">{message.progress?.step}</p>
-            <div className="w-full h-2 rounded-full bg-white/5 overflow-hidden">
-              <div
-                className="h-full rounded-full progress-gradient transition-all duration-500"
-                style={{ width: `${message.progress?.percentage || 0}%` }}
-              />
-            </div>
-            <p className="text-xs text-muted-foreground/50 mt-1.5 text-right">
-              {Math.round(message.progress?.percentage || 0)}%
-            </p>
+            <AgentWorkers
+              currentStep={message.progress?.step || "Iniciando..."}
+              agentCount={agentCount}
+              progress={pct}
+            />
+            <p className="text-sm text-foreground/55 mt-3 truncate">{message.progress?.step}</p>
           </div>
         </div>
       </div>
