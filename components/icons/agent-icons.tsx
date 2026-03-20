@@ -110,6 +110,25 @@ export function IconLibros({ className = "w-6 h-6" }: { className?: string }) {
   );
 }
 
+export function IconSora({ className = "w-6 h-6" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      {/* Film/video frame */}
+      <rect x="2" y="4" width="20" height="16" rx="2" stroke="currentColor" strokeWidth="1.5" />
+      {/* Film perforations */}
+      <rect x="4" y="6" width="2" height="2" rx="0.5" fill="currentColor" opacity="0.3" />
+      <rect x="4" y="16" width="2" height="2" rx="0.5" fill="currentColor" opacity="0.3" />
+      <rect x="18" y="6" width="2" height="2" rx="0.5" fill="currentColor" opacity="0.3" />
+      <rect x="18" y="16" width="2" height="2" rx="0.5" fill="currentColor" opacity="0.3" />
+      {/* AI sparkle/magic wand */}
+      <path d="M12 8L13 11L16 12L13 13L12 16L11 13L8 12L11 11L12 8Z" fill="currentColor" opacity="0.7" />
+      {/* Small sparkles */}
+      <circle cx="16" cy="9" r="0.7" fill="currentColor" opacity="0.4" />
+      <circle cx="8" cy="15" r="0.5" fill="currentColor" opacity="0.3" />
+    </svg>
+  );
+}
+
 export function IconConocimiento({ className = "w-6 h-6" }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className}>
@@ -151,6 +170,7 @@ export const AGENT_ICON_MAP: Record<string, React.FC<{ className?: string }>> = 
   clases: IconClases,
   cursos: IconCursos,
   libros: IconLibros,
+  sora: IconSora,
   conocimiento: IconConocimiento,
   historial: IconHistorial,
 };
