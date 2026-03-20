@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AgentWorkers } from "@/components/agents/agent-workers";
+import { TerminalOutput, type TerminalLine } from "@/components/effects/terminal-output";
 
 type AgentField = {
   name: string;
@@ -56,7 +57,7 @@ function ElapsedTimer({ startTime }: { startTime: number }) {
   const secs = Math.floor((elapsed % 60000) / 1000);
 
   return (
-    <span className="text-xs font-mono text-muted-foreground tabular-nums">
+    <span className="text-xs font-mono text-violet-300/40 tabular-nums">
       {String(mins).padStart(2, "0")}:{String(secs).padStart(2, "0")}
     </span>
   );
@@ -80,6 +81,7 @@ export function AgentPageShell({
   const [error, setError] = useState<string | null>(null);
   const [startTime, setStartTime] = useState(0);
   const [log, setLog] = useState<LogEntry[]>([]);
+  const [terminalLines, setTerminalLines] = useState<TerminalLine[]>([]);
   const logEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -104,6 +106,11 @@ export function AgentPageShell({
       step: "Iniciando ejecución...",
       percentage: 0,
     }]);
+    setTerminalLines([{
+      time: new Date().toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" }),
+      text: "Iniciando ejecución del agente...",
+      type: "step",
+    }]);
 
     try {
       const res = await fetch(`/api/agents/${agentType}`, {
@@ -117,10 +124,14 @@ export function AgentPageShell({
       if (!res.ok) {
         setError(data.error || "Error al ejecutar el agente");
         setRunning(false);
+        setTerminalLines((prev) => [...prev, {
+          time: new Date().toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" }),
+          text: data.error || "Error al ejecutar el agente",
+          type: "error",
+        }]);
         return;
       }
 
-      // Start SSE for progress
       const jobId = data.jobId;
       const eventSource = new EventSource(`/api/stream/${jobId}`);
 
@@ -138,6 +149,11 @@ export function AgentPageShell({
               percentage: msg.percentage,
             },
           ]);
+          setTerminalLines((prev) => [...prev, {
+            time: new Date().toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" }),
+            text: `[${msg.percentage}%] ${msg.step}`,
+            type: msg.percentage >= 100 ? "success" : "info",
+          }]);
         } else if (msg.type === "complete") {
           setResult(msg.output);
           setRunning(false);
@@ -150,10 +166,20 @@ export function AgentPageShell({
               percentage: 100,
             },
           ]);
+          setTerminalLines((prev) => [...prev, {
+            time: new Date().toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" }),
+            text: `Proceso completado en ${formatElapsed(Date.now() - now)}`,
+            type: "success",
+          }]);
           eventSource.close();
         } else if (msg.type === "error") {
           setError(msg.message);
           setRunning(false);
+          setTerminalLines((prev) => [...prev, {
+            time: new Date().toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" }),
+            text: msg.message,
+            type: "error",
+          }]);
           eventSource.close();
         }
       };
@@ -171,32 +197,37 @@ export function AgentPageShell({
 
   return (
     <div>
+      {/* Header */}
       <div className="mb-6 flex items-center gap-4">
-        <span className="w-12 h-12 rounded-lg bg-primary text-primary-foreground flex items-center justify-center text-lg font-bold">
+        <span className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500/15 to-teal-500/10 text-violet-300 flex items-center justify-center text-lg font-bold">
           {icon}
         </span>
         <div>
-          <h1 className="text-2xl font-bold">{title}</h1>
-          <p className="text-sm text-muted-foreground">{description}</p>
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-violet-300 to-teal-300 bg-clip-text text-transparent">{title}</h1>
+          <p className="text-sm text-muted-foreground/40">{description}</p>
         </div>
         <div className="ml-auto flex gap-2">
-          <Badge variant="secondary">{agentCount} agentes</Badge>
-          <Badge variant="outline">{outputType}</Badge>
+          <Badge variant="secondary" className="bg-violet-500/[0.06] text-violet-300/50 border-violet-500/10 text-[10px]">
+            {agentCount} agentes
+          </Badge>
+          <Badge variant="outline" className="border-teal-500/10 text-teal-300/40 text-[10px]">
+            {outputType}
+          </Badge>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left: Form */}
-        <Card>
+        <Card className="glass-card border-violet-500/[0.06]">
           <CardHeader>
-            <CardTitle className="text-base">Configuración</CardTitle>
+            <CardTitle className="text-base text-violet-200/70">Configuración</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {fields.map((field) => (
               <div key={field.name}>
-                <label className="text-sm font-medium mb-1.5 block">
+                <label className="text-sm font-medium mb-1.5 block text-violet-200/40">
                   {field.label}
-                  {field.required && <span className="text-destructive ml-1">*</span>}
+                  {field.required && <span className="text-rose-400/50 ml-1">*</span>}
                 </label>
                 {field.type === "textarea" ? (
                   <Textarea
@@ -204,10 +235,11 @@ export function AgentPageShell({
                     value={formData[field.name] || ""}
                     onChange={(e) => handleChange(field.name, e.target.value)}
                     rows={3}
+                    className="bg-background/50 border-violet-500/[0.06] text-foreground/70 placeholder:text-violet-300/15 text-sm focus:border-violet-500/15 focus:ring-violet-500/10"
                   />
                 ) : field.type === "select" ? (
                   <select
-                    className="w-full rounded-md border border-input bg-input px-3 py-2 text-sm"
+                    className="w-full rounded-lg border border-violet-500/[0.06] bg-background/50 px-3 py-2 text-sm text-foreground/70 focus:border-violet-500/15"
                     value={formData[field.name] || ""}
                     onChange={(e) => handleChange(field.name, e.target.value)}
                   >
@@ -221,7 +253,7 @@ export function AgentPageShell({
                 ) : (
                   <input
                     type="text"
-                    className="w-full rounded-md border border-input bg-input px-3 py-2 text-sm"
+                    className="w-full rounded-lg border border-violet-500/[0.06] bg-background/50 px-3 py-2 text-sm text-foreground/70 placeholder:text-violet-300/15 focus:border-violet-500/15"
                     placeholder={field.placeholder}
                     value={formData[field.name] || ""}
                     onChange={(e) => handleChange(field.name, e.target.value)}
@@ -233,23 +265,32 @@ export function AgentPageShell({
             <Button
               onClick={handleSubmit}
               disabled={running}
-              className="w-full"
+              className="w-full bg-gradient-to-r from-violet-600/20 to-teal-600/15 text-violet-200 border border-violet-500/10 hover:from-violet-600/30 hover:to-teal-600/20 hover:shadow-lg hover:shadow-violet-500/5 transition-all"
             >
-              {running ? "Ejecutando..." : "Ejecutar Agente"}
+              {running ? (
+                <span className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-violet-400/50 animate-pulse" />
+                  Ejecutando...
+                </span>
+              ) : (
+                "Ejecutar Agente"
+              )}
             </Button>
           </CardContent>
         </Card>
 
         {/* Right: Output / Progress */}
-        <Card>
+        <Card className={`glass-card border-violet-500/[0.06] transition-all duration-500 ${
+          result && !running ? "shadow-lg shadow-violet-500/5 border-violet-500/10" : ""
+        }`}>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="text-base">
+              <CardTitle className="text-base text-violet-200/70">
                 {running ? "Progreso" : result ? "Resultado" : "Output"}
               </CardTitle>
               {running && startTime > 0 && (
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                  <span className="w-2 h-2 rounded-full bg-violet-400/40 animate-pulse" />
                   <ElapsedTimer startTime={startTime} />
                 </div>
               )}
@@ -264,33 +305,8 @@ export function AgentPageShell({
                   progress={progress}
                 />
 
-                {/* Live activity log */}
-                <div className="rounded-lg border border-border/40 bg-black/20 overflow-hidden">
-                  <div className="px-3 py-1.5 border-b border-border/30 flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                    <span className="text-[10px] font-mono text-muted-foreground/60 uppercase tracking-wider">Activity Log</span>
-                  </div>
-                  <ScrollArea className="h-[140px]">
-                    <div className="p-2 space-y-0.5">
-                      {log.map((entry, i) => (
-                        <div
-                          key={i}
-                          className={`flex items-start gap-2 text-[11px] font-mono py-0.5 px-1 rounded ${
-                            i === log.length - 1 ? "bg-primary/10 text-primary" : "text-muted-foreground/70"
-                          }`}
-                        >
-                          <span className="text-muted-foreground/40 shrink-0">{entry.time}</span>
-                          <span className="text-primary/50 shrink-0">[{entry.elapsed}]</span>
-                          <span className="truncate">{entry.step}</span>
-                          <span className="ml-auto shrink-0 text-muted-foreground/40">{entry.percentage}%</span>
-                        </div>
-                      ))}
-                      <div ref={logEndRef} />
-                    </div>
-                  </ScrollArea>
-                </div>
+                <TerminalOutput lines={terminalLines} />
 
-                {/* Step checklist */}
                 {steps.length > 0 && (
                   <div className="space-y-1">
                     {steps.map((step, i) => {
@@ -302,19 +318,19 @@ export function AgentPageShell({
                           key={step}
                           className={`flex items-center gap-2 text-xs py-0.5 ${
                             isDone
-                              ? "text-primary"
+                              ? "text-teal-300/50"
                               : isCurrent
-                              ? "text-amber-400"
-                              : "text-muted-foreground/50"
+                              ? "text-violet-300/60"
+                              : "text-muted-foreground/20"
                           }`}
                         >
                           {isDone ? (
-                            <svg viewBox="0 0 12 12" className="w-3.5 h-3.5 shrink-0 text-green-500">
+                            <svg viewBox="0 0 12 12" className="w-3.5 h-3.5 shrink-0 text-teal-400/60">
                               <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1" fill="none" />
                               <path d="M3.5 6L5.5 8L8.5 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
                             </svg>
                           ) : isCurrent ? (
-                            <svg viewBox="0 0 12 12" className="w-3.5 h-3.5 shrink-0 animate-spin">
+                            <svg viewBox="0 0 12 12" className="w-3.5 h-3.5 shrink-0 animate-spin text-violet-400/50">
                               <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1" fill="none" opacity="0.3" />
                               <path d="M6 1A5 5 0 0 1 11 6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" fill="none" />
                             </svg>
@@ -333,7 +349,7 @@ export function AgentPageShell({
             )}
 
             {error && (
-              <div className="rounded-md bg-destructive/10 p-4 text-sm text-destructive">
+              <div className="rounded-xl bg-rose-500/5 border border-rose-500/10 p-4 text-sm text-rose-300/60">
                 {error}
               </div>
             )}
@@ -341,7 +357,7 @@ export function AgentPageShell({
             {result && !running && (
               <div>
                 {log.length > 0 && (
-                  <div className="mb-3 flex items-center gap-2 text-xs text-muted-foreground/60">
+                  <div className="mb-3 flex items-center gap-2 text-xs text-teal-300/30">
                     <svg viewBox="0 0 12 12" className="w-3 h-3">
                       <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="0.8" fill="none" />
                       <path d="M6 3V6L8 7.5" stroke="currentColor" strokeWidth="0.8" strokeLinecap="round" fill="none" />
@@ -349,22 +365,43 @@ export function AgentPageShell({
                     Completado en {log[log.length - 1]?.elapsed}
                   </div>
                 )}
-                <ScrollArea className="h-[400px]">
-                  <pre className="whitespace-pre-wrap text-sm font-mono leading-relaxed">
-                    {result}
-                  </pre>
-                </ScrollArea>
+                <div className="rounded-xl glass-card overflow-hidden">
+                  <div className="flex items-center gap-2 px-3 py-1.5 border-b border-violet-500/[0.06]">
+                    <div className="flex gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-rose-400/30" />
+                      <span className="w-2 h-2 rounded-full bg-amber-400/30" />
+                      <span className="w-2 h-2 rounded-full bg-teal-400/30" />
+                    </div>
+                    <span className="text-[9px] text-violet-300/25 ml-1">resultado</span>
+                  </div>
+                  <ScrollArea className="h-[400px]">
+                    <pre className="whitespace-pre-wrap text-sm leading-relaxed p-4 text-foreground/60">
+                      {result}
+                    </pre>
+                  </ScrollArea>
+                </div>
               </div>
             )}
 
             {!running && !result && !error && (
-              <p className="text-sm text-muted-foreground text-center py-12">
-                Configura los parámetros y ejecuta el agente para ver el resultado aquí.
-              </p>
+              <div className="text-center py-12">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500/10 to-teal-500/5 flex items-center justify-center mx-auto mb-3">
+                  <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6 text-violet-400/30">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" stroke="currentColor" strokeWidth="1.2" fill="none" />
+                    <path d="M8 14s1.5 2 4 2 4-2 4-2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" fill="none" />
+                    <circle cx="9" cy="9.5" r="1" fill="currentColor" />
+                    <circle cx="15" cy="9.5" r="1" fill="currentColor" />
+                  </svg>
+                </div>
+                <p className="text-sm text-muted-foreground/30">
+                  Configura los parámetros y ejecuta el agente
+                </p>
+              </div>
             )}
           </CardContent>
         </Card>
       </div>
+      <div ref={logEndRef} />
     </div>
   );
 }
