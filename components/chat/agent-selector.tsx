@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { AGENT_CONFIGS } from "@/lib/chat/agent-configs";
 
 const ACCENT_COLORS: Record<string, string> = {
@@ -66,8 +67,21 @@ export function AgentSelector({ onSelect }: { onSelect: (agentType: string) => v
         ))}
       </div>
 
+      {/* My files button */}
+      <div className="mt-6 flex justify-center">
+        <Link
+          href="/outputs"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-yellow-500/15 bg-yellow-500/[0.06] text-yellow-400/80 text-sm hover:bg-yellow-500/[0.12] hover:border-yellow-500/25 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-yellow-500/5"
+        >
+          <svg viewBox="0 0 16 16" fill="none" className="w-4 h-4">
+            <path d="M2 4.5A1.5 1.5 0 013.5 3h3.293a1 1 0 01.707.293L8.5 4.293A1 1 0 009.207 4.5H12.5A1.5 1.5 0 0114 6v6.5a1.5 1.5 0 01-1.5 1.5h-9A1.5 1.5 0 012 12.5v-8z" stroke="currentColor" strokeWidth="1.2" />
+          </svg>
+          Mis archivos guardados
+        </Link>
+      </div>
+
       {/* Stats */}
-      <div className="mt-6 flex items-center justify-center gap-6 text-xs text-muted-foreground/30">
+      <div className="mt-4 flex items-center justify-center gap-6 text-xs text-muted-foreground/30">
         <span>58 agentes</span>
         <span className="w-1 h-1 rounded-full bg-yellow-500/20" />
         <span>80 prompts</span>

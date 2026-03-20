@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import Link from "next/link";
 import type { ChatMessage } from "@/lib/chat/types";
 import { AGENT_CONFIGS } from "@/lib/chat/agent-configs";
 import { processAgentSelection, processUserInput, skipField } from "@/lib/chat/chat-engine";
@@ -111,6 +112,7 @@ export function ChatContainer({ initialAgent }: { initialAgent?: string }) {
             type: "output",
             content: "",
             timestamp: new Date(),
+            agentType: activeAgent!,
             output: {
               content: msg.output,
               title: `${config?.title || "Resultado"} — ${formatElapsed(Date.now() - startTime)}`,
@@ -238,12 +240,23 @@ export function ChatContainer({ initialAgent }: { initialAgent?: string }) {
             <h2 className="text-sm font-semibold text-foreground/85 truncate">{config.title}</h2>
             <p className="text-[10px] text-muted-foreground/40 truncate">{config.description}</p>
           </div>
-          <button
-            onClick={() => { setShowSelector(true); setMessages([]); setActiveAgent(null); }}
-            className="text-xs text-muted-foreground/40 hover:text-yellow-400/60 transition-colors px-2 py-1 rounded-lg hover:bg-white/[0.03]"
-          >
-            Cambiar
-          </button>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/outputs"
+              className="text-xs text-muted-foreground/40 hover:text-yellow-400/60 transition-colors px-2.5 py-1.5 rounded-lg hover:bg-white/[0.03] flex items-center gap-1.5 border border-transparent hover:border-yellow-500/10"
+            >
+              <svg viewBox="0 0 16 16" fill="none" className="w-3.5 h-3.5">
+                <path d="M2 4.5A1.5 1.5 0 013.5 3h3.293a1 1 0 01.707.293L8.5 4.293A1 1 0 009.207 4.5H12.5A1.5 1.5 0 0114 6v6.5a1.5 1.5 0 01-1.5 1.5h-9A1.5 1.5 0 012 12.5v-8z" stroke="currentColor" strokeWidth="1.2" />
+              </svg>
+              Mis archivos
+            </Link>
+            <button
+              onClick={() => { setShowSelector(true); setMessages([]); setActiveAgent(null); }}
+              className="text-xs text-muted-foreground/40 hover:text-yellow-400/60 transition-colors px-2.5 py-1.5 rounded-lg hover:bg-white/[0.03]"
+            >
+              Cambiar
+            </button>
+          </div>
         </div>
       )}
 

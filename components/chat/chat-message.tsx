@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { ChatMessage } from "@/lib/chat/types";
 
 function AgentAvatar() {
@@ -27,6 +28,97 @@ function renderMarkdown(text: string) {
     }
     return <p key={i} className={line === "" ? "h-2" : ""} dangerouslySetInnerHTML={{ __html: boldReplaced }} />;
   });
+}
+
+function OutputBubble({
+  message,
+  onChipClick,
+}: {
+  message: ChatMessage;
+  onChipClick?: (value: string) => void;
+}) {
+  const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleSave = async () => {
+    if (!message.output?.content || !message.agentType) return;
+    setSaving(true);
+    try {
+      const res = await fetch("/api/outputs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          agent_type: message.agentType,
+          title: message.output.title || "Output",
+          content: message.output.content,
+          file_type: "md",
+        }),
+      });
+      if (res.ok) setSaved(true);
+    } catch {
+      // silently fail
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(message.output?.content || "");
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="flex gap-3 mb-4 chat-msg-agent">
+      <AgentAvatar />
+      <div className="flex-1 max-w-[85%]">
+        <div className="chat-bubble-agent rounded-2xl rounded-bl-md px-4 py-3">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-yellow-400">✨</span>
+            <span className="text-sm font-semibold text-foreground/85">{message.output?.title || "Resultado"}</span>
+          </div>
+          <div className="bg-black/20 rounded-xl p-4 max-h-[400px] overflow-y-auto terminal-scroll">
+            <pre className="whitespace-pre-wrap text-sm text-foreground/65 leading-relaxed font-sans">
+              {message.output?.content}
+            </pre>
+          </div>
+          <div className="flex flex-wrap gap-2 mt-3">
+            <button onClick={handleCopy} className="chip-btn text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+              {copied ? (
+                <><span className="text-green-400">✓</span> Copiado</>
+              ) : (
+                <>
+                  <svg viewBox="0 0 16 16" fill="none" className="w-3.5 h-3.5"><rect x="5" y="5" width="8" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.2" /><path d="M3 11V3.5A.5.5 0 013.5 3H11" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" /></svg>
+                  Copiar
+                </>
+              )}
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saved || saving}
+              className="chip-btn text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 disabled:opacity-50"
+            >
+              {saved ? (
+                <><span className="text-green-400">✓</span> Guardado</>
+              ) : saving ? (
+                <><span className="w-2 h-2 rounded-full bg-yellow-400/50 animate-pulse" /> Guardando...</>
+              ) : (
+                <>
+                  <svg viewBox="0 0 16 16" fill="none" className="w-3.5 h-3.5"><path d="M3 14V2.5A.5.5 0 013.5 2h7.793a.5.5 0 01.354.146l1.707 1.708a.5.5 0 01.146.354V14a.5.5 0 01-.5.5h-10A.5.5 0 013 14z" stroke="currentColor" strokeWidth="1.2" /><path d="M5.5 2v3h5V2" stroke="currentColor" strokeWidth="1" /><rect x="5" y="9" width="6" height="4" rx="0.5" stroke="currentColor" strokeWidth="1" /></svg>
+                  Guardar
+                </>
+              )}
+            </button>
+            <button onClick={() => onChipClick?.("__new__")} className="chip-btn text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+              <svg viewBox="0 0 16 16" fill="none" className="w-3.5 h-3.5"><path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
+              Generar otro
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function ChatMessageBubble({
@@ -74,36 +166,7 @@ export function ChatMessageBubble({
 
   if (message.type === "output") {
     return (
-      <div className="flex gap-3 mb-4 chat-msg-agent">
-        <AgentAvatar />
-        <div className="flex-1 max-w-[85%]">
-          <div className="chat-bubble-agent rounded-2xl rounded-bl-md px-4 py-3">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-yellow-400">✨</span>
-              <span className="text-sm font-semibold text-foreground/85">{message.output?.title || "Resultado"}</span>
-            </div>
-            <div className="bg-black/20 rounded-xl p-4 max-h-[400px] overflow-y-auto terminal-scroll">
-              <pre className="whitespace-pre-wrap text-sm text-foreground/65 leading-relaxed font-sans">
-                {message.output?.content}
-              </pre>
-            </div>
-            <div className="flex gap-2 mt-3">
-              <button
-                onClick={() => navigator.clipboard.writeText(message.output?.content || "")}
-                className="chip-btn text-xs px-3 py-1.5 rounded-lg"
-              >
-                Copiar
-              </button>
-              <button
-                onClick={() => onChipClick?.("__new__")}
-                className="chip-btn text-xs px-3 py-1.5 rounded-lg"
-              >
-                Generar otro
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <OutputBubble message={message} onChipClick={onChipClick} />
     );
   }
 
