@@ -2,8 +2,6 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Sidebar } from "@/components/layout/sidebar";
-import { MatrixRain } from "@/components/effects/matrix-rain";
-import { FallingSymbols } from "@/components/effects/falling-symbols";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,10 +28,8 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <MatrixRain />
-        <FallingSymbols />
         <Sidebar />
-        <main className="ml-64 min-h-screen p-8 relative" style={{ zIndex: 2 }}>
+        <main className="ml-64 h-screen relative">
           {children}
         </main>
       </body>
