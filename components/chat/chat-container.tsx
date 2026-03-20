@@ -9,6 +9,19 @@ import { ChatMessageBubble } from "./chat-message";
 import { ChatInput } from "./chat-input";
 import { AgentSelector } from "./agent-selector";
 
+const MATERIAL_ICONS: Record<string, string> = {
+  tiktok: "movie_filter",
+  emails: "alternate_email",
+  voiceover: "record_voice_over",
+  talleres: "rebase_edit",
+  clases: "school",
+  cursos: "local_library",
+  libros: "menu_book",
+  sora: "auto_awesome",
+  conocimiento: "database",
+  outputs: "history",
+};
+
 function formatElapsed(ms: number): string {
   const secs = Math.floor(ms / 1000);
   const mins = Math.floor(secs / 60);
@@ -214,14 +227,13 @@ export function ChatContainer({ initialAgent }: { initialAgent?: string }) {
       return;
     }
 
-    // Regular chip = field value
     handleSend(value);
   }, [activeAgent, collectedFields, currentFieldIndex, addMessages, handleExecute, handleSend, handleAgentSelect]);
 
   if (showSelector) {
     return (
-      <div className="flex flex-col h-[calc(100vh-2rem)]">
-        <div className="flex-1 overflow-y-auto terminal-scroll" ref={scrollRef}>
+      <div className="flex flex-col h-screen">
+        <div className="flex-1 overflow-y-auto custom-scrollbar" ref={scrollRef}>
           <AgentSelector onSelect={handleAgentSelect} />
         </div>
       </div>
@@ -231,49 +243,55 @@ export function ChatContainer({ initialAgent }: { initialAgent?: string }) {
   const config = activeAgent ? AGENT_CONFIGS[activeAgent] : null;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-2rem)]">
+    <div className="flex flex-col h-screen relative">
       {/* Chat header */}
       {config && (
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.06] bg-background/50 backdrop-blur-sm shrink-0">
-          <span className="text-xl">{config.icon}</span>
-          <div className="flex-1 min-w-0">
-            <h2 className="text-sm font-semibold text-foreground/85 truncate">{config.title}</h2>
-            <p className="text-[10px] text-muted-foreground/40 truncate">{config.description}</p>
+        <header className="h-20 flex items-center justify-between px-10 glass-panel border-b border-[#D4AF37]/20 z-40 shrink-0">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-[#141414] flex items-center justify-center border border-[#D4AF37]/30">
+              <span
+                className="material-symbols-outlined text-[#D4AF37] text-2xl"
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
+                {MATERIAL_ICONS[activeAgent!] || "smart_toy"}
+              </span>
+            </div>
+            <div>
+              <h2 className="font-bold text-xl tracking-tight text-white" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                {config.title}
+              </h2>
+              <p className="text-sm text-gray-500">{config.description}</p>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
             <Link
               href="/outputs"
-              className="text-xs text-muted-foreground/40 hover:text-yellow-400/60 transition-colors px-2.5 py-1.5 rounded-lg hover:bg-white/[0.03] flex items-center gap-1.5 border border-transparent hover:border-yellow-500/10"
+              className="text-gray-500 hover:text-[#D4AF37] transition-colors"
             >
-              <svg viewBox="0 0 16 16" fill="none" className="w-3.5 h-3.5">
-                <path d="M2 4.5A1.5 1.5 0 013.5 3h3.293a1 1 0 01.707.293L8.5 4.293A1 1 0 009.207 4.5H12.5A1.5 1.5 0 0114 6v6.5a1.5 1.5 0 01-1.5 1.5h-9A1.5 1.5 0 012 12.5v-8z" stroke="currentColor" strokeWidth="1.2" />
-              </svg>
-              Mis archivos
+              <span className="material-symbols-outlined">folder_open</span>
             </Link>
             <button
               onClick={() => { setShowSelector(true); setMessages([]); setActiveAgent(null); }}
-              className="text-xs text-muted-foreground/40 hover:text-yellow-400/60 transition-colors px-2.5 py-1.5 rounded-lg hover:bg-white/[0.03]"
+              className="text-gray-500 hover:text-[#D4AF37] transition-colors"
             >
-              Cambiar
+              <span className="material-symbols-outlined">swap_horiz</span>
             </button>
           </div>
-        </div>
+        </header>
       )}
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto terminal-scroll px-4 py-4" ref={scrollRef}>
-        <div className="max-w-3xl mx-auto">
-          {messages.map((msg) => (
-            <ChatMessageBubble key={msg.id} message={msg} onChipClick={handleChipClick} />
-          ))}
-        </div>
-      </div>
+      <section className="flex-1 overflow-y-auto custom-scrollbar px-10 py-8 pb-32" ref={scrollRef}>
+        {messages.map((msg) => (
+          <ChatMessageBubble key={msg.id} message={msg} onChipClick={handleChipClick} />
+        ))}
+      </section>
 
       {/* Input */}
       <ChatInput
         onSend={handleSend}
         disabled={isRunning}
-        placeholder={config ? `Escríbele al agente de ${config.title}...` : "Escribe aquí..."}
+        placeholder={config ? `Describe lo que quieres crear con ${config.title}...` : "Escribe aquí..."}
       />
     </div>
   );

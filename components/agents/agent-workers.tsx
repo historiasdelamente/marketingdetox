@@ -22,8 +22,8 @@ const STATE_LABELS: Record<RobotState, string> = {
   hugging: "completado",
 };
 
-const AURA_COLORS = ["#ffd700", "#5eead4", "#fb923c", "#f472b6", "#fbbf24"];
-const BODY_COLORS = ["#fbbf24", "#7dd3fc", "#f472b6", "#5eead4", "#fcd34d"];
+const AURA_COLORS = ["#FFD700", "#D4AF37", "#F5E0A3", "#B8860B", "#FFD700"];
+const BODY_COLORS = ["#D4AF37", "#FFD700", "#A67C00", "#F5E0A3", "#D4AF37"];
 
 function Aura({ cx, cy, color, delay }: { cx: number; cy: number; color: string; delay: number }) {
   return (
@@ -328,14 +328,14 @@ export function AgentWorkers({
         </text>
       </svg>
 
-      <div className="flex items-center justify-between mt-1">
+      <div className="flex items-center justify-between mt-2">
         <div className="flex items-center gap-2">
-          <span className="inline-block w-2 h-2 rounded-full bg-yellow-400/50 animate-pulse" />
-          <span className="text-[11px] text-yellow-400/40">
+          <span className="inline-block w-2 h-2 rounded-full bg-[#D4AF37]/60 animate-pulse" />
+          <span className="text-[11px] text-[#D4AF37]/50 font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
             {visibleAgents} agente{visibleAgents > 1 ? "s" : ""} {STATE_LABELS[robotState]}
           </span>
         </div>
-        <span className="text-[11px] text-muted-foreground/30 truncate max-w-[55%] text-right">
+        <span className="text-[11px] text-gray-500 truncate max-w-[55%] text-right">
           {currentStep}{dots}
         </span>
       </div>

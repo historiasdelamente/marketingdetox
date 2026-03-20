@@ -39,35 +39,32 @@ export function ChatInput({
   };
 
   return (
-    <div className="border-t border-white/[0.06] bg-background/80 backdrop-blur-md px-4 py-3">
-      <div className="flex items-end gap-3 max-w-3xl mx-auto">
-        <div className="flex-1 relative">
-          <textarea
-            ref={textareaRef}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={placeholder || "Escribe aquí..."}
-            disabled={disabled}
-            rows={1}
-            className="w-full resize-none rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-sm text-foreground/85 placeholder:text-muted-foreground/40 focus:border-yellow-500/20 focus:ring-1 focus:ring-yellow-500/10 focus:outline-none transition-colors disabled:opacity-40"
-          />
+    <div className="absolute bottom-0 left-0 w-full p-8 bg-gradient-to-t from-black via-black/95 to-transparent">
+      <div className="max-w-4xl mx-auto flex items-end gap-4 glass-panel p-2 rounded-3xl border border-[#D4AF37]/30 shadow-[0_0_50px_rgba(0,0,0,0.5)] neon-glow-gold">
+        <textarea
+          ref={textareaRef}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder || "Describe lo que quieres crear..."}
+          disabled={disabled}
+          rows={1}
+          className="flex-1 bg-transparent border-none focus:ring-0 text-white py-3 px-4 resize-none custom-scrollbar max-h-32 placeholder-white/20 text-sm focus:outline-none disabled:opacity-40"
+        />
+        <div className="flex items-center gap-2 pr-2">
+          <button
+            onClick={handleSend}
+            disabled={disabled || !text.trim()}
+            className="w-12 h-12 rounded-full gold-bg-gradient text-black flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            <span className="material-symbols-outlined font-black">arrow_upward</span>
+          </button>
         </div>
-        <button
-          onClick={handleSend}
-          disabled={disabled || !text.trim()}
-          className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-500/80 to-yellow-600/60 text-black flex items-center justify-center shrink-0 hover:from-yellow-500/90 hover:to-yellow-600/70 transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:shadow-lg hover:shadow-yellow-500/10"
-        >
-          <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
-            <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
-          </svg>
-        </button>
       </div>
       {disabled && (
-        <div className="flex items-center gap-2 justify-center mt-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-yellow-400/50 animate-pulse" />
-          <span className="text-xs text-muted-foreground/40">Procesando...</span>
-        </div>
+        <p className="text-center text-xs text-[#D4AF37]/50 mt-3 font-medium tracking-wide" style={{ fontFamily: "'Inter', sans-serif" }}>
+          Los agentes están trabajando en tu solicitud...
+        </p>
       )}
     </div>
   );

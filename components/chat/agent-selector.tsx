@@ -3,89 +3,98 @@
 import Link from "next/link";
 import { AGENT_CONFIGS } from "@/lib/chat/agent-configs";
 
-const ACCENT_COLORS: Record<string, string> = {
-  rose: "from-rose-500/15 to-rose-600/5 border-rose-500/10 hover:border-rose-500/20",
-  amber: "from-amber-500/15 to-amber-600/5 border-amber-500/10 hover:border-amber-500/20",
-  violet: "from-violet-500/15 to-violet-600/5 border-violet-500/10 hover:border-violet-500/20",
-  emerald: "from-emerald-500/15 to-emerald-600/5 border-emerald-500/10 hover:border-emerald-500/20",
-  sky: "from-sky-500/15 to-sky-600/5 border-sky-500/10 hover:border-sky-500/20",
-  orange: "from-orange-500/15 to-orange-600/5 border-orange-500/10 hover:border-orange-500/20",
-  teal: "from-teal-500/15 to-teal-600/5 border-teal-500/10 hover:border-teal-500/20",
-  fuchsia: "from-fuchsia-500/15 to-fuchsia-600/5 border-fuchsia-500/10 hover:border-fuchsia-500/20",
-};
-
-const TEXT_COLORS: Record<string, string> = {
-  rose: "text-rose-400",
-  amber: "text-amber-400",
-  violet: "text-violet-400",
-  emerald: "text-emerald-400",
-  sky: "text-sky-400",
-  orange: "text-orange-400",
-  teal: "text-teal-400",
-  fuchsia: "text-fuchsia-400",
+const MATERIAL_ICONS: Record<string, string> = {
+  tiktok: "music_note",
+  emails: "mail",
+  voiceover: "mic",
+  talleres: "theater_comedy",
+  clases: "library_books",
+  cursos: "school",
+  libros: "menu_book",
+  sora: "movie",
+  conocimiento: "database",
+  outputs: "history",
 };
 
 export function AgentSelector({ onSelect }: { onSelect: (agentType: string) => void }) {
   return (
-    <div className="max-w-2xl mx-auto py-8 px-4">
-      {/* Welcome */}
-      <div className="text-center mb-8 chat-msg-enter">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-yellow-500/15 to-yellow-600/10 flex items-center justify-center mx-auto mb-4 border border-yellow-500/10">
-          <svg viewBox="0 0 24 24" fill="none" className="w-8 h-8 text-yellow-400">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" stroke="currentColor" strokeWidth="1.2" fill="none" />
-            <path d="M12 8C10.34 8 9 9.34 9 11s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" stroke="currentColor" strokeWidth="1.2" fill="none" />
-            <path d="M6 18.5C7.5 16 9.5 15 12 15s4.5 1 6 3.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" fill="none" />
-          </svg>
+    <div className="max-w-7xl mx-auto py-12 px-8 lg:px-16">
+      {/* Hero Header */}
+      <div className="text-center mb-14 chat-msg-enter max-w-4xl mx-auto">
+        <div className="mb-6 flex justify-center">
+          <div className="w-24 h-24 rounded-full border border-[#D4AF37]/40 p-1.5 bg-gradient-to-tr from-black to-zinc-900 shadow-[0_0_30px_rgba(212,175,55,0.15)]">
+            <div className="w-full h-full rounded-full bg-gradient-to-br from-[#D4AF37]/20 to-[#A67C00]/10 flex items-center justify-center">
+              <span className="material-symbols-outlined text-[#D4AF37] text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>
+                smart_toy
+              </span>
+            </div>
+          </div>
         </div>
-        <h1 className="text-2xl font-bold text-foreground/90 mb-2">
+        <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-white mb-4" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
           ¿Qué quieres crear hoy?
         </h1>
-        <p className="text-sm text-muted-foreground/50">
-          Selecciona un agente y te guiaré paso a paso
+        <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+          Selecciona un agente especializado para potenciar tu estrategia con{" "}
+          <span className="text-[#D4AF37] font-bold">inteligencia artificial de élite</span>.
         </p>
       </div>
 
-      {/* Agent grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      {/* Bento Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {Object.entries(AGENT_CONFIGS).map(([key, config]) => (
           <button
             key={key}
             onClick={() => onSelect(key)}
-            className={`group p-4 rounded-xl bg-gradient-to-br border transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 text-left ${ACCENT_COLORS[config.accent] || ""}`}
+            className="glass-card rounded-xl p-6 flex flex-col justify-between h-56 relative overflow-hidden group text-left"
           >
-            <span className="text-2xl block mb-2">{config.icon}</span>
-            <h3 className={`text-sm font-semibold mb-0.5 ${TEXT_COLORS[config.accent] || "text-foreground/80"}`}>
-              {config.title}
-            </h3>
-            <p className="text-[10px] text-muted-foreground/40 leading-tight">
-              {config.description}
-            </p>
-            <div className="mt-2 flex items-center gap-1">
-              <span className="text-[9px] text-muted-foreground/30">{config.agentCount} agentes</span>
+            <div className="absolute -right-4 -top-4 w-24 h-24 bg-[#D4AF37]/5 rounded-full blur-2xl group-hover:bg-[#D4AF37]/15 transition-all" />
+            <div>
+              <div className="w-12 h-12 rounded-lg bg-[#D4AF37]/10 flex items-center justify-center mb-4 border border-[#D4AF37]/20">
+                <span
+                  className="material-symbols-outlined text-[#D4AF37]"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
+                  {MATERIAL_ICONS[key] || "smart_toy"}
+                </span>
+              </div>
+              <h3 className="text-xl font-bold text-white" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                {config.title}
+              </h3>
+              <p className="text-sm text-gray-400 mt-2 line-clamp-2">{config.description}</p>
+            </div>
+            <div className="flex justify-between items-center mt-4">
+              <span
+                className="text-xs px-2 py-1 bg-[#D4AF37]/10 text-[#FFD700] rounded border border-[#D4AF37]/20 font-bold"
+                style={{ fontFamily: "'Inter', sans-serif" }}
+              >
+                {config.agentCount} Agentes
+              </span>
+              <span className="material-symbols-outlined text-gray-600 group-hover:text-[#FFD700] transition-colors">
+                arrow_forward
+              </span>
             </div>
           </button>
         ))}
       </div>
 
       {/* My files button */}
-      <div className="mt-6 flex justify-center">
+      <div className="mt-12 flex justify-center">
         <Link
           href="/outputs"
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-yellow-500/15 bg-yellow-500/[0.06] text-yellow-400/80 text-sm hover:bg-yellow-500/[0.12] hover:border-yellow-500/25 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-yellow-500/5"
+          className="flex items-center gap-3 px-8 py-4 rounded-xl border border-[#D4AF37]/30 bg-zinc-900/80 text-[#D4AF37] text-base font-bold hover:bg-[#D4AF37] hover:text-black transition-all duration-300 hover:shadow-[0_0_20px_rgba(212,175,55,0.4)]"
+          style={{ fontFamily: "'Space Grotesk', sans-serif" }}
         >
-          <svg viewBox="0 0 16 16" fill="none" className="w-4 h-4">
-            <path d="M2 4.5A1.5 1.5 0 013.5 3h3.293a1 1 0 01.707.293L8.5 4.293A1 1 0 009.207 4.5H12.5A1.5 1.5 0 0114 6v6.5a1.5 1.5 0 01-1.5 1.5h-9A1.5 1.5 0 012 12.5v-8z" stroke="currentColor" strokeWidth="1.2" />
-          </svg>
+          <span className="material-symbols-outlined">folder_open</span>
           Mis archivos guardados
         </Link>
       </div>
 
       {/* Stats */}
-      <div className="mt-4 flex items-center justify-center gap-6 text-xs text-muted-foreground/30">
+      <div className="mt-6 flex items-center justify-center gap-6 text-xs text-gray-500" style={{ fontFamily: "'Inter', sans-serif" }}>
         <span>58 agentes</span>
-        <span className="w-1 h-1 rounded-full bg-yellow-500/20" />
+        <span className="w-1 h-1 rounded-full bg-[#D4AF37]/30" />
         <span>80 prompts</span>
-        <span className="w-1 h-1 rounded-full bg-yellow-500/20" />
+        <span className="w-1 h-1 rounded-full bg-[#D4AF37]/30" />
         <span>47 PDFs</span>
       </div>
     </div>
