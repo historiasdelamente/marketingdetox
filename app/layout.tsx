@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Sidebar } from "@/components/layout/sidebar";
+import { JobNotifications } from "@/components/layout/job-notifications";
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -35,6 +36,7 @@ export default function RootLayout({
         style={{ fontFamily: "'Manrope', sans-serif" }}
       >
         <Sidebar />
+        <JobNotifications />
         <main className="ml-64 h-screen relative">
           {children}
         </main>

@@ -8,6 +8,7 @@ import { processAgentSelection, processUserInput, skipField } from "@/lib/chat/c
 import { ChatMessageBubble } from "./chat-message";
 import { ChatInput } from "./chat-input";
 import { AgentSelector } from "./agent-selector";
+import { useActiveJobs } from "@/lib/jobs/use-active-jobs";
 
 const MATERIAL_ICONS: Record<string, string> = {
   tiktok: "movie_filter",
@@ -38,17 +39,113 @@ export function ChatContainer({ initialAgent }: { initialAgent?: string }) {
   const [isRunning, setIsRunning] = useState(false);
   const [showSelector, setShowSelector] = useState(!initialAgent);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { startJob, getByAgent, consumeCompleted } = useActiveJobs();
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
 
+  // On mount: check if there's an active or completed job for this agent
   useEffect(() => {
-    if (initialAgent && messages.length === 0) {
+    if (!initialAgent) return;
+
+    const existingJob = getByAgent(initialAgent);
+    if (existingJob) {
+      if (existingJob.status === "running") {
+        // Reconnect to running job
+        setIsRunning(true);
+        setShowSelector(false);
+        const agentMsgs = processAgentSelection(initialAgent);
+        const progressMsg: ChatMessage = {
+          id: `progress-${existingJob.jobId}`,
+          role: "agent",
+          type: "progress",
+          content: existingJob.step,
+          timestamp: new Date(),
+          progress: { step: existingJob.step, percentage: existingJob.progress },
+        };
+        setMessages([...agentMsgs, progressMsg]);
+      } else if (existingJob.status === "completed" && existingJob.output) {
+        // Show completed result
+        setShowSelector(false);
+        const agentMsgs = processAgentSelection(initialAgent);
+        const config = AGENT_CONFIGS[initialAgent];
+        const elapsed = Date.now() - existingJob.startedAt;
+        const outputMsg: ChatMessage = {
+          id: `output-${existingJob.jobId}`,
+          role: "agent",
+          type: "output",
+          content: "",
+          timestamp: new Date(),
+          agentType: initialAgent,
+          output: {
+            content: existingJob.output,
+            title: `${config?.title || "Resultado"} — ${formatElapsed(elapsed)}`,
+          },
+        };
+        setMessages([...agentMsgs, outputMsg]);
+        consumeCompleted(existingJob.jobId);
+      }
+    } else if (messages.length === 0) {
       handleAgentSelect(initialAgent);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialAgent]);
+
+  // Poll the global store for progress updates on running jobs
+  useEffect(() => {
+    if (!isRunning || !activeAgent) return;
+
+    const interval = setInterval(() => {
+      const job = getByAgent(activeAgent);
+      if (!job) return;
+
+      if (job.status === "running") {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.type === "progress"
+              ? { ...m, content: job.step, progress: { step: job.step, percentage: job.progress } }
+              : m
+          )
+        );
+      } else if (job.status === "completed" && job.output) {
+        // Job finished! Show result
+        setMessages((prev) => prev.filter((m) => m.type !== "progress"));
+        const config = AGENT_CONFIGS[activeAgent];
+        const elapsed = Date.now() - job.startedAt;
+        addMessages([{
+          id: `output-${job.jobId}`,
+          role: "agent",
+          type: "output",
+          content: "",
+          timestamp: new Date(),
+          agentType: activeAgent,
+          output: {
+            content: job.output,
+            title: `${config?.title || "Resultado"} — ${formatElapsed(elapsed)}`,
+          },
+        }]);
+        setIsRunning(false);
+        consumeCompleted(job.jobId);
+        clearInterval(interval);
+      } else if (job.status === "failed") {
+        setMessages((prev) => prev.filter((m) => m.type !== "progress"));
+        addMessages([{
+          id: `error-${job.jobId}`,
+          role: "agent",
+          type: "error",
+          content: job.error || "Error en la ejecución",
+          timestamp: new Date(),
+        }]);
+        setIsRunning(false);
+        consumeCompleted(job.jobId);
+        clearInterval(interval);
+      }
+    }, 500);
+
+    return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isRunning, activeAgent]);
 
   const addMessages = useCallback((newMsgs: ChatMessage[]) => {
     setMessages((prev) => [...prev, ...newMsgs]);
@@ -79,8 +176,6 @@ export function ChatContainer({ initialAgent }: { initialAgent?: string }) {
     };
     addMessages([progressMsg]);
 
-    const startTime = Date.now();
-
     try {
       const res = await fetch(`/api/agents/${activeAgent}`, {
         method: "POST",
@@ -103,64 +198,11 @@ export function ChatContainer({ initialAgent }: { initialAgent?: string }) {
         return;
       }
 
-      const jobId = data.jobId;
-      const eventSource = new EventSource(`/api/stream/${jobId}`);
+      // Register job in global store — it handles SSE connection
+      startJob(data.jobId, activeAgent);
 
-      eventSource.onmessage = (event) => {
-        const msg = JSON.parse(event.data);
-        if (msg.type === "progress") {
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === progressMsgId
-                ? { ...m, content: msg.step, progress: { step: msg.step, percentage: msg.percentage } }
-                : m
-            )
-          );
-        } else if (msg.type === "complete") {
-          setMessages((prev) => prev.filter((m) => m.id !== progressMsgId));
-          const config = AGENT_CONFIGS[activeAgent!];
-          addMessages([{
-            id: `output-${Date.now()}`,
-            role: "agent",
-            type: "output",
-            content: "",
-            timestamp: new Date(),
-            agentType: activeAgent!,
-            output: {
-              content: msg.output,
-              title: `${config?.title || "Resultado"} — ${formatElapsed(Date.now() - startTime)}`,
-            },
-          }]);
-          setIsRunning(false);
-          eventSource.close();
-        } else if (msg.type === "error") {
-          setMessages((prev) => prev.filter((m) => m.id !== progressMsgId));
-          addMessages([{
-            id: `error-${Date.now()}`,
-            role: "agent",
-            type: "error",
-            content: msg.message,
-            timestamp: new Date(),
-          }]);
-          setIsRunning(false);
-          eventSource.close();
-        }
-      };
-
-      eventSource.onerror = () => {
-        setMessages((prev) => prev.filter((m) => m.id !== progressMsgId));
-        addMessages([{
-          id: `error-${Date.now()}`,
-          role: "agent",
-          type: "error",
-          content: "Conexión perdida con el servidor",
-          timestamp: new Date(),
-        }]);
-        setIsRunning(false);
-        eventSource.close();
-      };
     } catch {
-      setMessages((prev) => prev.filter((m) => m.id !== progressMsgId));
+      setMessages((prev) => prev.filter((m) => m.type !== "progress"));
       addMessages([{
         id: `error-${Date.now()}`,
         role: "agent",
@@ -170,7 +212,7 @@ export function ChatContainer({ initialAgent }: { initialAgent?: string }) {
       }]);
       setIsRunning(false);
     }
-  }, [activeAgent, collectedFields, addMessages]);
+  }, [activeAgent, collectedFields, addMessages, startJob]);
 
   const handleSend = useCallback((text: string) => {
     if (!activeAgent) return;
@@ -203,11 +245,7 @@ export function ChatContainer({ initialAgent }: { initialAgent?: string }) {
       handleExecute();
       return;
     }
-    if (value === "__reset__") {
-      if (activeAgent) handleAgentSelect(activeAgent);
-      return;
-    }
-    if (value === "__new__") {
+    if (value === "__reset__" || value === "__new__") {
       if (activeAgent) handleAgentSelect(activeAgent);
       return;
     }
