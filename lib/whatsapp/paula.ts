@@ -1,8 +1,38 @@
 import fs from 'fs';
 import path from 'path';
-import { getDb, type WaUser, type WaConversation } from '../db';
 
 const PROMPTS_DIR = path.join(process.cwd(), 'agents-source', 'prompts', 'whatsapp');
+
+// --- Supabase Config ---
+
+function getSupabaseConfig() {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_KEY;
+  if (!url || !key) {
+    throw new Error('SUPABASE_URL y SUPABASE_SERVICE_KEY deben estar configuradas en .env.local');
+  }
+  return { url, key };
+}
+
+async function supabaseQuery(endpoint: string, options: RequestInit = {}) {
+  const { url, key } = getSupabaseConfig();
+  const response = await fetch(`${url}/rest/v1/${endpoint}`, {
+    ...options,
+    headers: {
+      'apikey': key,
+      'Authorization': `Bearer ${key}`,
+      'Content-Type': 'application/json',
+      'Prefer': options.method === 'POST' ? 'return=representation' : '',
+      ...options.headers,
+    },
+  });
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Supabase error (${response.status}): ${error}`);
+  }
+  const text = await response.text();
+  return text ? JSON.parse(text) : null;
+}
 
 // --- Prompt Loading ---
 
@@ -20,51 +50,99 @@ export function clearPromptCache() {
   promptCache = {};
 }
 
-// --- Database Operations ---
+// --- Types ---
 
-export function getOrCreateUser(manychatId: string): WaUser {
-  const db = getDb();
+export type WaUser = {
+  id: number;
+  manychat_id: string;
+  name: string | null;
+  funnel_stage: string;
+  situacion_resumen: string | null;
+  first_contact: string;
+  last_interaction: string;
+  conversation_count: number;
+};
 
-  let user = db.prepare('SELECT * FROM wa_users WHERE manychat_id = ?').get(manychatId) as WaUser | undefined;
+type SupabaseMessage = {
+  id: number;
+  session_id: string;
+  message: {
+    type: 'human' | 'ai';
+    content: string;
+  };
+};
 
-  if (!user) {
-    db.prepare(
-      'INSERT INTO wa_users (manychat_id, funnel_stage) VALUES (?, ?)'
-    ).run(manychatId, 'new_lead');
-    user = db.prepare('SELECT * FROM wa_users WHERE manychat_id = ?').get(manychatId) as WaUser;
+// --- Database Operations (Supabase) ---
+
+export async function getOrCreateUser(manychatId: string): Promise<WaUser> {
+  // Check if user exists in wa_users table
+  const users = await supabaseQuery(
+    `wa_users?manychat_id=eq.${manychatId}&limit=1`
+  );
+
+  if (users && users.length > 0) {
+    return users[0] as WaUser;
   }
 
-  return user;
+  // Create new user
+  const now = new Date().toISOString();
+  const newUsers = await supabaseQuery('wa_users', {
+    method: 'POST',
+    body: JSON.stringify({
+      manychat_id: manychatId,
+      funnel_stage: 'new_lead',
+      first_contact: now,
+      last_interaction: now,
+      conversation_count: 0,
+    }),
+  });
+
+  return (newUsers && newUsers[0]) as WaUser;
 }
 
-export function getConversationHistory(manychatId: string, limit = 20): WaConversation[] {
-  const db = getDb();
-  return db.prepare(
-    'SELECT * FROM wa_conversations WHERE user_id = ? ORDER BY created_at DESC LIMIT ?'
-  ).all(manychatId, limit) as WaConversation[];
+export async function getConversationHistory(manychatId: string, limit = 20): Promise<Array<{ role: 'user' | 'assistant'; content: string }>> {
+  // Read from whatsapp_memoria (legacy n8n format)
+  const messages: SupabaseMessage[] = await supabaseQuery(
+    `whatsapp_memoria?session_id=eq.${manychatId}&order=id.desc&limit=${limit}`
+  );
+
+  if (!messages || messages.length === 0) return [];
+
+  // Reverse to chronological order and convert format
+  return messages.reverse().map((msg) => ({
+    role: msg.message.type === 'human' ? 'user' as const : 'assistant' as const,
+    content: msg.message.content,
+  }));
 }
 
-export function saveMessage(manychatId: string, role: 'user' | 'assistant', message: string, phase?: string) {
-  const db = getDb();
-  db.prepare(
-    'INSERT INTO wa_conversations (user_id, role, message, phase) VALUES (?, ?, ?, ?)'
-  ).run(manychatId, role, message, phase || null);
+export async function saveMessage(manychatId: string, role: 'user' | 'assistant', message: string) {
+  // Save in whatsapp_memoria format (compatible with n8n legacy)
+  await supabaseQuery('whatsapp_memoria', {
+    method: 'POST',
+    body: JSON.stringify({
+      session_id: manychatId,
+      message: {
+        type: role === 'user' ? 'human' : 'ai',
+        content: message,
+        additional_kwargs: {},
+        response_metadata: {},
+      },
+    }),
+  });
 }
 
-export function updateUser(manychatId: string, updates: Partial<Pick<WaUser, 'name' | 'funnel_stage' | 'situacion_resumen'>>) {
-  const db = getDb();
-  const fields: string[] = [];
-  const values: (string | number)[] = [];
+export async function updateUser(manychatId: string, updates: Partial<Pick<WaUser, 'name' | 'funnel_stage' | 'situacion_resumen'>>) {
+  const fields: Record<string, string | number> = {};
 
-  if (updates.name != null) { fields.push('name = ?'); values.push(updates.name); }
-  if (updates.funnel_stage != null) { fields.push('funnel_stage = ?'); values.push(updates.funnel_stage); }
-  if (updates.situacion_resumen != null) { fields.push('situacion_resumen = ?'); values.push(updates.situacion_resumen); }
+  if (updates.name != null) fields.name = updates.name;
+  if (updates.funnel_stage != null) fields.funnel_stage = updates.funnel_stage;
+  if (updates.situacion_resumen != null) fields.situacion_resumen = updates.situacion_resumen;
+  fields.last_interaction = new Date().toISOString();
 
-  fields.push('last_interaction = datetime(\'now\')');
-  fields.push('conversation_count = conversation_count + 1');
-
-  values.push(manychatId);
-  db.prepare(`UPDATE wa_users SET ${fields.join(', ')} WHERE manychat_id = ?`).run(...values);
+  await supabaseQuery(`wa_users?manychat_id=eq.${manychatId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(fields),
+  });
 }
 
 // --- Prompt Assembly ---
@@ -75,7 +153,6 @@ function buildSystemPrompt(user: WaUser): string {
   const protocoloCrisis = loadPrompt('03_protocolo_crisis.md');
   const configDinamica = loadPrompt('05_config_dinamica.md');
 
-  // Build context about this specific user
   const userContext = buildUserContext(user);
 
   return `${sistemaPrompt}
@@ -119,25 +196,6 @@ function buildUserContext(user: WaUser): string {
   }
 
   return lines.join('\n');
-}
-
-function buildMessages(history: WaConversation[], currentMessage: string): Array<{ role: string; content: string }> {
-  // History comes in DESC order, reverse to chronological
-  const chronological = [...history].reverse();
-
-  const messages: Array<{ role: string; content: string }> = [];
-
-  for (const msg of chronological) {
-    messages.push({
-      role: msg.role === 'user' ? 'user' : 'assistant',
-      content: msg.message,
-    });
-  }
-
-  // Add current message
-  messages.push({ role: 'user', content: currentMessage });
-
-  return messages;
 }
 
 // --- OpenRouter API Call ---
@@ -185,26 +243,29 @@ export async function processPaulaMessage(
   userMessage: string,
 ): Promise<string> {
   // 1. Get or create user
-  const user = getOrCreateUser(manychatId);
+  const user = await getOrCreateUser(manychatId);
 
-  // 2. Get conversation history (last 20 messages)
-  const history = getConversationHistory(manychatId, 20);
+  // 2. Get conversation history from Supabase (last 20 messages)
+  const history = await getConversationHistory(manychatId, 20);
 
   // 3. Build system prompt with user context
   const systemPrompt = buildSystemPrompt(user);
 
-  // 4. Build message array
-  const messages = buildMessages(history, userMessage);
+  // 4. Build message array (history + current message)
+  const messages = [
+    ...history,
+    { role: 'user', content: userMessage },
+  ];
 
   // 5. Call OpenRouter
   const paulaResponse = await callOpenRouter(systemPrompt, messages);
 
-  // 6. Save both messages to DB
-  saveMessage(manychatId, 'user', userMessage);
-  saveMessage(manychatId, 'assistant', paulaResponse);
+  // 6. Save both messages to Supabase
+  await saveMessage(manychatId, 'user', userMessage);
+  await saveMessage(manychatId, 'assistant', paulaResponse);
 
   // 7. Update user interaction
-  updateUser(manychatId, {});
+  await updateUser(manychatId, {});
 
   return paulaResponse;
 }
