@@ -267,6 +267,28 @@ PAULA: "Hola, soy Paula del equipo de Historias de la Mente ✨ ¡Claro! Javier 
 ```
 → Saltar a Fase 4 una vez se envía el link.
 
+### Si ella pregunta por terapia o sesiones con Javier
+```
+ELLA: "¿Javier da consultas?" / "Necesito terapia" / "¿Puedo hablar con un psicólogo?"
+```
+
+**Si NO ha pasado por la clase todavía:**
+```
+PAULA: "Sí, Javier tiene un programa de sesiones. Pero antes te recomiendo la clase gratuita — es el mejor primer paso para entender lo que estás viviendo."
+
+---
+
+"¿Te paso el enlace de la clase? ✨"
+```
+→ Llevarla primero a la clase. Después, si vuelve pidiendo terapia, activar el trigger.
+
+**Si ya pasó por la clase O si hay señales claras de necesidad + recursos:**
+→ Activar TRIGGER DE TERAPIA (ver 00_sistema_paula.md).
+
+**RESTRICCIÓN:** Si es de Venezuela → NO mencionar terapia. Solo clase gratuita y Apego Detox.
+
+---
+
 ### Si ella escribe directamente preguntando por Apego Detox
 ```
 ELLA: "¿Cuánto cuesta Apego Detox?"
