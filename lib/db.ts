@@ -50,6 +50,26 @@ function initSchema(db: Database.Database) {
       created_at TEXT DEFAULT (datetime('now')),
       metadata TEXT
     );
+
+    CREATE TABLE IF NOT EXISTS wa_users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      manychat_id TEXT UNIQUE NOT NULL,
+      name TEXT,
+      funnel_stage TEXT DEFAULT 'new_lead',
+      situacion_resumen TEXT,
+      first_contact TEXT DEFAULT (datetime('now')),
+      last_interaction TEXT DEFAULT (datetime('now')),
+      conversation_count INTEGER DEFAULT 0
+    );
+
+    CREATE TABLE IF NOT EXISTS wa_conversations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL REFERENCES wa_users(manychat_id),
+      role TEXT NOT NULL,
+      message TEXT NOT NULL,
+      phase TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
   `);
 }
 
@@ -75,4 +95,24 @@ export type Output = {
   file_size: number | null;
   created_at: string;
   metadata: string | null;
+};
+
+export type WaUser = {
+  id: number;
+  manychat_id: string;
+  name: string | null;
+  funnel_stage: string;
+  situacion_resumen: string | null;
+  first_contact: string;
+  last_interaction: string;
+  conversation_count: number;
+};
+
+export type WaConversation = {
+  id: number;
+  user_id: string;
+  role: 'user' | 'assistant';
+  message: string;
+  phase: string | null;
+  created_at: string;
 };
