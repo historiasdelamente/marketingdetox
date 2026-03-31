@@ -1,137 +1,132 @@
-# Guia de Estilo: Fusion Marian Rojas Estape + Walter Riso
+# Guia de Estilo: Voz Unificada para Lives
 
-Este archivo es el ADN creativo de cada voiceover. DEBE leerse antes de generar cualquier contenido.
+Este archivo es el ADN creativo de cada voiceover para lives. DEBE leerse antes de generar cualquier contenido.
+
+> **CAMBIO CLAVE (2026-03-25):** La voz del live ya NO es una fusion dual "Marian + Riso".
+> Es UNA SOLA VOZ que habla directo a ELLA. Una amiga psicóloga que te dice la verdad con amor.
+> La neurociencia se usa SOLO cuando sirve a la emocion, no como leccion.
 
 ---
 
-## 1. Estilo Marian Rojas Estape
+## 1. La Voz Unica
 
-### Caracteristicas de Voz
-- Calida, maternal, envolvente -- como una amiga que tambien es medica
-- Cientifica pero accesible -- traduce la neurociencia a lenguaje cotidiano
-- Genera acompanamiento, nunca juicio
-- Usa el storytelling como herramienta terapeutica (las historias generan oxitocina en el cerebro del oyente)
-- Habla desde la comprension, no desde la superioridad
+### Quien Habla
+Una sola persona. No hay "momento Marian" ni "momento Riso". Es UNA voz que combina:
+- La calidez de quien te entiende porque lo ha visto mil veces
+- La verdad directa de quien te quiere demasiado para mentirte
+- El conocimiento de psicologia como revelacion de poder, no como clase
 
-### Frameworks Clave
-- **Cortisol vs Oxitocina**: El estres cronico (cortisol) vs la conexion humana (oxitocina). Explicar como las relaciones toxicas mantienen al cerebro en modo cortisol permanente
-- **Personas Vitamina vs Personas Toxicas**: Las personas que te nutren vs las que te drenan. Identificar quien eres tu en esa ecuacion
-- **Secuestro Amigdalar**: Cuando la amigdala toma el control y el cerebro racional se apaga. Por que reaccionas asi con el narcisista
-- **Ventana de Tolerancia**: El rango de activacion emocional donde puedes funcionar. El trauma la estrecha
-- **Neuronas Espejo**: Por que absorbes las emociones del narcisista. Por que su frialdad te congela
-- **Intoxicacion por Cortisol**: Cuando llevas tanto tiempo estresada que tu cuerpo ya no sabe vivir sin estres
+### Caracteristicas
+- **Directa**: Va al hueso. No rodeos. No introducciones academicas
+- **Intima**: Habla como si estuvieran solas en una habitacion. "Tu" siempre, nunca "usted"
+- **Visceral**: Describe lo que SIENTE en el cuerpo, no lo que dice la teoria
+- **Honesta**: Dice lo que nadie le dice, pero con amor
+- **Sin etiquetas**: No dice "como dice Riso" ni "segun la neurociencia de Marian". Solo habla
+
+### Lo Que Cambio
+| ANTES (fusion dual) | AHORA (voz unica) |
+|---|---|
+| "Como dice Walter Riso..." | Solo dice la verdad, sin atribuir |
+| "La neurociencia explica que..." | "Tu cuerpo sabe que..." |
+| 60% Marian / 40% Riso | Una sola voz, sin ratios |
+| Transiciones entre estilos | Flujo natural, sin cambios marcados |
+| Explicar el concepto y luego la emocion | La emocion ES la explicacion |
+
+---
+
+## 2. Herramientas de la Voz
+
+### Conocimiento Psicologico (como se usa AHORA)
+El conocimiento cientifico NO se presenta como leccion. Se usa como REVELACION DE PODER:
+
+- ❌ "El eje HPA produce cortisol que activa la respuesta de estres cronico"
+- ✅ "Tu cuerpo se volvio adicto al estres. La calma te da miedo porque nunca fue segura"
+
+- ❌ "Segun la teoria polivagal de Stephen Porges..."
+- ✅ "Hay una parte de ti que se congela cada vez que el levanta la voz. No es debilidad. Es tu cuerpo protegiendo a la nina que fuiste"
+
+- ❌ "El refuerzo intermitente genera picos de dopamina similares a..."
+- ✅ "Vuelves porque tu cerebro esta enganchado al mismo ciclo que una tragamonedas. No es amor. Es quimica"
+
+**Regla:** La neurociencia entra SOLO cuando hace que ella diga "ahora entiendo por que me pasa esto". Si no genera esa reaccion, sobra.
+
+### Frameworks (ya no se nombran, se SIENTEN)
+Los conceptos siguen ahi pero se expresan como verdades vividas:
+
+- **Desapego** → "Soltar no es dejar de amar. Es dejar de destruirte por alguien que no te cuida"
+- **Trauma bond** → "No es que lo ames. Es que tu cerebro confundio el peligro con el hogar"
+- **Nina interior** → "Dentro de ti hay una nina que aprendio que para que la quieran tiene que desaparecer"
+- **Codependencia** → "Dejaste de existir para que el pudiera existir. Y ahora no sabes quien eres sin el"
+- **Disonancia cognitiva** → "Sabes que te hace dano. Y aun asi tu cuerpo lo extrana. No estas loca. Estas atrapada"
 
 ### Tecnicas Narrativas
-- Anecdotas personales (inventadas pero que suenen autenticas y universales)
-- Historias de "una mujer que conoci" (compuestas, nunca reales identificables)
-- Metaforas de la naturaleza y la vida cotidiana
-- Preguntas retoricas que invitan a la introspeccion
-- Pausas narrativas que dejan espacio para sentir
+- **Hablar directo a ella**: "Tu" en cada parrafo. "Tu sabes", "Tu sientes", "Tu recuerdas"
+- **Historias-espejo**: Historias breves donde ella se reconoce ("Ana" no es un caso clinico — es ELLA)
+- **Imagenes corporales**: "El estomago se encoge", "el pecho se aprieta", "las manos tiemblan"
+- **Preguntas retoricas que golpean**: "Cuantas veces mas vas a..." / "Que le dirias a tu hija si..."
+- **Pausas emocionales**: Despues de una verdad fuerte, dejar respirar. No llenar el silencio
+- **Metaforas vividas**: De la base de conocimiento (293+ tecnicas tienen metaforas listas)
 
-### Patrones de Frases Tipo Marian
-- "Se lo que sientes cuando..."
-- "Tu cerebro no esta roto, esta en modo supervivencia..."
-- "Cada vez que tu corazon se acelera al ver su nombre en el telefono, eso es cortisol puro corriendo por tus venas..."
-- "Y aqui viene lo hermoso de la neurociencia..."
-- "Tu sistema nervioso aprendio a sobrevivir en el caos. Ahora vamos a ensenarle a vivir en la calma..."
-- "No es que seas debil. Es que tu cerebro se adapto a algo que nunca debio ser normal..."
-
-### Vocabulario Marian
-cortisol, oxitocina, amigdala, sistema nervioso, ventana de tolerancia, regulacion emocional, neuronas espejo, neuroplasticidad, hipocampo, eje HPA, respuesta de lucha-huida-congelacion, trauma almacenado en el cuerpo, memoria implicita, apego seguro ganado
-
----
-
-## 2. Estilo Walter Riso
-
-### Caracteristicas de Voz
-- Directo y categorico -- dice las cosas como son, sin rodeos
-- Aforistico -- frases cortas, contundentes, que se graban en la memoria
-- Firme pero nunca cruel -- la dureza viene del amor, no del desprecio
-- Practico y accionable -- no solo diagnostica, da herramientas
-- No permite excusas ni autoengano -- confronta con respeto
-
-### Frameworks Clave
-- **Desapego Sano**: El desapego no es dejar de amar, es dejar de necesitar. Es amar desde la libertad, no desde la carencia
-- **Autoestima como Pilar**: Sin autoestima no hay limites, sin limites no hay dignidad, sin dignidad no hay amor propio
-- **Dependencia Afectiva**: El apego enferma, castra, incapacita, elimina criterio, degrada y subyuga. No es amor, es adiccion
-- **Autonomia Emocional**: Tu bienestar no puede depender de que otra persona decida dartelo
-- **Distorsiones Cognitivas**: Los lentes rotos con los que miras el amor -- idealizacion, minimizacion, negacion
-- **Amor Propio como Salud Mental**: Cuidarte no es egoismo, es un acto de supervivencia emocional
-
-### Patrones de Frases Tipo Riso
-- "El apego no es amor. Es miedo disfrazado de necesidad."
-- "Mientras sigas esperando que cambie, seguiras perdiendo tu vida en la sala de espera de alguien que nunca va a llegar."
-- "No es que no puedas irte. Es que elegiste creer que no mereces algo mejor."
-- "La dignidad no se negocia. Ni por amor, ni por miedo, ni por costumbre."
-- "Soltar no es rendirse. Es elegirte a ti misma por primera vez."
-- "Cada dia que te quedas, le estas diciendo a tu nina interior que su dolor no importa."
-
-### Vocabulario Riso
-dignidad, desapego, autoestima, autonomia emocional, limites, dependencia afectiva, autoengano, zona de confort emocional, amor propio, libertad interior, fortaleza, decision, valentia, coherencia, respeto propio
+### Patrones de Frases de la Voz Unica
+- "Necesito que escuches esto con el cuerpo, no con la cabeza..."
+- "Se lo que se siente. Esa sensacion de que algo esta mal pero no puedes nombrar que..."
+- "No es que seas debil. Es que aprendiste a amar en modo supervivencia"
+- "El dia que dejes de buscarlo a el y empieces a buscarte a ti, todo cambia"
+- "Tu cuerpo lleva la cuenta de cada vez que te dijeron que lo que sentias no era real"
+- "Llevas tanto tiempo cuidando a otros que olvidaste como se siente que te cuiden a ti"
+- "No necesitas que te explique que es un narcisista. Tu cuerpo ya lo sabe. Hoy vamos a escucharlo"
 
 ---
 
-## 3. La Fusion: Como Combinar Ambos Estilos
+## 3. Ritmo Emocional (ya no es "fusion", es OLEADA)
 
-### Ratio y Ritmo
-- **60% Marian / 40% Riso** como proporcion general
-- La alternancia NO es mecanica (no es parrafo-y-parrafo). Es como una conversacion donde una voz envuelve y la otra despierta
-- Marian es el agua tibia que relaja. Riso es el agua fria que despierta. El voiceover alterna entre ambas temperaturas
-
-### El Patron de Fusion (el ritmo fundamental)
+### El Patron Natural
 
 ```
-1. MARIAN ABRE CON EMPATIA (2-3 parrafos)
-   → Conecta con el dolor, valida la experiencia, cuenta una historia
-   → El oyente baja las defensas y se siente comprendido
+1. ABRIR CON EL DOLOR (2-3 parrafos)
+   → Describe lo que ella siente HOY, ahora mismo, en su cuerpo
+   → Que sienta que le leyeron la mente
+   → "Tu" directo, imagenes corporales, sin preambulo
 
-2. RISO SUELTA LA VERDAD (1-2 frases contundentes)
-   → La frase que desnuda la realidad sin anestesia
-   → El oyente siente el impacto -- "eso es exactamente lo que me pasa"
+2. NOMBRAR LA VERDAD (1-2 frases cortas)
+   → La frase que desnuda lo que esta pasando realmente
+   → Sin atribuir a ningun autor — es la voz que lo dice
+   → Debe doler pero aliviar al mismo tiempo
 
-3. MARIAN SOSTIENE EL DOLOR (1-2 parrafos)
-   → Explica la neurociencia detras de por que duele
-   → Normaliza la reaccion -- "no eres debil, tu cerebro esta programado asi"
+3. SOSTENER (1-2 parrafos)
+   → "No es tu culpa." "No estas loca." "Tu dolor es real."
+   → Neurociencia SOLO si amplifica la validacion
+   → Normalizar sin minimizar
 
-4. RISO DA EL FRAMEWORK (2-3 frases + concepto)
-   → Nombra el patron, lo desnuda, lo hace visible
-   → "Esto se llama X y funciona asi..."
+4. PROFUNDIZAR (3-4 parrafos)
+   → Aqui entra la psicologia como revelacion, no como leccion
+   → Historias-espejo, metaforas, conexion con la infancia
+   → Cada parrafo sube la intensidad emocional
 
-5. MARIAN CIERRA CON ESPERANZA (1-2 parrafos)
-   → La neuroplasticidad existe. Tu cerebro puede cambiar.
-   → El puente hacia la accion desde la compasion, no desde la culpa
+5. DEJAR RESPIRAR (1 parrafo breve)
+   → Bajar la intensidad. Un momento de ternura
+   → "Respira. Lo que acabo de decirte es fuerte."
+
+6. CONSTRUIR (2-3 parrafos)
+   → Herramientas practicas, pasos concretos, lo que puede hacer HOY
+   → Desde el amor, no desde la culpa
+   → "No necesitas ser fuerte. Necesitas ser honesta contigo misma"
 ```
 
-### Metafora del Estilo
-"Marian te abraza mientras Walter te sacude."
-- El abrazo sin sacudida es complicidad con el dolor
-- La sacudida sin abrazo es retraumatizacion
-- La fusion es terapia real: sostenerte para que puedas escuchar lo que necesitas oir
+### Oleadas Emocionales
+El ritmo sube y baja naturalmente. Ya NO es "Marian abre, Riso golpea, Marian sostiene".
 
-### Transiciones Entre Estilos
-
-De Marian a Riso:
-- "Y aqui es donde necesito ser honesta contigo..."
-- "Pero hay algo que no te han dicho..."
-- "Y la verdad, aunque duela, es esta..."
-- "Se que esto va a incomodar, pero necesitas escucharlo..."
-- "Ahora, mirame a los ojos (imaginariamente) y escucha esto..."
-
-De Riso a Marian:
-- "Y no te digo esto para hacerte sentir mal. Te lo digo porque se que puedes mas..."
-- "Respira. Lo que acabo de decirte es fuerte, pero escuchame..."
-- "Se que duele leer esto. Pero detras de ese dolor hay una verdad liberadora..."
-- "Ahora que lo sabes, ahora que lo ves... viene la parte hermosa..."
-- "Y aqui es donde tu historia puede empezar a cambiar..."
-
-### Lo que NUNCA hacer
-- NUNCA ser fria sin seguimiento calido (Riso sin Marian = crueldad)
-- NUNCA ser calida sin verdad eventual (Marian sin Riso = complicidad)
-- NUNCA usar positivismo toxico ("todo pasa por algo", "eres fuerte")
-- NUNCA diagnosticar ("eres codependiente") -- en su lugar educar ("existe un patron llamado codependencia")
-- NUNCA culpar a la victima -- confrontar el patron, no a la persona
-- NUNCA minimizar el dolor con frases como "hay gente que esta peor"
-- NUNCA usar lenguaje clinico sin traducirlo inmediatamente
+```
+NIVEL 1 (base): Narrativa calma, conexion
+    ↑
+NIVEL 2 (tension): Ella se reconoce en lo que describes
+    ↑
+NIVEL 3 (pico): La verdad que duele y libera al mismo tiempo
+    ↓
+NIVEL 2 (alivio): Validacion. "No es tu culpa"
+    ↓
+NIVEL 1 (respiro): Ternura breve antes de la siguiente ola
+```
 
 ---
 
@@ -178,21 +173,34 @@ De Riso a Marian:
 ## 5. Calibracion por Tipo de Tema
 
 ### Temas de DOLOR (trauma, abuso, TEPT)
-- Ratio ajustado: 70% Marian / 30% Riso
 - Mas calidez, mas acompanamiento, verdades mas suaves
 - Enfasis en validacion antes de confrontacion
+- Dejar que el dolor respire. No apurar la esperanza
+- La voz es mas baja, mas intima, como hablar en la oscuridad
 
 ### Temas de PATRON (narcisismo, gaslighting, ciclos)
-- Ratio estandar: 60% Marian / 40% Riso
 - Balance entre nombrar el patron y sostener emocionalmente
-- Enfasis en educacion y reconocimiento
+- Enfasis en reconocimiento — que ella diga "eso es lo que me pasa"
+- Mas directa, mas confrontativa, pero siempre con amor
+- La voz sube: "Esto tiene nombre. Y hoy lo vas a ver"
 
 ### Temas de EMPODERAMIENTO (limites, autoestima, soltar)
-- Ratio ajustado: 50% Marian / 50% Riso
 - Mas contundencia, mas desafio, mas llamado a la accion
 - Enfasis en responsabilidad personal desde el amor propio
+- La voz es firme, casi desafiante: "Cuantas veces mas?"
+- Energia de "ya basta, hoy eliges"
 
 ### Temas de SANACION (reparentalizacion, regulacion, integracion)
-- Ratio ajustado: 75% Marian / 25% Riso
 - Tono predominantemente calido y guiado
 - Enfasis en herramientas practicas y esperanza realista
+- La voz es como una mano que te guia: "Ven, te enseno"
+- Neurociencia aqui SI entra mas — como esperanza con base cientifica
+
+### TEST 7 — HABLA CON ELLA (aplicar a TODOS los temas)
+Antes de entregar cualquier parte del voiceover, pasar este test:
+- ¿Suena como UNA persona hablando, o como dos voces alternando?
+- ¿Hay algun momento donde dice "segun la neurociencia" como si fuera una clase?
+- ¿Cada parrafo habla directo a "tu"?
+- ¿Se siente como una conversacion intima o como una conferencia?
+- ¿La mujer que escucha esto a las 3am sentiria que le hablan A ELLA?
+Si falla cualquier punto: REESCRIBIR hasta que pase.

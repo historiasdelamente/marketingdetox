@@ -96,6 +96,27 @@ Buscar en cada ejecucion:
 - Que tipo de contenido psicologico esta trending en TikTok
 - Que angulos del narcisismo/apego generan mas engagement
 
+### REFERENCIA OBLIGATORIA — Copies y Transcripciones Virales Reales
+
+**SIEMPRE consultar estos archivos antes de optimizar:**
+
+**58 transcripciones reales de creadores virales:**
+→ `content/transcripciones-tiktok-virales.md`
+- Hooks que funcionan en la vida real (no teoricos)
+- Estructuras probadas con millones de vistas
+- Tonos que conectan: @lizannaplata (confrontativa), @sanandonoselalma (espiritual), @doctoraflorez (clinica accesible)
+
+**50 copies modelo organizadas por categoria:**
+→ `content/research-copies-virales-tiktok.md`
+- Patrones de viralizacion detectados
+- Formatos: condicional "Si alguna vez...", brecha de curiosidad "Nadie te dice esto pero...", roleplay del narcisista, listas de senales
+- Psicologia del engagement: sesgo de negatividad, validacion, patron interrumpido
+
+**293+ tecnicas terapeuticas para fundamentar el contenido:**
+→ `content/BASE-CONOCIMIENTO-TALLERES.md` — indice maestro con tabla herida→tecnica
+
+**Como usar:** Inspirarse en los patrones reales para optimizar hooks, estructura y cierres. NUNCA copiar. Adaptar al estilo unico de @historiasdelamente.
+
 ## Politicas de TikTok (cumplimiento obligatorio)
 - NUNCA diagnosticos directos ("el ES narcisista" -> "persona con rasgos narcisistas")
 - NUNCA incitacion al odio o violencia

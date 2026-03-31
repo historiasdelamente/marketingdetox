@@ -1,4 +1,4 @@
-# Banco de Temas: 30 Temas Predefinidos
+# Banco de Temas: 45 Temas Predefinidos
 
 Cada tema incluye: angulo especifico, conceptos psicologicos clave, direccion del hook, arco emocional sugerido, y temas relacionados para crear series.
 
@@ -254,3 +254,71 @@ Dia 1: Tema 15 → Dia 2: Tema 11 → Dia 3: Tema 19 → Dia 4: Tema 22 → Dia 
 
 ### Serie "Raices" (de donde viene todo)
 Dia 1: Tema 16 → Dia 2: Tema 20 → Dia 3: Tema 29 → Dia 4: Tema 18 → Dia 5: Tema 5
+
+---
+
+## CLUSTER 7: TEMAS AMPLIADOS — BASE DE CONOCIMIENTO (Temas 31-37)
+
+### Tema 31: Madres Narcisistas: La Herida que Nadie Nombra
+**Angulo:** Antes de el, hubo ella. Tu madre. La primera persona que debio amarte incondicionalmente y no lo hizo. Cada relacion toxica adulta tiene su raiz en esa primera traicion.
+**Conceptos clave:** Narcisismo parental, parentificacion, invalidacion emocional cronica, madre emocionalmente ausente, la hija como extension narcisista, herida materna (Bethany Webster)
+**Direccion del hook:** DOLOR — reconectar con la nina que nunca fue vista por mama
+**Arco emocional:** Dolor profundo → Reconocimiento → Rabia justa → Compasion por tu madre (ella tambien fue herida) → Romper la cadena
+**Temas relacionados:** 5 (Nina interior), 20 (Trauma intergeneracional), 14 (Reparentalizacion)
+**Base de conocimiento:** `content/research-trauma-intergeneracional-epigenetica.md` — Bethany Webster mother wound, constelaciones familiares
+
+### Tema 32: La Bioquimica de la Adiccion: Por Que Tu Cuerpo No Te Deja Soltar
+**Angulo:** No eres debil. Estas en abstinencia. Tu cerebro esta enganchado a un cocktail de dopamina, cortisol y oxitocina que funciona igual que la heroina. Y hoy te voy a explicar como romper la adiccion.
+**Conceptos clave:** Refuerzo intermitente como slot machine neuronal, dopamina en love bombing, cortisol addiction, oxitocina de trauma bond, abstinencia relacional, Patrick Carnes betrayal bond
+**Direccion del hook:** DESPERTAR — "no es amor, es adiccion quimica"
+**Arco emocional:** Shock → Comprension bioquimica → Alivio ("no es mi culpa") → Plan de desintoxicacion → Esperanza
+**Temas relacionados:** 2 (Vinculo traumatico), 27 (Cortisol addiction), 11 (Desintoxicacion)
+**Base de conocimiento:** `content/research-bioquimica-adiccion-trauma-bond.md`
+
+### Tema 33: La Verguenza: El Combustible Oculto del Abuso
+**Angulo:** La verguenza es lo que te mantiene callada. La verguenza de haberte quedado, de haber vuelto, de no haberte ido antes. El narcisista no solo te lastimo — te lleno de verguenza. Y hoy la vamos a sacar a la luz.
+**Conceptos clave:** Shame resilience (Brene Brown), verguenza toxica vs culpa sana, shame shields (moving away/toward/against), John Bradshaw shame work, weaponizacion de la verguenza por el narcisista
+**Direccion del hook:** DOLOR — nombrar la verguenza que nadie nombra
+**Arco emocional:** Verguenza → Nombrarla → Rabia ("el te lleno de verguenza") → Vulnerabilidad como fuerza → Liberacion
+**Temas relacionados:** 7 (Gaslighting), 13 (Autoestima), 18 (Perfeccionismo)
+**Base de conocimiento:** `content/research-verguenza-shame-resilience.md`
+
+### Tema 34: Trauma Intergeneracional: Lo Que Tu Abuela No Pudo Sanar
+**Angulo:** El dolor que sientes no empezo contigo. Tu abuela lo vivio. Tu madre lo normalizo. Y tu lo heredaste en el cuerpo sin saberlo. La ciencia lo llama epigenetica. Y hoy vas a entender por que siempre elegiste lo mismo.
+**Conceptos clave:** Epigenetica (Rachel Yehuda), transmision transgeneracional, Mark Wolynn "It Didn't Start with You", constelaciones familiares (Hellinger), lealtades invisibles, Core Language Map
+**Direccion del hook:** DESPERTAR — "tu dolor viene de antes de ti"
+**Arco emocional:** Descubrimiento → Dolor ancestral → Compasion por tu linaje → Responsabilidad sagrada → Ser quien rompe la cadena
+**Temas relacionados:** 5 (Nina interior), 16 (5 heridas), 20 (Trauma intergeneracional)
+**Base de conocimiento:** `content/research-trauma-intergeneracional-epigenetica.md`
+
+### Tema 35: Co-parentalidad con un Narcisista
+**Angulo:** Te fuiste. Hiciste lo mas valiente. Pero el sigue ahi — a traves de los hijos. Y ahora usa a tus hijos como armas. Hoy vamos a hablar de la batalla mas silenciosa y mas dolorosa.
+**Conceptos clave:** Parallel parenting, gray rock parenting, alienacion parental, los hijos como supply narcisista, proteger sin controlar, documentar el abuso
+**Direccion del hook:** RABIA — "tus hijos NO son su arma de negociacion"
+**Arco emocional:** Rabia → Dolor → Estrategia → Fortaleza → Proteccion activa
+**Temas relacionados:** 21 (Flying monkeys), 23 (Limites), 15 (Contacto cero)
+
+### Tema 36: La Nueva Supply: Cuando Lo Ves "Feliz" con Otra
+**Angulo:** Lo peor no fue que se fuera. Lo peor fue verlo con otra, siendo "perfecto", haciendo todo lo que tu le pediste y nunca hizo. Y tu cabeza te dice: "entonces el problema si era yo". Hoy te voy a explicar por que eso es una mentira.
+**Conceptos clave:** Idealizacion de nueva supply, ciclo narcisista que se repite, el narcisista no cambia — recicla, duelo comparativo, redes sociales como tortura
+**Direccion del hook:** DOLOR — el dolor especifico de ver al narcisista "feliz" con otra
+**Arco emocional:** Dolor punzante → Duda ("era yo?") → Revelacion (el no cambio, la fase de idealizacion se repite) → Rabia → Liberacion
+**Temas relacionados:** 22 (Duelo), 8 (Love bombing), 10 (Ciclo del abuso)
+
+### Tema 37: Cuando Lo "Normal" Se Siente Aburrido: El Amor Sano Despues del Abuso
+**Angulo:** Conociste a alguien bueno. Alguien que te trata bien. Que no grita, que no desaparece, que cumple. Y sientes... nada. Porque tu cerebro confunde caos con pasion y calma con aburrimiento.
+**Conceptos clave:** Recalibracion del sistema nervioso, confundir activacion con amor, cortisol addiction, la calma como "trigger", apego seguro ganado, glimmers (Deb Dana)
+**Direccion del hook:** CONFUSION — "por que no siento nada con alguien que me trata bien?"
+**Arco emocional:** Confusion → Comprension neurocientifica → Alivio → Recalibracion → Esperanza de amor sano
+**Temas relacionados:** 27 (Cortisol addiction), 30 (Regulacion sistema nervioso), 3 (Apego ansioso)
+**Base de conocimiento:** `content/research-bioquimica-adiccion-trauma-bond.md`
+
+---
+
+## Series Ampliadas
+
+### Serie "Raices del Dolor" (lo que nadie nombra)
+Dia 1: Tema 31 (Madre narcisista) → Dia 2: Tema 34 (Trauma intergeneracional) → Dia 3: Tema 33 (Verguenza) → Dia 4: Tema 32 (Bioquimica) → Dia 5: Tema 5 (Nina interior)
+
+### Serie "Despues de El" (lo que viene)
+Dia 1: Tema 36 (Nueva supply) → Dia 2: Tema 35 (Co-parentalidad) → Dia 3: Tema 37 (Amor sano) → Dia 4: Tema 15 (Contacto cero) → Dia 5: Tema 28 (Etapas recuperacion)

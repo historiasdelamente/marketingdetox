@@ -66,6 +66,12 @@ Cuando el usuario diga un tema como "hazme un TikTok sobre el trauma bond" o "co
 5. Guarda el resultado en `2_Salida_Contenido/finales/[tema]_[fecha].md`
 6. Muestra el resultado al usuario
 
+## REFERENCIA — Research de Contenido Viral Real
+**El pipeline SIEMPRE debe consultar estos archivos (el Investigador los lee primero):**
+→ `content/transcripciones-tiktok-virales.md` — 58 transcripciones reales de 30+ creadores virales
+→ `content/research-copies-virales-tiktok.md` — 50 copies modelo + patrones de viralización
+→ `content/BASE-CONOCIMIENTO-TALLERES.md` — 293+ técnicas terapéuticas (índice maestro)
+
 ## Temas principales disponibles
 
 **Narcisismo:** Ciclo narcisista, love bombing, gaslighting, hoovering, tratamiento del silencio, triangulacion, flying monkeys, mascara publica, supply narcisista, descarte, refuerzo intermitente.

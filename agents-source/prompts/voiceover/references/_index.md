@@ -7,7 +7,7 @@
 | `style-guide.md` | ADN creativo: fusion Marian Rojas Estape + Walter Riso | SIEMPRE antes de generar |
 | `voiceover-structure.md` | Template de 3 partes con distribucion de caracteres | SIEMPRE antes de generar |
 | `emotional-techniques.md` | Ganchos, transiciones, metaforas, cierres | SIEMPRE antes de generar |
-| `topic-bank.md` | 30 temas predefinidos con angulos y arcos emocionales | Cuando se usa tema numerado |
+| `topic-bank.md` | 45 temas predefinidos con angulos y arcos emocionales | Cuando se usa tema numerado |
 | `_index.md` | Este archivo - catalogo y planificacion | Cuando se necesita orientacion |
 
 ---
@@ -46,6 +46,13 @@
 | 28 | Etapas de la Recuperacion del Trauma | Recuperacion | Esperanza |
 | 29 | Ansiedad de Separacion en Adultos | Recuperacion | Dolor |
 | 30 | La Regulacion del Sistema Nervioso | Recuperacion | Esperanza |
+| 31 | Madres Narcisistas: La Herida que Nadie Nombra | Ampliado | Dolor |
+| 32 | La Bioquimica de la Adiccion: Por Que Tu Cuerpo No Te Deja Soltar | Ampliado | Despertar |
+| 33 | La Verguenza: El Combustible Oculto del Abuso | Ampliado | Dolor |
+| 34 | Trauma Intergeneracional: Lo Que Tu Abuela No Pudo Sanar | Ampliado | Despertar |
+| 35 | Co-parentalidad con un Narcisista | Ampliado | Rabia |
+| 36 | La Nueva Supply: Cuando Lo Ves "Feliz" con Otra | Ampliado | Dolor |
+| 37 | Cuando Lo "Normal" Se Siente Aburrido: El Amor Sano Despues del Abuso | Ampliado | Confusion |
 
 ---
 
@@ -65,7 +72,8 @@ Rotar entre clusters para no saturar un solo angulo:
 - Semana 1: Identificacion (1-5) + Sanacion (11-15)
 - Semana 2: Tacticas (6-10) + Patrones (16-20)
 - Semana 3: Avanzado (21-25) + Recuperacion (26-30)
-- Semana 4: Mix libre o serie tematica
+- Semana 4: Ampliado (31-37) o mix libre
+- Semana 5: Series tematicas nuevas o rotacion
 
 ### Series Tematicas (5 dias consecutivos)
 
@@ -76,3 +84,27 @@ Rotar entre clusters para no saturar un solo angulo:
 | Sanar | 5 → 14 → 13 → 28 → 30 | Camino de recuperacion |
 | Soltar | 15 → 11 → 19 → 22 → 23 | Romper el vinculo |
 | Raices | 16 → 20 → 29 → 18 → 5 | Origen del patron |
+| Raices del Dolor | 31 → 34 → 33 → 32 → 5 | Lo que nadie nombra |
+| Despues de El | 36 → 35 → 37 → 15 → 28 | Lo que viene despues |
+
+---
+
+## Base de Conocimiento Terapeutica Ampliada (224+ tecnicas)
+
+Para enriquecer los voiceovers con tecnicas validadas, metaforas terapeuticas y ejercicios vivenciales, consultar:
+
+| Archivo | Tecnicas | Enfoque |
+|---|---|---|
+| `content/research-terapias-tercera-generacion.md` | 42 | ACT, DBT, CFT, MBCT, Schema Therapy |
+| `content/research-tecnicas-terapeuticas-universidades-top.md` | 37 | Harvard, Stanford, Yale, MIT, Oxford |
+| `content/research-metaforas-tecnicas-somaticas.md` | 38 | Metaforas ACT, IFS, Gestalt, Polyvagal, EMDR |
+| `content/research-trauma-recovery-narcissistic-abuse-techniques.md` | 38 | Narcisismo, C-PTSD, apego, codependencia |
+| `content/research-tecnicas-corporales-transformacionales.md` | 32 | Yoga trauma, TRE, breathwork, voz, rituales |
+| `content/research-group-therapy-innovations.md` | 37 | Psicodrama, circulos femeninos, neurociencia |
+| `content/BASE-CONOCIMIENTO-TALLERES.md` | Indice | Tabla herida→tecnica, 30 investigadores clave |
+
+### Como Usar en los Voiceovers
+- **Para el puente neurocientifico (Parte 1)**: Extraer conceptos de las tecnicas de universidades top
+- **Para las oleadas de tension/alivio (Parte 2)**: Usar metaforas de `research-metaforas-tecnicas-somaticas.md`
+- **Para herramientas practicas (Parte 3)**: Seleccionar ejercicios vivenciales de la base
+- **Para historias**: Inspirar escenarios basados en las tecnicas documentadas (como se siente hacerlas)

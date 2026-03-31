@@ -1,0 +1,99 @@
+const http = require('http');
+const { processPaulaMessage } = require('./paula');
+const { runFollowUp } = require('./followup');
+
+const PORT = process.env.PORT || 3000;
+
+const server = http.createServer(async (req, res) => {
+  // CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    res.writeHead(200);
+    res.end();
+    return;
+  }
+
+  // Health check
+  if (req.method === 'GET' && req.url === '/') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      status: 'ok',
+      agent: 'Paula - Historias de la Mente',
+      timestamp: new Date().toISOString(),
+    }));
+    return;
+  }
+
+  // Webhook endpoint for ManyChat
+  if (req.method === 'POST' && req.url === '/webhook') {
+    let body = '';
+
+    req.on('data', chunk => { body += chunk; });
+
+    req.on('end', async () => {
+      try {
+        const data = JSON.parse(body);
+
+        const userId = data.user_id || data.subscriber_id;
+        const userMessage = data.user_message || data.last_input_text || data.message;
+        const replyType = data.reply_type || 'text';
+        const phone = data.phone || '';
+
+        if (!userId) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Falta campo: user_id' }));
+          return;
+        }
+
+        console.log(`[Paula] ${userId} (${replyType}): "${userMessage || '[media]'}"`);
+
+        const paulaResponse = await processPaulaMessage(
+          String(userId),
+          String(userMessage || ''),
+          String(replyType),
+          String(phone)
+        );
+
+        console.log(`[Paula] -> "${paulaResponse.substring(0, 100)}..."`);
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ bot_response: paulaResponse }));
+
+      } catch (error) {
+        console.error('[Paula Error]', error.message);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          bot_response: 'En este momento no puedo responder. Escribeme de nuevo en unos minutos \uD83D\uDDA4',
+        }));
+      }
+    });
+    return;
+  }
+
+  // Cron endpoint for follow-ups
+  if (req.method === 'GET' && req.url === '/cron/followup') {
+    try {
+      const result = await runFollowUp();
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ status: 'ok', ...result }));
+    } catch (error) {
+      console.error('[FollowUp Error]', error.message);
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: error.message }));
+    }
+    return;
+  }
+
+  // 404
+  res.writeHead(404, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify({ error: 'Not found' }));
+});
+
+server.listen(PORT, () => {
+  console.log(`[Paula] Servidor activo en puerto ${PORT}`);
+  console.log(`[Paula] Modelo: ${process.env.PAULA_MODEL || 'openai/gpt-4.1-mini'}`);
+  console.log(`[Paula] Webhook: POST /webhook`);
+});

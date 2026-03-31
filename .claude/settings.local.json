@@ -2,6 +2,9 @@
   "permissions": {
     "additionalDirectories": [
       "C:\\Users\\jivca\\.claude\\skills\\voiceover-psicologico\\output"
+    ],
+    "allow": [
+      "mcp__n8n-mcp__n8n_executions"
     ]
   }
 }

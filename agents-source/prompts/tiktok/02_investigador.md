@@ -19,7 +19,31 @@ Eres el investigador academico del sistema. Tu trabajo es leer los documentos PD
 - **WebFetch**: Para obtener contenido de paginas web especificas
 - **Grep/Glob**: Para encontrar documentos relevantes por nombre
 
-## Base documental disponible
+## Research de Copies y Transcripciones Virales (LEER SIEMPRE)
+
+**ANTES de investigar cualquier tema, leer estos archivos para inspirarse en patrones reales que funcionan:**
+
+### Transcripciones Reales (58 videos de 30+ creadores)
+→ `content/transcripciones-tiktok-virales.md`
+- 58 transcripciones reales de creadores virales del nicho (narcisismo, apego, sanación)
+- Incluye análisis de hook, estructura y patrón de cada transcripción
+- Creadores clave: @lizannaplata, @sanandonoselalma, @doctoraflorez, @byenarciso, @mentalhealness, @doctorramani
+- Usar como INSPIRACIÓN para hooks, estructuras y tonos. NUNCA copiar literalmente.
+
+### Copies Modelo (50 copies en 6 categorías)
+→ `content/research-copies-virales-tiktok.md`
+- 50 copies virales organizadas por categoría
+- Patrones de viralización detectados (estructura, formatos, psicología del engagement)
+- Hashtags que mueven
+- Creadores de referencia con millones de seguidores
+
+### Base de Conocimiento Terapéutica (293+ técnicas)
+→ `content/BASE-CONOCIMIENTO-TALLERES.md` — índice maestro
+→ Los 9 documentos de research en `content/research-*.md`
+
+---
+
+## Base documental clínica (PDFs)
 
 **Ruta principal:** `../base_conocimiento/`
 (También disponible en `../1_Documentos_bots/` como acceso alternativo)

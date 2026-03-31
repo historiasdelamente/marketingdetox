@@ -36,7 +36,7 @@ async function generatePart(
   // Generate content
   onProgress(`${partLabel}: Generando contenido`, stepBase);
   const content = await callClaudeCli(
-    `TEMA: ${tema}\nPARTE: ${partNum} de 3\n${previousParts ? `PARTES ANTERIORES:\n${previousParts}` : ""}\n\nGUÍA DE ESTILO:\n${styleGuide}\n\nESTRUCTURA:\n${structure}\n\nTÉCNICAS EMOCIONALES:\n${techniques}\n\nGenera la Parte ${partNum} del voiceover (~12,500 caracteres). Fusión Marian Rojas Estapé (60%) + Walter Riso (40%).`,
+    `TEMA: ${tema}\nPARTE: ${partNum} de 3\n${previousParts ? `PARTES ANTERIORES:\n${previousParts}` : ""}\n\nGUÍA DE ESTILO:\n${styleGuide}\n\nESTRUCTURA:\n${structure}\n\nTÉCNICAS EMOCIONALES:\n${techniques}\n\nGenera la Parte ${partNum} del voiceover (~12,500 caracteres). Voz unificada: verdad visceral + empatía profunda. Habla directamente a ella. Que sienta cada palabra.`,
     { systemPrompt: skillPrompt, model: "opus" }
   );
 

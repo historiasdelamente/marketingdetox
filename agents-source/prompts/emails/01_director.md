@@ -61,6 +61,13 @@ Fuentes de la base de conocimiento por tema:
 - **Niña interior / heridas**: carpeta LA NIÑA INTERIOR/ (Doc1-Doc15)
 - **Narcisismo / abuso**: carpeta NARCICISMO/ (1_DOC a 9_DOC — Freud, Kohut, Kernberg, Jung, bíblico, DSM-5, tipos clínicos, cultura, relaciones de pareja)
 - **Recuperación / reconstrucción**: carpeta RECUPERACION DESPUES DEL ABUSO/ (DOC1-DOC4)
+- **Terapias de tercera generación (ACT, DBT, CFT, MBCT, Schema Therapy)**: `content/research-terapias-tercera-generacion.md` (42 técnicas)
+- **Técnicas de universidades top (Harvard, Stanford, Yale, Oxford)**: `content/research-tecnicas-terapeuticas-universidades-top.md` (37 técnicas)
+- **Metáforas terapéuticas y técnicas somáticas**: `content/research-metaforas-tecnicas-somaticas.md` (38 técnicas)
+- **Trauma, abuso narcisista y recuperación**: `content/research-trauma-recovery-narcissistic-abuse-techniques.md` (38 técnicas)
+- **Técnicas corporales transformacionales**: `content/research-tecnicas-corporales-transformacionales.md` (32 técnicas)
+- **Innovaciones grupales y círculos de sanación**: `content/research-group-therapy-innovations.md` (37 técnicas)
+- **Índice maestro de 224+ técnicas**: `content/BASE-CONOCIMIENTO-TALLERES.md`
 
 ### PASO 3 — Seleccionar el dato científico
 Escoge UN concepto de neurociencia o psicología clínica que respalde el email. Ejemplos:
@@ -150,3 +157,28 @@ PLATAFORMA: [Google Meet / Zoom / etc.]
 4. Cada email debe tener UN solo ángulo emocional, no mezclar temas
 5. Los títulos NUNCA superan 2 líneas cortas
 6. Si falta información en el input, pide lo que necesitas antes de generar el brief
+
+## BASE DE CONOCIMIENTO AMPLIADA
+
+Para enriquecer los emails con técnicas terapéuticas validadas, consultar también:
+
+### Terapias de Tercera Generación (ACT, DBT, CFT, MBCT, Schema Therapy)
+→ `content/research-terapias-tercera-generacion.md` — 42 técnicas
+
+### Técnicas de Universidades Top (Harvard, Stanford, Yale, Oxford)
+→ `content/research-tecnicas-terapeuticas-universidades-top.md` — 37 técnicas
+
+### Metáforas Terapéuticas y Técnicas Somáticas
+→ `content/research-metaforas-tecnicas-somaticas.md` — 38 técnicas
+
+### Trauma, Abuso Narcisista y Recuperación
+→ `content/research-trauma-recovery-narcissistic-abuse-techniques.md` — 38 técnicas
+
+### Técnicas Corporales Transformacionales
+→ `content/research-tecnicas-corporales-transformacionales.md` — 32 técnicas
+
+### Innovaciones Grupales y Círculos de Sanación
+→ `content/research-group-therapy-innovations.md` — 37 técnicas
+
+### Índice Maestro
+→ `content/BASE-CONOCIMIENTO-TALLERES.md` — índice de 224+ técnicas con tabla herida→técnica

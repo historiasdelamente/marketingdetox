@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Sesion Terapeutica - Erika Valdez - 30 Marzo 2026</title>
+<style>
+  @page {
+    margin: 2cm;
+    size: letter;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 12pt;
+    line-height: 1.6;
+    color: #1a1a1a;
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    background: #fff;
+  }
+  .header {
+    text-align: center;
+    border-bottom: 3px solid #C9A84C;
+    padding-bottom: 20px;
+    margin-bottom: 30px;
+  }
+  .header h1 {
+    font-size: 20pt;
+    color: #1a1a1a;
+    margin: 0 0 5px 0;
+    letter-spacing: 1px;
+  }
+  .header .subtitle {
+    font-size: 13pt;
+    color: #C9A84C;
+    font-weight: bold;
+    margin: 5px 0;
+  }
+  .header .meta {
+    font-size: 10pt;
+    color: #666;
+    margin-top: 10px;
+  }
+  .header .meta span {
+    display: inline-block;
+    margin: 0 10px;
+  }
+  .patient-box {
+    background: #f9f7f2;
+    border-left: 4px solid #C9A84C;
+    padding: 15px 20px;
+    margin-bottom: 25px;
+    font-size: 10.5pt;
+  }
+  .patient-box h3 {
+    margin: 0 0 8px 0;
+    color: #C9A84C;
+    font-size: 11pt;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .patient-box ul {
+    margin: 0;
+    padding-left: 18px;
+  }
+  .patient-box li {
+    margin-bottom: 3px;
+  }
+  h2 {
+    font-size: 14pt;
+    color: #1a1a1a;
+    border-bottom: 2px solid #C9A84C;
+    padding-bottom: 6px;
+    margin-top: 35px;
+    margin-bottom: 15px;
+    page-break-after: avoid;
+  }
+  h2 .time {
+    float: right;
+    font-size: 11pt;
+    color: #C9A84C;
+    font-weight: normal;
+  }
+  h3 {
+    font-size: 12pt;
+    color: #333;
+    margin-top: 20px;
+    margin-bottom: 8px;
+  }
+  .instruction {
+    background: #f0ede5;
+    border-radius: 4px;
+    padding: 10px 15px;
+    margin: 10px 0;
+    font-size: 10.5pt;
+    font-style: italic;
+    color: #555;
+  }
+  .script {
+    background: #1a1a1a;
+    color: #C9A84C;
+    border-radius: 4px;
+    padding: 12px 18px;
+    margin: 12px 0;
+    font-size: 11.5pt;
+    font-style: italic;
+    line-height: 1.7;
+  }
+  .script-key {
+    background: #1a1a1a;
+    color: #fff;
+    border-left: 4px solid #C9A84C;
+    border-radius: 4px;
+    padding: 12px 18px;
+    margin: 12px 0;
+    font-size: 12pt;
+    font-weight: bold;
+    line-height: 1.7;
+  }
+  .pause {
+    text-align: center;
+    color: #C9A84C;
+    font-size: 10pt;
+    letter-spacing: 3px;
+    margin: 8px 0;
+  }
+  .warning {
+    background: #fff3e0;
+    border-left: 4px solid #e65100;
+    padding: 10px 15px;
+    margin: 12px 0;
+    font-size: 10.5pt;
+  }
+  .warning strong {
+    color: #e65100;
+  }
+  .homework-box {
+    background: #f9f7f2;
+    border: 2px solid #C9A84C;
+    border-radius: 6px;
+    padding: 18px 22px;
+    margin: 15px 0;
+  }
+  .homework-box h3 {
+    margin-top: 0;
+    color: #C9A84C;
+  }
+  .notes-section {
+    margin-top: 35px;
+    padding-top: 20px;
+    border-top: 2px dashed #ccc;
+  }
+  .notes-section h2 {
+    border-bottom-color: #999;
+  }
+  .checklist {
+    list-style: none;
+    padding-left: 5px;
+  }
+  .checklist li {
+    margin-bottom: 8px;
+    padding-left: 25px;
+    position: relative;
+  }
+  .checklist li::before {
+    content: "\2610";
+    position: absolute;
+    left: 0;
+    font-size: 14pt;
+  }
+  .footer {
+    margin-top: 40px;
+    padding-top: 15px;
+    border-top: 2px solid #C9A84C;
+    text-align: center;
+    font-size: 9pt;
+    color: #999;
+  }
+  @media print {
+    body { padding: 0; }
+    .script, .script-key { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .patient-box, .instruction, .homework-box, .warning { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>GUIA DE SESION TERAPEUTICA</h1>
+  <div class="subtitle">IFS Parts Work + Reparentalizacion de Nina Interior</div>
+  <div class="meta">
+    <span>Paciente: Erika Valdez</span> |
+    <span>Sesion: 3/3</span> |
+    <span>Fecha: 30 Marzo 2026</span> |
+    <span>Duracion: 45 min</span>
+  </div>
+  <div class="meta">
+    <span>Psicologo Especialista: Javier Vieira</span>
+  </div>
+</div>
+
+<!-- PERFIL CLINICO -->
+<div class="patient-box">
+  <h3>Perfil Clinico Actualizado</h3>
+  <ul>
+    <li><strong>Madre narcisista</strong> con control religioso, culpa y miedo desde los 10 anios</li>
+    <li><strong>Esposo pasivo-explosivo</strong> con violencia economica &mdash; pidio divorcio el 13 feb 2026</li>
+    <li><strong>Ex-esposo narcisista</strong> con rasgos psicopaticos confirmados</li>
+    <li><strong>Ansiedad severa:</strong> insomnio (1 hora/noche en crisis), memoria deteriorada, cortisol elevado</li>
+    <li><strong>Ideacion pasiva:</strong> "quisiera que todo se acabara" (no plan activo)</li>
+    <li><strong>Nina interior herida:</strong> busco protector desde los 12 anios, "oveja negra"</li>
+    <li><strong>Hipervigilante e hipersensible</strong> &mdash; detecta narcisistas intuitivamente</li>
+    <li><strong>Somatico:</strong> intestino permeable, metales pesados, tiroides disfuncional</li>
+    <li><strong>Ya entiende:</strong> disonancia cognitiva. <strong>Trabajando:</strong> indefension aprendida</li>
+    <li><strong>Sesion anterior (23 feb):</strong> Se le dieron ejercicios de respiracion basal, te de manzanilla, grounding con 3 objetos, libro de nina interior</li>
+  </ul>
+</div>
+
+<!-- FASE 1 -->
+<h2>FASE 1: ATERRIZAJE Y REGULACION <span class="time">Min 0 &ndash; 8</span></h2>
+
+<div class="instruction">Saludo breve, maximo 2 minutos. Preguntar como esta HOY, no la historia. Cortar rapido si empieza a narrar eventos &mdash; hoy no es sesion de ventilacion.</div>
+
+<div class="script">
+  "Erika, hoy vamos a hacer algo diferente. No vamos a hablar de el, ni de tu mama, ni del trabajo. Hoy vamos a hablar contigo. Con la Erika que nadie ve. &iquest;Estas lista?"
+</div>
+
+<h3>Respiracion de Ritmo Calmante (3 minutos)</h3>
+
+<div class="script">
+  "Cierra los ojos. Pon las dos manos en el pecho, una encima de la otra. Siente el calor de tus propias manos. Inhala por la nariz contando 3... sosten 2... exhala por la boca contando 4. La exhalacion siempre mas larga. Otra vez. Y otra. Cinco veces."
+</div>
+
+<h3>Grounding con Sensaciones Corporales (2 minutos)</h3>
+
+<div class="script">
+  "Sin abrir los ojos, dime tres cosas que puedes sentir en tu cuerpo ahorita. No pienses, solo siente. &iquest;Donde esta el peso? &iquest;Donde esta la tension? &iquest;Donde esta el calor?"
+</div>
+
+<div class="instruction">Esperar respuestas. Solo validar: "Ahi esta. Bien." No interpretar.</div>
+
+<!-- FASE 2 -->
+<h2>FASE 2: MAPEO DE PARTES <span class="time">Min 8 &ndash; 15</span></h2>
+
+<div class="script">
+  "Erika, imagina que adentro de ti viven varias Erikas. No estas loca, todos las tenemos. Hay una Erika que esta furiosa ahorita &mdash; la que limpio el banio a las 6 de la maniana con cloro. Hay otra Erika que esta cansada, que quiere huir, que dice 'ya no puedo mas.' Y hay una Erika chiquita, una ninia, que lleva mucho tiempo escondida adentro de ti. &iquest;Las puedes ver?"
+</div>
+
+<div class="instruction">Esperar. Si dice que si, preguntar: "&iquest;Cual de ellas habla mas fuerte ahorita? &iquest;La furiosa, la cansada, o la ninia?" Lo mas probable es que diga "la furiosa" o "la cansada".</div>
+
+<div class="script">
+  "Esa parte furiosa te ha protegido toda la vida. Desde los 10 anios, esa furia es la que te saco de la casa de tu mama, la que te hizo independiente, la que te hace buscar trabajo aunque nadie te conteste. Esa parte es una guerrera. Pero hoy le vamos a pedir permiso de algo."
+</div>
+
+<div class="pause">&bull; &bull; &bull; P A U S A &bull; &bull; &bull;</div>
+
+<div class="script">
+  "Le vamos a pedir permiso a la guerrera de ir a ver a la ninia. Porque la guerrera pelea para que la ninia no sienta dolor. Pero la ninia lleva anios sola ahi adentro. &iquest;La guerrera nos da permiso?"
+</div>
+
+<div class="instruction">Si hay resistencia: "Dile a la guerrera que no vamos a dejarla sola. Solo vamos a visitarla 15 minutos. La guerrera puede quedarse en la puerta cuidando."</div>
+
+<!-- FASE 3 -->
+<h2>FASE 3: ENCUENTRO CON LA NINIA INTERIOR <span class="time">Min 15 &ndash; 35</span></h2>
+
+<div class="warning"><strong>NUCLEO DE LA SESION.</strong> Esta es la parte mas importante. No apurar. Respetar los silencios. Si hay llanto, no consolar con palabras &mdash; solo presencia.</div>
+
+<h3>Visualizacion Guiada &mdash; La Puerta</h3>
+
+<div class="script">
+  "Cierra los ojos otra vez. Respira. Imagina un pasillo largo. Al final hay una puerta. Detras de esa puerta esta la Erika de 10 anios. La que ya sabia que algo estaba mal en su casa. La que comparaba su vida con la de sus primas y decia 'esto no es normal.' La que queria salirse a los 12."
+</div>
+
+<div class="pause">&bull; &bull; &bull; SILENCIO 10 SEGUNDOS &bull; &bull; &bull;</div>
+
+<div class="script">
+  "Abre la puerta. &iquest;Como la ves? &iquest;Que esta haciendo? &iquest;Que tiene puesto? &iquest;Donde esta?"
+</div>
+
+<div class="instruction">Dejar que describa. NO interrumpir. Solo escuchar. Si llora, bien. Si no llora, tambien bien.</div>
+
+<h3>Primer Contacto</h3>
+
+<div class="script">
+  "Acercate a ella. Agachate para estar a su nivel. Mirale los ojos. Esa ninia lleva 30 anios esperando que alguien venga por ella."
+</div>
+
+<div class="pause">&bull; &bull; &bull; P A U S A &bull; &bull; &bull;</div>
+
+<p>Pedirle que diga EN VOZ ALTA:</p>
+
+<div class="script-key">
+  "Ya vine. Perdoname por tardar tanto."
+</div>
+
+<div class="instruction">Esperar que lo diga. Si no puede, repetirlo suave hasta que lo diga. No forzar.</div>
+
+<div class="script-key">
+  "Lo que te hicieron no fue tu culpa. Tu no eras demasiado. Ella no sabia amar."
+</div>
+
+<h3>Escuchar a la Ninia</h3>
+
+<div class="script">
+  "&iquest;Que te dice la ninia? &iquest;Que necesita? Escuchala."
+</div>
+
+<div class="pause">&bull; &bull; &bull; SILENCIO LARGO &mdash; 30 A 60 SEGUNDOS &bull; &bull; &bull;</div>
+
+<div class="warning"><strong>MOMENTO CRITICO.</strong> Lo que salga aqui es oro clinico. No interrumpir. No interpretar. Solo estar presente.</div>
+
+<div class="instruction">Despues de que responda, guiar:</div>
+
+<div class="script-key">
+  "Ya no tienes que cuidarte sola. Ya no tienes que buscar quien te proteja. Yo te protejo. Yo soy la adulta que tu necesitabas."
+</div>
+
+<div class="instruction">Si hay llanto fuerte, dejar. No consolar con palabras. Solo decir: "Ahi esta. Dejalo salir. Es seguro."</div>
+
+<h3>Soltar la Carga &mdash; Unburdening</h3>
+
+<div class="script">
+  "Preguntale a la ninia: &iquest;que cargas que no es tuyo? &iquest;Que te dieron que no era para ti?"
+</div>
+
+<div class="instruction">Aqui saldra la culpa religiosa, la verguenza, el "no eres suficiente", el "pareces una cualquiera por pintarte los labios."</div>
+
+<div class="script">
+  "Ahora imagina que eso que carga &mdash; esa culpa, esa verguenza, esas palabras &mdash; esta en sus manos como una piedra negra, pesada. &iquest;La ves?"
+</div>
+
+<div class="script">
+  "Esa piedra no es de ella. Nunca fue de ella. Se la pusieron encima. Dile a la ninia que la suelte. Que la deje caer al piso. Que la piedra se queda aqui. Ella no se la lleva."
+</div>
+
+<p>Pedirle que repita EN VOZ ALTA:</p>
+
+<div class="script-key">
+  "Esto no es mio. Nunca fue mio."
+</div>
+
+<h3>Abrazo de Cierre &mdash; Butterfly Hug</h3>
+
+<div class="script">
+  "Ahora abrazala. Abrazate los brazos como te ensenie &mdash; mariposa &mdash; y siente como la ninia por fin descansa. Por primera vez en 30 anios, alguien vino por ella. Y fuiste tu."
+</div>
+
+<div class="pause">&bull; &bull; &bull; 30 SEGUNDOS EN SILENCIO CON ABRAZO MARIPOSA &bull; &bull; &bull;</div>
+
+<!-- FASE 4 -->
+<h2>FASE 4: INTEGRACION Y ANCLAJE <span class="time">Min 35 &ndash; 42</span></h2>
+
+<div class="script">
+  "Abre los ojos lentamente. Respira. Toma agua si necesitas."
+</div>
+
+<div class="instruction">Darle un momento. Luego preguntar:</div>
+
+<div class="script">
+  "&iquest;Que sentiste? &iquest;Que te dijo la ninia?"
+</div>
+
+<div class="instruction">Escuchar. NO interpretar. Solo reflejar: "Ella te dijo eso. Escuchala."</div>
+
+<h3>Ancla con Palabra Clave</h3>
+
+<div class="script">
+  "Quiero que escojas una palabra que resuma lo que acabas de vivir. Una sola palabra. &iquest;Cual es?"
+</div>
+
+<div class="instruction">Puede ser "libre", "mia", "fuerte", "vine" &mdash; lo que sea. No sugerir.</div>
+
+<div class="script">
+  "Esa palabra es tu ancla. Cada vez que sientas que el mundo se te viene encima, que no duermes, que la ansiedad te agarra, pon las manos en el pecho y repite esa palabra tres veces. Eso te regresa a este momento, a esta Erika que fue por su ninia."
+</div>
+
+<!-- FASE 5 -->
+<h2>FASE 5: TAREA Y CIERRE <span class="time">Min 42 &ndash; 45</span></h2>
+
+<div class="homework-box">
+  <h3>Tarea para la Semana</h3>
+  <p><strong>Carta con Mano Izquierda</strong></p>
+  <p>Todas las noches, antes de dormir, escribirle una carta a la Erika de 10 anios. <strong>Con la mano izquierda</strong> &mdash; no la derecha. Fea, chueca, como pueda. La mano izquierda accede a la parte emocional del cerebro.</p>
+  <p>Escribirle lo que le diria hoy sabiendo lo que sabe. Maximo una pagina por noche.</p>
+  <p><em>No me la vas a mandar. Es tuya. Es entre tu y ella.</em></p>
+</div>
+
+<div class="script">
+  "Erika, hoy no trabajamos con tu mama ni con tu esposo. Trabajamos contigo. Porque si la ninia de adentro sana, la mujer de afuera va a tomar decisiones que hoy le parecen imposibles. El trabajo no va a llegar, ni el departamento, ni la paz, hasta que ella este segura adentro de ti."
+</div>
+
+<!-- NOTAS POST-SESION -->
+<div class="notes-section">
+  <h2>NOTAS POST-SESION</h2>
+
+  <h3>Observar Durante la Sesion</h3>
+  <ul class="checklist">
+    <li>&iquest;Pudo visualizar a la ninia o se bloqueo? (indica nivel de disociacion)</li>
+    <li>&iquest;La "guerrera" dio permiso? (parte protectora demasiado activada = no forzar)</li>
+    <li>&iquest;Que contenido salio en la "piedra negra"? (material para proximas sesiones)</li>
+    <li>&iquest;El llanto fue liberador o se congelo? (freeze response)</li>
+    <li>&iquest;Pudo decir las frases en voz alta? (indica acceso al self)</li>
+    <li>&iquest;Que palabra ancla escogio? (anotarla para reforzar en proxima sesion)</li>
+  </ul>
+
+  <h3>Plan para Proxima Sesion</h3>
+  <p>Trabajar con lo que salio de la "piedra negra" usando <strong>Silla Vacia</strong> (Gestalt/EFT) &mdash; dialogo directo con la madre narcisista. Solo si esta sesion fue exitosa en estabilizacion.</p>
+
+  <h3>Alerta Clinica</h3>
+  <div class="warning">
+    <strong>RIESGO:</strong> Si la ideacion pasiva se intensifica despues de esta sesion, activar <strong>Plan de Seguridad Stanley-Brown</strong> inmediatamente. Monitorear via mensaje en las siguientes 48 horas.
+  </div>
+
+  <h3>Tecnicas de Base (ya asignadas en sesion anterior)</h3>
+  <ul>
+    <li>Respiracion basal 4-3-2-1 &mdash; 5 veces al dia</li>
+    <li>Te de manzanilla con ritual sensorial &mdash; todas las noches</li>
+    <li>Grounding con 3 objetos (tocar, oler, nombrar)</li>
+    <li>Caminata diaria o pasear al perro</li>
+    <li>Libro de nina interior (en proceso)</li>
+  </ul>
+</div>
+
+<div class="footer">
+  <p>Historias de la Mente &mdash; Javier Vieira, Psicologo Especialista</p>
+  <p>Documento confidencial &mdash; Uso exclusivo del terapeuta</p>
+</div>
+
+</body>
+</html>

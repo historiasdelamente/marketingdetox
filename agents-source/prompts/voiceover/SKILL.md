@@ -1,7 +1,7 @@
 ---
 name: voiceover-psicologico
 description: "Genera guiones de voiceover psicológico de alto impacto emocional para lives diarios. Activar cuando el usuario pida: voiceover, guión para live, script psicológico, contenido de narcisismo, apego, trauma, TEPT, sanación emocional, o cualquier pedido de guión de contenido psicológico para redes sociales."
-argument-hint: "[número de tema 1-30 O tema libre en lenguaje natural]"
+argument-hint: "[número de tema 1-45 O tema libre en lenguaje natural]"
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 ---
 
@@ -30,6 +30,13 @@ Antes de generar cualquier voiceover, el agente puede consultar los PDFs de:
 ```
 
 Usar los PDFs relevantes al tema para incluir conceptos clínicos reales, no genéricos.
+
+Adicionalmente, para técnicas validadas y metáforas terapéuticas:
+→ content/BASE-CONOCIMIENTO-TALLERES.md (índice de 224+ técnicas)
+→ content/research-terapias-tercera-generacion.md (ACT, DBT, CFT, MBCT)
+→ content/research-metaforas-tecnicas-somaticas.md (metáforas, IFS, Gestalt, Polyvagal)
+→ content/research-trauma-recovery-narcissistic-abuse-techniques.md (narcisismo, C-PTSD)
+→ content/research-tecnicas-corporales-transformacionales.md (técnicas corporales)
 
 ---
 
@@ -67,12 +74,19 @@ Usar los PDFs relevantes al tema para incluir conceptos clínicos reales, no gen
 | 28 | Etapas de la Recuperación del Trauma |
 | 29 | Ansiedad de Separación en Adultos |
 | 30 | La Regulación del Sistema Nervioso |
+| 31 | Madres Narcisistas: La Herida que Nadie Nombra |
+| 32 | La Bioquímica de la Adicción: Por Qué Tu Cuerpo No Te Deja Soltar |
+| 33 | La Vergüenza: El Combustible Oculto del Abuso |
+| 34 | Trauma Intergeneracional: Lo Que Tu Abuela No Pudo Sanar |
+| 35 | Co-parentalidad con un Narcisista |
+| 36 | La Nueva Supply: Cuando Lo Ves "Feliz" con Otra |
+| 37 | Cuando Lo "Normal" Se Siente Aburrido: El Amor Sano Después del Abuso |
 
 ---
 
 ## Cómo Usar Este Skill
 
-### Opción A: Tema del Banco (número 1-30)
+### Opción A: Tema del Banco (número 1-45)
 ```
 /voiceover-psicologico 7
 ```
