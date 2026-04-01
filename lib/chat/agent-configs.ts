@@ -282,4 +282,81 @@ export const AGENT_CONFIGS: Record<string, AgentConfig> = {
       "Variaciones: generando alternativas creativas",
     ],
   },
+  blog: {
+    title: "Blog SEO",
+    description: "Artículos SEO optimizados para tráfico orgánico",
+    agentCount: 1,
+    outputType: "Artículos .md",
+    icon: "📝",
+    accent: "emerald",
+    greeting: "¡Hola! Vamos a crear un artículo SEO. ¿Sobre qué tema quieres escribir?",
+    fields: [
+      { name: "tema", label: "Tema del artículo", type: "textarea", required: true, placeholder: "Ej: Cómo identificar a un narcisista en una relación" },
+      { name: "keywords", label: "Keywords SEO", type: "text", placeholder: "Ej: narcisista, relación tóxica, apego" },
+      { name: "audiencia", label: "Audiencia", type: "text", placeholder: "Mujeres hispanohablantes 25-65 años" },
+    ],
+    steps: [
+      "Escritor SEO: generando artículo optimizado",
+    ],
+  },
+  instagram: {
+    title: "Instagram",
+    description: "Contenido para carousels, reels y stories",
+    agentCount: 4,
+    outputType: "Contenido .md",
+    icon: "📸",
+    accent: "pink",
+    greeting: "¡Hola! Vamos a crear contenido para Instagram. ¿Qué formato necesitas?",
+    fields: [
+      { name: "tema", label: "Tema", type: "textarea", required: true, placeholder: "Ej: 5 señales de que estás en trauma bonding" },
+      { name: "formato", label: "Formato", type: "select", required: true, options: [
+        { value: "carousel", label: "Carousel" },
+        { value: "reels", label: "Reels" },
+        { value: "stories", label: "Stories" },
+      ]},
+      { name: "audiencia", label: "Audiencia", type: "text", placeholder: "Mujeres hispanohablantes 25-65 años" },
+    ],
+    steps: [
+      "Director: planificando contenido",
+      "Generando formato específico",
+    ],
+  },
+  investigador: {
+    title: "Investigador Científico",
+    description: "Busca actualizaciones en revistas científicas y sintetiza hallazgos",
+    agentCount: 3,
+    outputType: "Research .md",
+    icon: "🔬",
+    accent: "blue",
+    greeting: "¡Hola! Soy el investigador científico. ¿Qué tema quieres investigar?",
+    fields: [
+      { name: "tema", label: "Tema de investigación", type: "textarea", required: true, placeholder: "Ej: Nuevos hallazgos sobre trauma bonding y neuroplasticidad" },
+      { name: "area", label: "Área científica", type: "text", placeholder: "Ej: psicología clínica, neurociencia, apego" },
+    ],
+    steps: [
+      "Buscador: rastreando actualizaciones",
+      "Sintetizador: organizando hallazgos",
+      "Integrador: preparando para base de conocimiento",
+    ],
+  },
+  guardian: {
+    title: "Guardián del Conocimiento",
+    description: "Audita la base de conocimiento, rota técnicas y verifica coherencia",
+    agentCount: 1,
+    outputType: "Auditoría .md",
+    icon: "🛡️",
+    accent: "slate",
+    greeting: "Soy el Guardián. Voy a auditar la base de conocimiento completa.",
+    fields: [
+      { name: "enfoque", label: "Enfoque de auditoría", type: "select", options: [
+        { value: "completa", label: "Auditoría completa" },
+        { value: "rotacion", label: "Rotación de técnicas" },
+        { value: "coherencia", label: "Verificar coherencia" },
+        { value: "gaps", label: "Detectar gaps" },
+      ]},
+    ],
+    steps: [
+      "Guardián: auditando base de conocimiento",
+    ],
+  },
 };

@@ -7,6 +7,10 @@ import "./clases-adapter";
 import "./cursos-adapter";
 import "./libros-adapter";
 import "./sora-adapter";
+import "./blog-adapter";
+import "./instagram-adapter";
+import "./investigador-adapter";
+import "./guardian-adapter";
 
 // This file exists solely to trigger adapter registration.
 // Import it in API routes before using getRunner().
@@ -19,6 +23,10 @@ export const AGENT_TYPES = [
   "cursos",
   "libros",
   "sora",
+  "blog",
+  "instagram",
+  "investigador",
+  "guardian",
 ] as const;
 
 export type AgentType = (typeof AGENT_TYPES)[number];

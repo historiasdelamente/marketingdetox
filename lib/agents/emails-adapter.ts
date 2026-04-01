@@ -2,6 +2,7 @@ import { callClaudeCli, loadPrompt } from "./base-agent";
 import { registerRunner } from "@/lib/jobs/runner";
 import { readFileSync, existsSync } from "fs";
 import path from "path";
+import { sendEmail } from "@/lib/email/ses-client";
 
 const TEMPLATES_DIR = path.join(process.cwd(), "agents-source", "templates");
 
@@ -9,7 +10,7 @@ async function runEmails(
   params: Record<string, string>,
   onProgress: (step: string, percentage: number) => void
 ) {
-  const { tipo_email, audiencia, tema, fecha_clase, link_cta } = params;
+  const { tipo_email, audiencia, tema, fecha_clase, link_cta, enviar_a, asunto } = params;
 
   const directorPrompt = loadPrompt("emails", "01_director");
   const redactorPrompt = loadPrompt("emails", "02_redactor");
@@ -61,10 +62,29 @@ async function runEmails(
     { systemPrompt: disenadorPrompt, model: "sonnet" }
   );
 
+  // Step 5: Send via SES if recipient provided
+  let sendResult = "";
+  if (enviar_a) {
+    onProgress("Enviando via Amazon SES", 95);
+    try {
+      const subject = asunto || `${tema} — Historias de la Mente`;
+      const recipients = enviar_a.split(",").map((e: string) => e.trim());
+      const messageId = await sendEmail({
+        to: recipients,
+        subject,
+        html,
+      });
+      sendResult = `\n\n<!-- SES: enviado a ${recipients.length} destinatario(s), MessageId: ${messageId} -->`;
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      sendResult = `\n\n<!-- SES ERROR: ${errMsg} -->`;
+    }
+  }
+
   onProgress("Completado", 100);
 
   return {
-    content: html,
+    content: html + sendResult,
     title: `${tipo_email}-${tema.substring(0, 40)}`,
     fileType: "html",
   };
