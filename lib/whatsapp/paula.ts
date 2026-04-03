@@ -241,7 +241,6 @@ export async function callOpenRouter(systemPrompt: string, messages: Array<{ rol
 export async function processPaulaMessage(
   manychatId: string,
   userMessage: string,
-  typingDelayMs: number = 3000,
 ): Promise<string> {
   // 1. Get or create user
   const user = await getOrCreateUser(manychatId);
@@ -261,16 +260,11 @@ export async function processPaulaMessage(
   // 5. Call OpenRouter
   const paulaResponse = await callOpenRouter(systemPrompt, messages);
 
-  // 6. Simulate typing delay (3-5 sec) so ManyChat shows "typing..." to user
-  if (typingDelayMs > 0) {
-    await new Promise(resolve => setTimeout(resolve, typingDelayMs));
-  }
-
-  // 7. Save both messages to Supabase
+  // 6. Save both messages to Supabase
   await saveMessage(manychatId, 'user', userMessage);
   await saveMessage(manychatId, 'assistant', paulaResponse);
 
-  // 8. Update user interaction
+  // 7. Update user interaction
   await updateUser(manychatId, {});
 
   return paulaResponse;
