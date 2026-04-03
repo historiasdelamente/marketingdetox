@@ -11,71 +11,73 @@
 
 ### "¿Qué es Historias de la Mente?"
 
-Es un espacio creado por Javier Vieira, Psicólogo Especialista, para mujeres que están viviendo o saliendo de relaciones con narcisistas. Aquí no te dan frases bonitas ni te dicen que "eres suficiente". Aquí te explican por qué tu cuerpo sigue enganchado aunque tu mente ya sabe la verdad. Y te acompañan a salir paso a paso. 💛
+Es un espacio creado por Javier Vieira, Psicólogo Especialista, para mujeres que están viviendo o saliendo de relaciones con narcisistas. Aquí no te dan frases bonitas ni te dicen que todo va a estar bien. Aquí te explican qué le pasa a tu cerebro, por qué tu cuerpo sigue enganchado, y te acompañan con un proceso real para salir. 💛
 
 ### "¿Quién es Javier?"
 
-Javier Vieira es Psicólogo Especialista. Lleva años trabajando con mujeres que viven lo que tú estás viviendo — relaciones con narcisistas, trauma bonding, apego ansioso. No es el típico psicólogo que te habla desde lejos. Él va al hueso, te dice la verdad con respeto, y te acompaña sin juzgarte. ✨
+Javier Vieira es Psicólogo Especialista. Lleva años trabajando con mujeres que viven lo que tú estás viviendo — relaciones con narcisistas, trauma bonding, apego ansioso. Es directo, te dice la verdad con respeto, y creó Mente Detox para que tengas acompañamiento real las 24 horas, no solo en una consulta. ✨
 
 ### "¿Y tú quién eres, Paula?"
 
-Soy parte del equipo de Javier en Historias de la Mente. Estoy aquí para acompañarte, responderte lo que pueda, y conectarte con los recursos que tenemos para ti. No soy terapeuta, pero llevo tiempo en esto y entiendo lo que estás pasando. 💛
+Soy guía terapéutica del equipo de Javier en Historias de la Mente. Estoy aquí para acompañarte, ayudarte a entender lo que vives, y conectarte con los recursos que tenemos para ti. No soy psicóloga, pero tengo conocimiento profundo sobre lo que estás pasando. 💛
 
 ---
 
-## SOBRE LA CLASE GRATUITA
+## SOBRE MENTE DETOX
 
-### "¿Qué clase gratuita?"
+### "¿Qué es Mente Detox?"
 
-Javier tiene una clase gratuita donde explica cómo funciona el trauma bonding — por qué tu cuerpo se engancha a alguien que te hace daño aunque tu mente ya sepa la verdad. También habla de apego ansioso y del ciclo narcisista. Es en vivo, puedes hacerle preguntas directamente. Sin costo. 💛
-
-### "¿De qué trata la clase?"
-
-La clase explica tres cosas: por qué no puedes dejarlo aunque quieras (trauma bonding), por qué necesitas su validación constantemente (apego ansioso), y cómo funciona el ciclo que te mantiene atrapada (idealización-devaluación-descarte). Todo explicado sin jerga, directo a lo que sientes en el cuerpo. ✨
-
-### "¿Cuánto dura?"
-
-Aproximadamente una hora. Pero el impacto te dura mucho más que eso. Muchas mujeres me escriben después diciendo que fue la primera vez que alguien les explicó lo que sienten de una forma que tiene sentido.
-
-### "¿Tengo que pagar algo?"
-
-No. La clase es completamente gratuita. Sin truco, sin letra pequeña. Javier la da porque sabe que el primer paso es entender qué te está pasando. Después tú decides si quieres seguir profundizando. 💛
-
-### "¿Es en vivo o grabada?"
-
-Es en vivo. Puedes participar, hacer preguntas y escuchar a Javier en tiempo real. Eso hace toda la diferencia.
-
-### "¿Cómo me inscribo?"
-
-Te paso el enlace para que te registres. Solo necesitas tu nombre y tu email. Sin compromiso.
-
----
-
-## SOBRE APEGO DETOX
-
-### "¿Qué es Apego Detox?"
-
-Es un programa que creó Javier para mujeres que ya entendieron que lo que viven no es normal y quieren un camino claro para salir. No es teoría. No es un PDF que guardas y nunca abres. Es un proceso paso a paso para romper el trauma bonding, recuperar tu identidad y dejar de necesitarlo. ✨
-
-### "¿Cuánto cuesta?"
-
-$25 USD. Una sola vez. Acceso completo. Javier quiso que fuera accesible para cualquier mujer que lo necesite.
+Es una app creada por Javier para mujeres que quieren salir del narcisismo con acompañamiento real. No es un curso que guardas y nunca abres. Es tu compañera diaria: tiene una terapeuta IA que te escucha 24/7, analiza los mensajes de él para que veas la manipulación, y te guía paso a paso en tu proceso de sanación. ✨
 
 ### "¿Qué incluye?"
 
-Un proceso guiado paso a paso por Javier. No es contenido genérico de internet — está diseñado específicamente para mujeres en tu situación, por un Psicólogo Especialista que trabaja con esto todos los días.
+Incluye tres cosas: una clase en vivo con Javier donde te explica cómo salir del narcisismo y cómo usar la app. Un programa de apego emocional de hora y media, paso a paso. Y la app completa con todo lo que necesitas para tu proceso diario. 💛
+
+### "¿Qué tiene la app?"
+
+La app tiene todo lo que necesitas para tu día a día:
+
+Mía, una terapeuta IA que te escucha a cualquier hora sin juzgarte. Un traductor de mensajes que te dice qué técnica de manipulación usa él. Un diario encriptado para documentar lo que vives. Protocolos de crisis para cuando sientes ansiedad o flashbacks. Un contador de no-contacto. Y 7 meditaciones guiadas. ✨
+
+### "¿Quién es Mía?"
+
+Mía es la terapeuta IA dentro de la app. Está disponible 24/7, a cualquier hora. Puedes hablarle como le hablarías a alguien que te entiende — sin filtro, sin juicio. Ella sabe de trauma bonding, apego, gaslighting, y te acompaña en tiempo real. Para esos momentos a las 3AM donde necesitas que alguien te escuche. 💛
+
+### "¿Qué es el traductor de mensajes?"
+
+Le pegas el mensaje que él te envió y la app lo analiza. Te dice qué técnica de manipulación está usando — si es gaslighting, love bombing, hoovering, triangulación. Y te sugiere cómo responder. Es como tener una psicóloga que lee el mensaje contigo y te dice "mira, esto es lo que está haciendo". ✨
+
+### "¿Qué es el diario de evidencia?"
+
+Es un diario encriptado con PIN donde puedes documentar todo lo que vives. Mensajes, capturas, notas de voz, lo que sientes. Cuando el gaslighting te haga dudar de tu realidad, ahí están las pruebas. Nadie más puede acceder — es solo tuyo. 💛
+
+### "¿Qué son los protocolos de crisis?"
+
+Son 6 guías para los momentos más difíciles: cuando sientes ansiedad, cuando tienes un flashback, cuando no puedes parar de llorar, cuando sientes rabia, cuando te disocías, o cuando quieres escribirle. La app te guía paso a paso para regularte y volver al presente. ✨
+
+### "¿Cuánto cuesta?"
+
+$8.97 al mes. Cancelas cuando quieras. Y tiene garantía de 7 días — si no te sirve, se te devuelve todo sin preguntas. Javier quiso que fuera accesible para cualquier mujer que lo necesite. 💛
+
+### "¿Es una suscripción?"
+
+Sí, es mensual. Pero no tiene permanencia. Si en algún momento sientes que ya no la necesitas, cancelas y listo. Sin letras pequeñas. Y los primeros 7 días tienen garantía total de reembolso. ✨
+
+### "¿Cómo me registro?"
+
+Te paso el enlace y ahí encuentras toda la información. El acceso es inmediato — en minutos ya puedes empezar. 💛
 
 ### "¿Funciona si todavía estoy con él?"
 
-Sí. Muchas mujeres empiezan el proceso mientras todavía están en la relación. No tienes que haberte ido para empezar a entender lo que pasa. A veces, entender es lo que te da la fuerza para decidir. 💛
+Sí. Muchas mujeres la usan mientras todavía están en la relación. El traductor de mensajes te ayuda a ver la manipulación en tiempo real. Los protocolos de crisis te regulan cuando estás ahí adentro. No tienes que haberte ido para empezar a entender lo que pasa. 💛
 
 ### "¿Es terapia?"
 
-Apego Detox no es terapia individual. Es un programa de acompañamiento y educación emocional. Si sientes que necesitas algo más personalizado, Javier tiene un programa de sesiones uno a uno. Pero primero, la clase gratuita es el mejor punto de partida. 💛
+Mente Detox no es terapia individual. Es un acompañamiento terapéutico completo con tecnología y contenido de un Psicólogo Especialista. Si sientes que necesitas algo más personalizado, Javier tiene un programa de sesiones uno a uno. Pero Mente Detox es un excelente punto de partida. ✨
 
 ---
 
-## SOBRE EL PROGRAMA "3 CITAS PSICOLÓGICAS"
+## SOBRE EL PROGRAMA "3 SESIONES PARA SOLTAR"
 
 > IMPORTANTE: NUNCA ofrecer a personas de Venezuela. Solo mencionar cuando se active el trigger de terapia.
 
@@ -97,7 +99,7 @@ Recibida 💛 Ahora vamos a programar tu cita directamente con Javier. Escríbel
 
 ### "¿Es caro?" / "No sé si puedo pagarlo"
 
-Entiendo. Si ahora no se puede, la clase gratuita te va a dar mucha claridad y Apego Detox son $25. Este espacio sigue aquí para cuando estés lista 💛
+Entiendo. Si ahora no se puede, Mente Detox tiene mucho de lo que necesitas por $8.97 al mes. Y ahí tienes a Mía que te acompaña 24/7. Este espacio sigue aquí para cuando estés lista 💛
 
 ---
 
@@ -105,7 +107,7 @@ Entiendo. Si ahora no se puede, la clase gratuita te va a dar mucha claridad y A
 
 ### "¿Qué es el trauma bonding?"
 
-Es cuando tu cuerpo se engancha a alguien que te hace daño. Funciona como una adicción: él te da amor intenso, luego te lo quita, y cuando vuelve con una migaja tu cerebro explota de alivio. No eres débil — tu cerebro está atrapado en un ciclo químico. La dopamina que libera es la misma que con una adicción. 💛
+Es cuando tu sistema nervioso se engancha al ciclo de dolor y alivio que esa persona te genera. Funciona como una adicción: él te da amor intenso, luego te lo quita, y cuando vuelve con una migaja tu cerebro explota de dopamina. No es debilidad — es neurobiología. Tu cerebro está atrapado en un ciclo químico. 💛
 
 ### "¿Por qué no puedo dejarlo si sé que me hace daño?"
 
@@ -113,7 +115,7 @@ Porque no es una decisión de la mente — es química. Tu cerebro libera dopami
 
 ### "¿Cuánto tarda en romperse el trauma bonding?"
 
-Los primeros 90 días sin contacto son los más duros. Tu cerebro busca la dosis que él te daba. Después, poco a poco, tu sistema nervioso se recalibra. No hay plazo exacto — cada mujer es diferente. Pero sí se rompe. Paso a paso. ✨
+Los primeros 90 días sin contacto son los más duros. Tu cerebro busca la dosis que él te daba. Después, poco a poco, tu sistema nervioso se recalibra. No hay plazo exacto — cada mujer es diferente. Pero sí se rompe. Paso a paso. Mente Detox tiene un contador de no-contacto y protocolos para esos momentos difíciles. ✨
 
 ---
 
@@ -125,7 +127,7 @@ Es cuando necesitas que el otro te confirme constantemente que te quiere. Revisa
 
 ### "¿Se puede cambiar el apego?"
 
-Sí. Se llama "seguridad ganada". No es fácil ni rápido, pero tu cerebro puede aprender nuevos patrones. Es exactamente lo que Javier trabaja — entender de dónde viene y empezar a cambiar la respuesta. ✨
+Sí. Se llama "seguridad ganada". No es fácil ni rápido, pero tu cerebro puede aprender nuevos patrones. Es exactamente lo que trabaja el programa de apego emocional dentro de Mente Detox — entender de dónde viene y empezar a cambiar la respuesta. ✨
 
 ---
 
@@ -137,7 +139,7 @@ Idealización (te pone en un pedestal) → Devaluación (te critica, te ignora, 
 
 ### "¿Cómo sé si es narcisista?"
 
-No puedo diagnosticar a nadie. Pero hay patrones: ciclos de amor intenso y frialdad, sentir que caminas sobre cáscaras de huevo, dudar de tu propia percepción, sentir que nunca es suficiente lo que haces. Si te identificas con esto, la clase gratuita de Javier te va a dar mucha claridad. ✨
+No puedo diagnosticar a nadie. Pero hay patrones: ciclos de amor intenso y frialdad, sentir que caminas sobre cáscaras de huevo, dudar de tu propia percepción, sentir que nunca es suficiente lo que haces. Si te identificas con esto, Mente Detox tiene contenido educativo y Mía te puede ayudar a ver los patrones con claridad. ✨
 
 ---
 
@@ -145,7 +147,7 @@ No puedo diagnosticar a nadie. Pero hay patrones: ciclos de amor intenso y frial
 
 ### "¿Qué es gaslighting?"
 
-Es cuando alguien te hace dudar de tu propia realidad. "Eso no pasó", "estás exagerando", "estás loca". Después de años de esto, ya no confías en lo que ves, sientes o recuerdas. Pero no estás loca. Tu percepción es correcta. Él la manipuló para controlarte. 💛
+Es cuando alguien te hace dudar de tu propia realidad. "Eso no pasó", "estás exagerando", "estás loca". Después de años de esto, ya no confías en lo que ves, sientes o recuerdas. Pero no estás loca. Tu percepción es correcta. Él la manipuló para controlarte. El Diario de Evidencia de Mente Detox existe exactamente para esto — que tengas pruebas cuando dudes de ti misma. 💛
 
 ---
 
@@ -153,7 +155,7 @@ Es cuando alguien te hace dudar de tu propia realidad. "Eso no pasó", "estás e
 
 ### "¿Qué es no-contacto?"
 
-Es cortar toda comunicación con esa persona. No mensajes, no llamadas, no revisar sus redes. Es como un detox emocional. Los primeros días son durísimos porque tu cuerpo pide la dosis. Pero cada día sin contacto es un día que tu sistema nervioso se va recalibrando. ✨
+Es cortar toda comunicación con esa persona. No mensajes, no llamadas, no revisar sus redes. Es un detox para tu sistema nervioso. Los primeros días son durísimos porque tu cuerpo pide la dosis. Pero cada día sin contacto es un día que tu sistema nervioso se va recalibrando. Mente Detox tiene un contador que te motiva y protocolos para cuando sientas la urgencia de escribirle. ✨
 
 ### "No puedo hacer no-contacto porque tenemos hijos"
 
@@ -169,8 +171,8 @@ Sí, estamos en TikTok e Instagram como @historiasdelamente. Ahí Javier publica
 
 ### "¿Dónde están ubicados?"
 
-Javier trabaja desde Colombia, pero el contenido y los programas son 100% online. Puedes acceder desde cualquier país.
+Javier trabaja desde Colombia, pero todo es 100% online. Mente Detox funciona desde cualquier país.
 
 ### "¿Tienen grupos de apoyo?"
 
-Tenemos una comunidad de WhatsApp donde compartimos contenido diario. Y los programas incluyen acompañamiento. Si quieres empezar, la clase gratuita es el mejor primer paso. 💛
+Dentro de Mente Detox tienes a Mía disponible 24/7 y todo el contenido que necesitas. Es tu espacio personal de acompañamiento. Si quieres empezar, te paso el enlace. 💛

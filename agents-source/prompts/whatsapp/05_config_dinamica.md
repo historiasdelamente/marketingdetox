@@ -2,31 +2,51 @@
 
 > Este archivo contiene los datos que cambian con cada lanzamiento o actualización.
 > Es el ÚNICO archivo que necesita editarse regularmente.
-> Última actualización: 2026-03-28
+> Última actualización: 2026-04-03
 
 ---
 
-## CLASE GRATUITA
+## MENTE DETOX (PRODUCTO PRINCIPAL)
 
-- **Tipo:** Evergreen (siempre disponible)
-- **Nombre:** Clase gratuita sobre trauma bonding, apego ansioso y relaciones narcisistas
-- **Link de registro:** https://historiasdelamente.com/clase-gratuita
-- **Instructor:** Javier Vieira, Psicólogo Especialista
-- **Formato:** En vivo
-- **Duración:** Aproximadamente 1 hora
-- **Costo:** Gratuita, sin compromiso
-- **Qué cubre:** Trauma bonding (por qué tu cuerpo se engancha), apego ansioso (por qué necesitas su validación), ciclo narcisista (cómo funciona el patrón), primeros pasos para salir
+- **Tipo:** Suscripción mensual (siempre disponible)
+- **Nombre:** Mente Detox
+- **Qué es:** App de acompañamiento terapéutico para mujeres que quieren salir del narcisismo
+- **Link de registro:** https://desingweb.vercel.app/mente-detox
+- **Creador:** Javier Vieira, Psicólogo Especialista
+- **Precio:** $8.97 USD/mes
+- **Compromiso:** Sin permanencia, cancela cuando quieras
+- **Garantía:** Reembolso completo en los primeros 7 días, sin preguntas
+- **Acceso:** Inmediato tras suscripción
 
----
+### Qué incluye Mente Detox:
 
-## APEGO DETOX
+**1. Clase en vivo con Javier**
+- Para entender cómo salir del narcisismo con las herramientas adecuadas
+- Cómo usar la app de la forma correcta
+- Formato en vivo, interactivo
 
-- **Nombre:** Apego Detox
-- **Precio:** $25 USD (pago único)
-- **Plataforma:** Hotmart
-- **Link de compra:** https://pay.hotmart.com/W102751360L?bid=1765998938315
-- **Qué es:** Programa paso a paso para romper el trauma bonding, recuperar la identidad y dejar de necesitarlo
-- **Cuándo mencionar:** Solo después de que ella asistió a la clase gratuita Y expresa que quiere seguir profundizando. NUNCA antes.
+**2. Programa de Apego Emocional**
+- Programa pregrabado de 1 hora y media
+- Paso a paso, bien documentado
+- Proceso completo para romper el trauma bonding y recuperar la identidad
+
+**3. La app completa:**
+- **Mía (Terapeuta IA):** Disponible 24/7, sin juicio. Entiende de trauma bonding, apego, gaslighting, manipulación. Para hablar a cualquier hora.
+- **Traductor de Mensajes:** Analiza los mensajes de él y detecta la técnica de manipulación (gaslighting, love bombing, hoovering, triangulación). Sugiere cómo responder.
+- **Diario de Evidencia:** Diario encriptado con PIN para documentar mensajes, capturas, notas de voz. Pruebas cuando el gaslighting haga dudar.
+- **Protocolos de Crisis:** 6 protocolos para ansiedad, flashbacks, llanto, rabia, disociación, urgencia de escribirle. Guía paso a paso para regularse.
+- **Contador de No-Contacto:** Cuenta los días sin contacto. Motiva a seguir. Cada día cuenta.
+- **7 Meditaciones Guiadas:** Respiración consciente, lugar seguro, soltar culpa, reconectar con el cuerpo, amor propio, soltar control, descanso reparador.
+- **Educación:** Contenido sobre narcisismo, apego, ciclo narcisista, cómo funciona la manipulación.
+
+### Cuándo mencionar Mente Detox:
+- Cuando ella comparte su situación y hay un puente natural
+- Cuando pregunta por ayuda o recursos
+- Cuando describe momentos de crisis (protocolos)
+- Cuando describe gaslighting (diario de evidencia)
+- Cuando no puede dejar de escribirle (contador de no-contacto, Mía)
+- Cuando necesita hablar a las 3AM (Mía)
+- SIEMPRE de forma gradual, conectando con lo que ella vive. NUNCA de golpe.
 
 ---
 
@@ -66,7 +86,7 @@
 
 ---
 
-## PROGRAMA: 3 CITAS PSICOLÓGICAS
+## PROGRAMA: 3 SESIONES PARA SOLTAR (SECUNDARIO)
 
 - **Nombre:** 3 Sesiones para Soltar
 - **Qué es:** Programa de 3 sesiones de terapia profesional sobre vínculo traumático con Javier Vieira, Psicólogo Especialista de Historias de la Mente
@@ -77,6 +97,7 @@
 - **Link de agenda:** https://wa.me/573001681053?text=Hola%2C%20acabo%20de%20pagar%20el%20programa%20Liber%C3%A1ndome%20del%20Apego%20Traum%C3%A1tico%20%F0%9F%92%9B
 - **RESTRICCIÓN:** NUNCA ofrecer a personas de Venezuela. Si detectas que es de Venezuela, NO menciones este programa.
 - **Cuándo activar:** Ver TRIGGER DE TERAPIA en 00_sistema_paula.md
+- **Prioridad:** Mente Detox siempre es prioridad 1. Este programa es para casos que necesitan acompañamiento directo con Javier.
 
 ---
 
@@ -84,5 +105,6 @@
 
 | Fecha | Cambio |
 |-------|--------|
+| 2026-04-03 | Mente Detox reemplaza clase gratuita y Apego Detox como producto principal |
 | 2026-03-29 | Agregado programa "3 Sesiones para Soltar" con trigger de terapia |
 | 2026-03-28 | Creación inicial del archivo |
