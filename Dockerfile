@@ -8,7 +8,8 @@ COPY package.json package-lock.json ./
 # Install ALL dependencies (including dev for build)
 RUN npm ci
 
-# Copy app code
+# Copy app code (bust cache on each deploy)
+ARG CACHE_BUST=1
 COPY . .
 
 # Create data directory for SQLite
