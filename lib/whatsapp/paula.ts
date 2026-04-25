@@ -228,7 +228,7 @@ export async function callOpenRouter(systemPrompt: string, messages: Array<{ rol
         { role: 'system', content: systemPrompt },
         ...messages,
       ],
-      max_tokens: 1024,
+      max_tokens: 512,
       temperature: 0.7,
     }),
   });
@@ -251,8 +251,8 @@ export async function processPaulaMessage(
   // 1. Get or create user
   const user = await getOrCreateUser(manychatId);
 
-  // 2. Get conversation history from Supabase (last 20 messages)
-  const history = await getConversationHistory(manychatId, 20);
+  // 2. Get conversation history from Supabase (last 10 messages — reduced from 20 to avoid ManyChat timeout)
+  const history = await getConversationHistory(manychatId, 10);
 
   // 3. Build system prompt with user context
   const systemPrompt = buildSystemPrompt(user);
