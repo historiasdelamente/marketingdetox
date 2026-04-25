@@ -85,19 +85,23 @@ Sí. De hecho ahí es cuando más sirve — el Traductor te ayuda a no dudar de 
 
 ---
 
-## SOBRE APEGO DETOX (PROGRAMA PAGO ÚNICO — $25 USD)
+## SOBRE APEGO DETOX (SUSCRIPCIÓN MENSUAL — $25/MES)
 
 ### "¿Qué es Apego Detox?"
 
-Es un programa autogestionado de 8 módulos que Javier diseñó para romper el ciclo del trauma bonding paso a paso. Pago único, acceso permanente. Se trabaja en casa, a tu ritmo, sin IA. $25 USD: historiasdelamente.com/apegodetox 💛
+Es un programa autogestionado de 8 módulos que Javier diseñó para romper el ciclo del trauma bonding paso a paso. Se trabaja en casa, a tu ritmo, mes a mes. historiasdelamente.com/apegodetox 💛
 
 ### "¿Cuál es la diferencia con Mente Detox?"
 
-Apego Detox es un proceso estructurado en 8 módulos que se hace en orden, como un curso. Mente Detox es un kit de herramientas para el día a día — traductor, diario, IA 24/7, meditaciones. Uno es un viaje paso a paso ($25 único), el otro es un acompañamiento mensual ($8.97). Depende de qué necesites. ✨
+Mente Detox es un kit de herramientas para el día a día — traductor de mensajes, diario encriptado, Alma IA 24/7, meditaciones. Apego Detox es un programa estructurado de 8 módulos como un curso. Mente Detox para acompañamiento diario, Apego Detox para un proceso paso a paso. Depende de qué necesites más ahora ✨
+
+### "¿Cuánto cuesta Apego Detox?"
+
+$25 al mes, mientras estés en el programa. Te suscribes y lo haces a tu ritmo 💛
 
 ### "¿Cómo se paga Apego Detox?"
 
-Por Hotmart con tarjeta crédito o débito desde cualquier país. Es pago único, acceso permanente.
+Por Hotmart con tarjeta crédito o débito desde cualquier país. Es suscripción mensual.
 
 ---
 
