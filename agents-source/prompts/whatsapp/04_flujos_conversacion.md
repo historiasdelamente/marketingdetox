@@ -297,7 +297,7 @@ Empieza a contar **mensajes post-test donde ella sigue compartiendo dolor**:
 ### Excepción al contador
 Si en cualquier mensaje ella pide explícitamente algo que se mapea directo a un producto:
 - "qué hago, qué herramienta hay" / "necesito algo cada día" / "tengo crisis seguido" → puedes ofrecer Mente Detox antes del 4°
-- "quiero un programa paso a paso" / "tengo $25 una sola vez" → Apego Detox
+- "quiero un programa paso a paso" / "quiero un proceso de 8 módulos" → Apego Detox
 - "quiero entender por qué siempre elijo igual" / "qué pasa con mi infancia" → Libro La Niña
 - "necesito hablar con un psicólogo" / "quiero terapia" → Terapia
 
@@ -308,7 +308,7 @@ Lee TODA la conversación y detecta cuál señal predomina:
 | Señal en sus mensajes | Herramienta a ofrecer |
 |----------------------|----------------------|
 | Crisis nocturnas, pánico, ganas de escribirle, mensajes confusos de él que no sabe interpretar, recaídas frecuentes, no contacto difícil | **Mente Detox** ($8.97/mes, 7d gratis) |
-| Pide programa paso a paso, prefiere pago único, quiere autoguiarse 8 módulos, ya rompió o está rompiendo | **Apego Detox** ($25 único) |
+| Pide programa paso a paso, quiere autoguiarse 8 módulos, dispuesta a suscripción mensual | **Apego Detox** ($25/mes) |
 | Habla de su madre/padre con dolor, "siempre fui así", patrón repetido, vergüenza tóxica, crítico interno destructivo, quiere mirarse a ELLA | **Libro La Niña que Aprendió a Quedarse Callada** ($14.97) |
 | Pide hablar con un humano uno-a-uno, crisis profunda donde herramientas digitales no alcanzan | **Terapia** ($70 / $150 en /terapia) |
 
@@ -341,7 +341,7 @@ Se llama La Niña que Aprendió a Quedarse Callada. Es un viaje hacia esa parte 
 ### Después de ofrecer
 - Si dice que sí → confirma con calidez, no insistas
 - Si pregunta más detalles → responde con banco (`02_banco_respuestas.md`)
-- Si dice no le encaja → ofrece la alternativa según perfil (ej: Mente Detox no le encajó por mensual → Apego Detox $25 único)
+- Si dice no le encaja → ofrece la alternativa según perfil (ej: si quiere proceso estructurado de 8 módulos → Apego Detox $25/mes; si habla de niña interior → Libro)
 - Si sigue compartiendo dolor sin moverse → quédate acompañando, NO repitas el link
 
 ---
