@@ -148,11 +148,11 @@ export async function updateUser(manychatId: string, updates: Partial<Pick<WaUse
 // --- Prompt Assembly ---
 
 function buildSystemPrompt(user: WaUser): string {
+  // Prompt MAESTRO autocontenido — incluye TODO lo necesario.
+  // No cargar banco_respuestas / config_dinamica / libro_nina_callada (ya están dentro del maestro).
+  // Mantener protocolo_crisis solo como referencia adicional de seguridad.
   const sistemaPrompt = loadPrompt('00_sistema_paula.md');
-  const bancoRespuestas = loadPrompt('02_banco_respuestas.md');
   const protocoloCrisis = loadPrompt('03_protocolo_crisis.md');
-  const configDinamica = loadPrompt('05_config_dinamica.md');
-  const libroNinaCallada = loadPrompt('06_libro_nina_callada.md');
 
   const userContext = buildUserContext(user);
 
@@ -165,22 +165,7 @@ ${userContext}
 
 ---
 
-# CONFIGURACIÓN ACTUAL
-${configDinamica}
-
----
-
-# BANCO DE RESPUESTAS (FAQ)
-${bancoRespuestas}
-
----
-
-# BASE DE CONOCIMIENTO — LIBRO "LA NIÑA QUE APRENDIÓ A QUEDARSE CALLADA"
-${libroNinaCallada}
-
----
-
-# PROTOCOLO DE CRISIS (PRIORIDAD MÁXIMA)
+# PROTOCOLO DE CRISIS (REFERENCIA DETALLADA)
 ${protocoloCrisis}`;
 }
 
