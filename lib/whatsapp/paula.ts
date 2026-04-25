@@ -152,6 +152,7 @@ function buildSystemPrompt(user: WaUser): string {
   const bancoRespuestas = loadPrompt('02_banco_respuestas.md');
   const protocoloCrisis = loadPrompt('03_protocolo_crisis.md');
   const configDinamica = loadPrompt('05_config_dinamica.md');
+  const libroNinaCallada = loadPrompt('06_libro_nina_callada.md');
 
   const userContext = buildUserContext(user);
 
@@ -171,6 +172,11 @@ ${configDinamica}
 
 # BANCO DE RESPUESTAS (FAQ)
 ${bancoRespuestas}
+
+---
+
+# BASE DE CONOCIMIENTO — LIBRO "LA NIÑA QUE APRENDIÓ A QUEDARSE CALLADA"
+${libroNinaCallada}
 
 ---
 
@@ -206,7 +212,7 @@ export async function callOpenRouter(systemPrompt: string, messages: Array<{ rol
     throw new Error('OPENROUTER_API_KEY no está configurada en .env.local');
   }
 
-  const model = process.env.PAULA_MODEL || 'openai/gpt-4.1-mini';
+  const model = process.env.PAULA_MODEL || 'moonshotai/kimi-k2';
 
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',

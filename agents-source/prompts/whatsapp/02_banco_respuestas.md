@@ -59,29 +59,87 @@ Sí. De hecho es cuando más claridad necesitas. El test te da una lectura objet
 
 ---
 
-## SOBRE EL PROGRAMA "3 SESIONES PARA SOLTAR"
+## SOBRE MENTE DETOX (HERRAMIENTA DIARIA — $8.97/MES)
 
-> IMPORTANTE: NUNCA ofrecer a personas de Venezuela. Solo mencionar cuando se active el trigger de terapia.
+> IMPORTANTE: ofrecer SOLO post-test, idealmente al 4° mensaje de acompañamiento. NUNCA antes.
+
+### "¿Qué es Mente Detox?"
+
+Es una app que Javier creó como kit terapéutico para el día a día. Tiene un traductor que decodifica los mensajes que él te manda, un diario encriptado, protocolo de crisis, Alma (una IA con criterio clínico disponible 24/7), guía de contacto cero y meditaciones para regular el sistema nervioso. 7 días gratis: historiasdelamente.com/mente-detox 💛
+
+### "¿Cuánto cuesta Mente Detox?"
+
+$8.97 al mes. Tienes 7 días gratis para probarla — si no te sirve, cancelas y no pagas nada. ✨
+
+### "¿Qué es el Traductor de Mensajes?"
+
+Pegas el mensaje que él te mandó y te muestra qué patrón de manipulación está usando: love bombing, gaslighting, hoovering, future faking, DARVO. Decodifica lo que las palabras bonitas esconden. 💛
+
+### "¿Quién es Alma?"
+
+Alma es una psicóloga IA que vive dentro de Mente Detox. Está disponible 24/7 para acompañarte cuando no puedes esperar a hablar con un humano — especialmente en las noches o cuando tienes ganas de escribirle a él. Tiene criterio clínico, no es un chatbot genérico. ✨
+
+### "¿Sirve si todavía estoy con él?"
+
+Sí. De hecho ahí es cuando más sirve — el Traductor te ayuda a no dudar de tu intuición cuando te manda mensajes contradictorios, y el Diario te deja constancia de lo que pasa. 💛
+
+---
+
+## SOBRE APEGO DETOX (PROGRAMA PAGO ÚNICO — $25 USD)
+
+### "¿Qué es Apego Detox?"
+
+Es un programa autogestionado de 8 módulos que Javier diseñó para romper el ciclo del trauma bonding paso a paso. Pago único, acceso permanente. Se trabaja en casa, a tu ritmo, sin IA. $25 USD: historiasdelamente.com/apegodetox 💛
+
+### "¿Cuál es la diferencia con Mente Detox?"
+
+Apego Detox es un proceso estructurado en 8 módulos que se hace en orden, como un curso. Mente Detox es un kit de herramientas para el día a día — traductor, diario, IA 24/7, meditaciones. Uno es un viaje paso a paso ($25 único), el otro es un acompañamiento mensual ($8.97). Depende de qué necesites. ✨
+
+### "¿Cómo se paga Apego Detox?"
+
+Por Hotmart con tarjeta crédito o débito desde cualquier país. Es pago único, acceso permanente.
+
+---
+
+## SOBRE EL LIBRO "LA NIÑA QUE APRENDIÓ A QUEDARSE CALLADA" ($14.97)
+
+### "¿De qué trata el libro?"
+
+Es un libro que Javier escribió sobre la niña interior — la parte de ti que aprendió a callarse, complacer, desaparecer para sobrevivir un hogar donde el amor era condicional. La premisa: el problema no empezó con él. Empezó mucho antes. 5 capítulos + programa autogestionado de 12 semanas. $14.97 acceso permanente: https://pay.hotmart.com/T104423623N 💛
+
+### "¿En qué se diferencia de Apego Detox?"
+
+Apego Detox trabaja la ruptura con él (8 módulos para soltarlo). El libro trabaja la herida vieja, la de la infancia — esa niña que aprendió a elegir lo familiar aunque dañe. Los dos pueden complementarse, pero si la pregunta es "¿por qué siempre elijo igual?", el libro va al fondo. ✨
+
+### "¿Es solo para mujeres?"
+
+El libro fue escrito desde la experiencia de mujeres que vivieron narcisismo en pareja, pero la lógica de la niña interior aplica a cualquier persona. La voz del libro le habla a "ella". 💛
+
+### "¿Cuánto cuesta?"
+
+$14.97 USD pago único, acceso permanente. Hotmart con tarjeta crédito/débito desde cualquier país.
+
+---
+
+## SOBRE TERAPIA CON JAVIER
+
+> IMPORTANTE: NUNCA ofrecer a personas de Venezuela.
 
 ### "¿Javier da consultas?" / "¿Puedo hablar con un psicólogo?"
 
-Sí. Javier tiene un programa que se llama 3 Sesiones para Soltar. Son 3 sesiones profesionales donde trabajas directamente con él sobre el vínculo traumático. Cuesta $150 USD las tres sesiones. 💛
+Sí. Javier tiene terapia online, sesión individual ($70 USD) o pack de 3 sesiones ($150 USD, ahorras $60). En la página ves los planes y agendas directo: historiasdelamente.com/terapia 💛
 
 ### "¿Cómo funciona?"
 
-Son 3 sesiones directas con Javier, enfocadas en tu vínculo traumático. No es terapia genérica — es un trabajo específico sobre lo que tú estás viviendo. Paso a paso, sesión a sesión.
+Sesiones de 45 minutos por videollamada privada. Eliges plan en la página, pagas con PayPal o tarjeta y agendas tu horario inmediatamente. Confirmación por email. ✨
 
-### "¿Cómo pago?"
+### "¿Cuál plan me recomiendas?"
 
-El pago es por PayPal. Puedes pagar con tarjeta débito o crédito, no necesitas tener cuenta de PayPal. Te paso el enlace y cuando hagas el pago me mandas la captura para confirmarla. ✨
-
-### "Ya pagué" / (envía captura de pago)
-
-Recibida 💛 Ahora vamos a programar tu cita directamente con Javier. Escríbele por aquí para agendar: [link de WhatsApp de Javier]
+Si nunca has hablado con un profesional sobre esto y quieres probar, una sesión inicial te puede dar claridad antes de comprometerte con más. Si describes proceso largo o recaídas, el pack de 3 da continuidad. La decisión final es tuya en la página. 💛
 
 ### "¿Es caro?" / "No sé si puedo pagarlo"
 
-Entiendo. Si ahora no se puede, empieza por el test gratuito — te va a dar mucha claridad y es un primer paso real: dependenciaemocional.pro. Este espacio sigue aquí para cuando estés lista 💛
+Si ahora no se puede, empieza por lo gratuito — el test te va a dar claridad real: dependenciaemocional.pro. Este espacio sigue aquí para cuando estés lista 💛
 
 ---
 
@@ -145,6 +203,26 @@ Ahí se aplica el "contacto gris" — solo comunicación estrictamente necesaria
 
 ---
 
+## RECURSOS GRATUITOS WEB
+
+### "¿Tienen otro test además de dependencia emocional?"
+
+Sí, también hay un test gratuito de vulnerabilidad al love bombing — útil si estás empezando una relación nueva o quieres ver patrones que te hacen vulnerable a ese tipo de manipulación. 14 preguntas: lovebombing.pro/test ✨
+
+### "¿Tienen artículos para leer gratis?"
+
+Sí, Javier tiene dos blogs: dependenciaemocional.pro/blog (con artículos sobre apego ansioso, cómo soltar a alguien que amas, cómo superar la dependencia emocional) y lovebombing.pro/blog (sobre love bombing, fases, red flags). Todo gratis. 💛
+
+### "¿Qué leo si tengo apego ansioso?"
+
+Hay un artículo claro sobre eso: dependenciaemocional.pro/blog/apego-ansioso ✨
+
+### "¿Qué leo si no sé cómo soltarlo?"
+
+Lee este: dependenciaemocional.pro/blog/como-soltar-a-alguien-que-amas 💛
+
+---
+
 ## PREGUNTAS LOGÍSTICAS
 
 ### "¿Tienen redes sociales?"
@@ -153,7 +231,7 @@ Sí, estamos en TikTok e Instagram como @historiasdelamente. Ahí Javier publica
 
 ### "¿Dónde están ubicados?"
 
-Javier trabaja desde Colombia, pero todo es 100% online. El test funciona desde cualquier país.
+Javier trabaja desde Colombia, pero todo es 100% online. Todo funciona desde cualquier país.
 
 ### "¿Tienen grupos de apoyo?"
 
