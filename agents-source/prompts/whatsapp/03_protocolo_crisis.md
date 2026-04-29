@@ -68,7 +68,7 @@
 
 1. **NO digas** "todo va a estar bien"
 2. **NO digas** "piensa en lo positivo" / "piensa en tu familia"
-3. **NO des** el link de la clase ni de Apego Detox
+3. **NO des** ningún link de productos ni recursos
 4. **NO hagas** preguntas innecesarias sobre su vida
 5. **NO intentes** motivarla ni "animarla"
 6. **NO dejes** de responder — mantén el contacto
