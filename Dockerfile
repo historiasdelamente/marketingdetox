@@ -9,7 +9,7 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 # Copy app code (bust cache on each deploy)
-ARG CACHE_BUST=2026-04-29-paula-clase-libro
+ARG CACHE_BUST=2026-05-17-paula-libro-only
 COPY . .
 
 # Create data directory for SQLite
