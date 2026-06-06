@@ -178,18 +178,22 @@ ${protocoloCrisis}`;
 function buildLibroState(user: WaUser, libroRecienEnviado: boolean): string {
   if (libroRecienEnviado) {
     return `
-# ⚡ ACCIÓN DEL SISTEMA EN ESTE TURNO
-El sistema ACABA de registrar a esta mujer y de enviarle el libro "Cómo Dejar al Narcisista" a su correo.
-- Confírmaselo con calidez: dile que ya se lo enviaste a su correo.
-- Pídele que revise también Promociones y Spam, y que busque un correo de "Javier Vieira".
-- Pídele que te confirme cuando le llegue.
-- A partir de aquí tu foco pasa a APEGO DETOX: cuando ella confirme o siga conversando, véndelo con fuerza (toca su dolor, pinta la transformación, ofrécelo con precio y link). NO vuelvas a pedir su correo.`;
+# ⚡ ACCIÓN DEL SISTEMA EN ESTE TURNO (sigue el PASO 3)
+El sistema ACABA de enviarle el libro "Cómo Dejar al Narcisista" a su correo. En ESTE turno:
+- Confírmale con calidez que ya está en camino a su correo; que revise también Promociones y Spam (remitente "Javier Vieira").
+- Invítala de una vez al grupo de la comunidad (pega el link del PASO 3) para que no camine sola.
+- Cierra con UNA pregunta que mantenga viva la conversación (ej.: "¿cómo estás llevando todo esto hoy?"). NO la dejes esperando con "avísame cuando llegue".
+- NO vuelvas a pedir su correo. AÚN NO vendas Apego Detox: primero la comunidad y escuchar su dolor.`;
+  }
+  if (user.funnel_stage === 'correo_capturado') {
+    return `
+# ESTADO DEL LIBRO
+Ya tienes su CORREO y el sistema lo está procesando. NUNCA se lo vuelvas a pedir. Dile con calidez que su libro está saliendo a su correo y que en un momentito le llega (que revise Promociones y Spam). Mientras, invítala al grupo de la comunidad y sigue acompañándola.`;
   }
   if (user.funnel_stage === 'libro_enviado') {
     return `
 # ESTADO DEL LIBRO
-Esta mujer YA recibió el libro en su correo. NO le pidas el correo otra vez ni le ofrezcas el libro de nuevo.
-Tu foco ahora es APEGO DETOX: vende con fuerza tocando su dolor y pintando la transformación. Si dice que el libro no le llegó, ayúdala (Promociones, Spam, correo de "Javier Vieira").`;
+Esta mujer YA recibió el libro en su correo. NO le pidas el correo otra vez ni le ofrezcas el libro de nuevo. Si aún no la has invitado al grupo de la comunidad, hazlo ahora (PASO 4). Luego tu foco es escuchar su dolor y llevarla a Apego Detox. Si dice que el libro no le llegó, ayúdala (Promociones, Spam, correo de "Javier Vieira").`;
   }
   return `
 # ESTADO DEL LIBRO
@@ -259,6 +263,30 @@ export async function callOpenRouter(systemPrompt: string, messages: Array<{ rol
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const EMAIL_FIND_RE = /[^\s@]+@[^\s@]+\.[^\s@]{2,}/;
+
+/** Busca un email válido dentro de un texto suelto. */
+function buscarEmailEnTexto(text: string): string | null {
+  const m = text.match(EMAIL_FIND_RE);
+  return m && EMAIL_RE.test(m[0]) ? m[0].toLowerCase() : null;
+}
+
+/**
+ * Busca el último email que ELLA escribió en el historial. Así, si el envío del
+ * libro falló en el turno en que lo dio (p. ej. rate-limit del endpoint), el
+ * correo NO se "olvida": se recupera del historial y se reintenta el envío sin
+ * volver a pedírselo. Arregla el bug de "pide el correo dos veces".
+ */
+function buscarEmailEnHistorial(
+  history: Array<{ role: string; content: string }>
+): string | null {
+  for (let i = history.length - 1; i >= 0; i--) {
+    if (history[i].role === 'user') {
+      const e = buscarEmailEnTexto(history[i].content);
+      if (e) return e;
+    }
+  }
+  return null;
+}
 
 /**
  * Extrae el nombre de pila y el email del historial + el último mensaje. Usa un modelo
@@ -376,10 +404,10 @@ export async function processPaulaMessage(
   const yaTieneLibro = user.funnel_stage === 'libro_enviado';
 
   if (!yaTieneLibro) {
-    // Email por regex (barato); el nombre solo lo extraemos con LLM si aún no lo tenemos
-    const emailMatch = userMessage.match(EMAIL_FIND_RE);
+    // Email: del mensaje actual O del historial (así NO se "olvida" si el envío
+    // falló en el turno en que lo dio, y no se lo volvemos a pedir).
     let email: string | null =
-      emailMatch && EMAIL_RE.test(emailMatch[0]) ? emailMatch[0].toLowerCase() : null;
+      buscarEmailEnTexto(userMessage) || buscarEmailEnHistorial(history);
     let nombre: string | null = null;
 
     if (!user.name) {
@@ -398,6 +426,11 @@ export async function processPaulaMessage(
       if (ok) {
         libroRecienEnviado = true;
         updates.funnel_stage = 'libro_enviado';
+      } else if (user.funnel_stage !== 'correo_capturado') {
+        // No se pudo enviar ahora (p. ej. rate-limit del endpoint). Marcamos el
+        // correo como capturado para NO volver a pedírselo; el próximo turno se
+        // reintenta solo (el email se recupera del historial).
+        updates.funnel_stage = 'correo_capturado';
       }
     }
   }
