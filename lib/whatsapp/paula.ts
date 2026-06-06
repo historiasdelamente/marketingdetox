@@ -227,36 +227,95 @@ export async function callOpenRouter(systemPrompt: string, messages: Array<{ rol
   return data.choices[0]?.message?.content || '';
 }
 
+// --- Extracción de nombre (arregla el bug de "repetir el nombre") ---
+
+/**
+ * Extrae el nombre de pila con el que ella se presentó, leyendo el historial + el último
+ * mensaje. Usa un modelo rápido. Devuelve null si todavía no se ha presentado. NUNCA inventa.
+ * Solo se llama cuando aún no conocemos su nombre.
+ */
+async function extraerNombre(
+  history: Array<{ role: string; content: string }>,
+  userMessage: string
+): Promise<string | null> {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) return null;
+
+  const model = process.env.PAULA_EXTRACT_MODEL || 'openai/gpt-4.1-mini';
+  const contexto = [...history.slice(-6), { role: 'user', content: userMessage }]
+    .map((m) => `${m.role === 'user' ? 'ELLA' : 'PAULA'}: ${m.content}`)
+    .join('\n');
+
+  const sys =
+    'Eres un extractor de datos. Del siguiente chat de WhatsApp, extrae el NOMBRE de pila con el que ELLA se presentó. ' +
+    'Responde SOLO un JSON válido, sin texto extra: {"nombre": string|null}. ' +
+    'nombre = como ella se llama (ej "Ana", "María José"). Si no se ha presentado, null. NUNCA inventes.';
+
+  try {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://historiasdelamente.com',
+        'X-Title': 'Paula - Extractor',
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: 'system', content: sys },
+          { role: 'user', content: contexto },
+        ],
+        max_tokens: 40,
+        temperature: 0,
+        response_format: { type: 'json_object' },
+      }),
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    const raw = data.choices?.[0]?.message?.content || '{}';
+    const parsed = JSON.parse(raw) as { nombre?: unknown };
+    if (typeof parsed.nombre === 'string' && parsed.nombre.trim().length >= 2) {
+      return parsed.nombre.trim().slice(0, 80);
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 // --- Main Entry Point ---
 
 export async function processPaulaMessage(
   manychatId: string,
   userMessage: string,
 ): Promise<string> {
-  // 1. Get or create user
+  // 1. Usuaria + historial
   const user = await getOrCreateUser(manychatId);
-
-  // 2. Get conversation history from Supabase (last 10 messages — reduced from 20 to avoid ManyChat timeout)
   const history = await getConversationHistory(manychatId, 10);
 
-  // 3. Build system prompt with user context
-  const systemPrompt = buildSystemPrompt(user);
+  // 2. Si todavía no sabemos su nombre, intentar capturarlo y GUARDARLO
+  //    (esto arregla el bug de que Paula vuelve a preguntar el nombre)
+  const updates: Partial<Pick<WaUser, 'name' | 'funnel_stage' | 'situacion_resumen'>> = {};
+  if (!user.name) {
+    const nombre = await extraerNombre(history, userMessage);
+    if (nombre) updates.name = nombre;
+  }
 
-  // 4. Build message array (history + current message)
-  const messages = [
-    ...history,
-    { role: 'user', content: userMessage },
-  ];
+  // 3. Prompt con el nombre ya actualizado para ESTE turno
+  const userParaPrompt: WaUser = { ...user, name: updates.name ?? user.name };
+  const systemPrompt = buildSystemPrompt(userParaPrompt);
 
-  // 5. Call OpenRouter
+  // 4. Modelo principal
+  const messages = [...history, { role: 'user', content: userMessage }];
   const paulaResponse = await callOpenRouter(systemPrompt, messages);
 
-  // 6. Save both messages to Supabase
+  // 5. Guardar conversación
   await saveMessage(manychatId, 'user', userMessage);
   await saveMessage(manychatId, 'assistant', paulaResponse);
 
-  // 7. Update user interaction
-  await updateUser(manychatId, {});
+  // 6. Persistir el nombre (ahora SÍ se guarda, ya no lo vuelve a preguntar)
+  await updateUser(manychatId, updates);
 
   return paulaResponse;
 }
