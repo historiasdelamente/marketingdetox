@@ -147,7 +147,7 @@ export async function updateUser(manychatId: string, updates: Partial<Pick<WaUse
 
 // --- Prompt Assembly ---
 
-function buildSystemPrompt(user: WaUser): string {
+function buildSystemPrompt(user: WaUser, libroRecienEnviado = false): string {
   // Prompt MAESTRO autocontenido — incluye TODO lo necesario.
   // No cargar banco_respuestas / config_dinamica / libro_nina_callada (ya están dentro del maestro).
   // Mantener protocolo_crisis solo como referencia adicional de seguridad.
@@ -155,6 +155,7 @@ function buildSystemPrompt(user: WaUser): string {
   const protocoloCrisis = loadPrompt('03_protocolo_crisis.md');
 
   const userContext = buildUserContext(user);
+  const libroState = buildLibroState(user, libroRecienEnviado);
 
   return `${sistemaPrompt}
 
@@ -162,11 +163,38 @@ function buildSystemPrompt(user: WaUser): string {
 
 # CONTEXTO DE ESTA USUARIA
 ${userContext}
+${libroState}
 
 ---
 
 # PROTOCOLO DE CRISIS (REFERENCIA DETALLADA)
 ${protocoloCrisis}`;
+}
+
+/**
+ * Estado del libro para que Paula sepa qué hacer en ESTE turno.
+ * El ENVÍO del libro lo hace el código (no el modelo) cuando detecta nombre + correo.
+ */
+function buildLibroState(user: WaUser, libroRecienEnviado: boolean): string {
+  if (libroRecienEnviado) {
+    return `
+# ⚡ ACCIÓN DEL SISTEMA EN ESTE TURNO
+El sistema ACABA de registrar a esta mujer y de enviarle el libro "Cómo Dejar al Narcisista" a su correo.
+- Confírmaselo con calidez: dile que ya se lo enviaste a su correo.
+- Pídele que revise también Promociones y Spam, y que busque un correo de "Javier Vieira".
+- Pídele que te confirme cuando le llegue.
+- A partir de aquí tu foco pasa a APEGO DETOX: cuando ella confirme o siga conversando, véndelo con fuerza (toca su dolor, pinta la transformación, ofrécelo con precio y link). NO vuelvas a pedir su correo.`;
+  }
+  if (user.funnel_stage === 'libro_enviado') {
+    return `
+# ESTADO DEL LIBRO
+Esta mujer YA recibió el libro en su correo. NO le pidas el correo otra vez ni le ofrezcas el libro de nuevo.
+Tu foco ahora es APEGO DETOX: vende con fuerza tocando su dolor y pintando la transformación. Si dice que el libro no le llegó, ayúdala (Promociones, Spam, correo de "Javier Vieira").`;
+  }
+  return `
+# ESTADO DEL LIBRO
+Aún NO tiene el libro. Para enviárselo necesitas su NOMBRE y su CORREO. Pídeselos con calidez (uno a la vez).
+IMPORTANTE: tú NO mandas el libro a mano — en cuanto ella escriba su correo, el sistema se lo envía solo y tú se lo confirmas. NO inventes que ya lo enviaste hasta que el sistema te lo indique. NO la mandes a ninguna página: el libro se lo enviamos aquí mismo por correo.`;
 }
 
 function buildUserContext(user: WaUser): string {
@@ -227,19 +255,25 @@ export async function callOpenRouter(systemPrompt: string, messages: Array<{ rol
   return data.choices[0]?.message?.content || '';
 }
 
-// --- Extracción de nombre (arregla el bug de "repetir el nombre") ---
+// --- Captura de nombre + correo y envío del libro ---
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const EMAIL_FIND_RE = /[^\s@]+@[^\s@]+\.[^\s@]{2,}/;
 
 /**
- * Extrae el nombre de pila con el que ella se presentó, leyendo el historial + el último
- * mensaje. Usa un modelo rápido. Devuelve null si todavía no se ha presentado. NUNCA inventa.
- * Solo se llama cuando aún no conocemos su nombre.
+ * Extrae el nombre de pila y el email del historial + el último mensaje. Usa un modelo
+ * rápido. NUNCA inventa. Solo se usa mientras ella aún no tiene el libro (fase de captura).
  */
-async function extraerNombre(
+async function extraerNombreEmail(
   history: Array<{ role: string; content: string }>,
   userMessage: string
-): Promise<string | null> {
+): Promise<{ nombre: string | null; email: string | null }> {
+  // Email por regex (barato y confiable)
+  const emailMatch = userMessage.match(EMAIL_FIND_RE);
+  const emailRegex = emailMatch && EMAIL_RE.test(emailMatch[0]) ? emailMatch[0].toLowerCase() : null;
+
   const apiKey = process.env.OPENROUTER_API_KEY;
-  if (!apiKey) return null;
+  if (!apiKey) return { nombre: null, email: emailRegex };
 
   const model = process.env.PAULA_EXTRACT_MODEL || 'openai/gpt-4.1-mini';
   const contexto = [...history.slice(-6), { role: 'user', content: userMessage }]
@@ -247,8 +281,8 @@ async function extraerNombre(
     .join('\n');
 
   const sys =
-    'Eres un extractor de datos. Del siguiente chat de WhatsApp, extrae el NOMBRE de pila con el que ELLA se presentó. ' +
-    'Responde SOLO un JSON válido, sin texto extra: {"nombre": string|null}. ' +
+    'Eres un extractor de datos. Del siguiente chat de WhatsApp, extrae el NOMBRE de pila con el que ELLA se presentó y su EMAIL si lo dio. ' +
+    'Responde SOLO un JSON válido, sin texto extra: {"nombre": string|null, "email": string|null}. ' +
     'nombre = como ella se llama (ej "Ana", "María José"). Si no se ha presentado, null. NUNCA inventes.';
 
   try {
@@ -266,21 +300,63 @@ async function extraerNombre(
           { role: 'system', content: sys },
           { role: 'user', content: contexto },
         ],
-        max_tokens: 40,
+        max_tokens: 80,
         temperature: 0,
         response_format: { type: 'json_object' },
       }),
     });
-    if (!response.ok) return null;
+    if (!response.ok) return { nombre: null, email: emailRegex };
     const data = await response.json();
     const raw = data.choices?.[0]?.message?.content || '{}';
-    const parsed = JSON.parse(raw) as { nombre?: unknown };
-    if (typeof parsed.nombre === 'string' && parsed.nombre.trim().length >= 2) {
-      return parsed.nombre.trim().slice(0, 80);
-    }
-    return null;
+    const parsed = JSON.parse(raw) as { nombre?: unknown; email?: unknown };
+
+    const nombre =
+      typeof parsed.nombre === 'string' && parsed.nombre.trim().length >= 2
+        ? parsed.nombre.trim().slice(0, 80)
+        : null;
+    const emailLlm =
+      typeof parsed.email === 'string' && EMAIL_RE.test(parsed.email.trim())
+        ? parsed.email.trim().toLowerCase()
+        : null;
+
+    return { nombre, email: emailRegex || emailLlm };
   } catch {
-    return null;
+    return { nombre: null, email: emailRegex };
+  }
+}
+
+/**
+ * Envía el libro gratis llamando al endpoint de producción que ya existe en el sitio
+ * (historiasdelamente.com/api/leads/capture): registra a la mujer, le manda el libro por
+ * correo y arranca la secuencia de nutrición. NO instala nada aquí; solo hace la llamada.
+ * Devuelve true si el endpoint respondió OK.
+ */
+async function enviarLibroPorCorreo(email: string, nombre: string): Promise<boolean> {
+  const url =
+    process.env.LEADS_CAPTURE_URL || 'https://historiasdelamente.com/api/leads/capture';
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email,
+        nombre,
+        utmSource: 'whatsapp',
+        utmMedium: 'paula',
+        utmCampaign: 'whatsapp_paula',
+        referer: 'whatsapp-paula',
+      }),
+    });
+    if (!response.ok) {
+      console.error('[Paula] enviarLibroPorCorreo falló:', response.status);
+      return false;
+    }
+    const data = await response.json().catch(() => ({}));
+    return data?.success !== false;
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('[Paula] enviarLibroPorCorreo excepción:', msg);
+    return false;
   }
 }
 
@@ -294,17 +370,45 @@ export async function processPaulaMessage(
   const user = await getOrCreateUser(manychatId);
   const history = await getConversationHistory(manychatId, 10);
 
-  // 2. Si todavía no sabemos su nombre, intentar capturarlo y GUARDARLO
-  //    (esto arregla el bug de que Paula vuelve a preguntar el nombre)
+  // 2. Captura: mientras aún no tenga el libro, intentar nombre + correo
   const updates: Partial<Pick<WaUser, 'name' | 'funnel_stage' | 'situacion_resumen'>> = {};
-  if (!user.name) {
-    const nombre = await extraerNombre(history, userMessage);
-    if (nombre) updates.name = nombre;
+  let libroRecienEnviado = false;
+  const yaTieneLibro = user.funnel_stage === 'libro_enviado';
+
+  if (!yaTieneLibro) {
+    // Email por regex (barato); el nombre solo lo extraemos con LLM si aún no lo tenemos
+    const emailMatch = userMessage.match(EMAIL_FIND_RE);
+    let email: string | null =
+      emailMatch && EMAIL_RE.test(emailMatch[0]) ? emailMatch[0].toLowerCase() : null;
+    let nombre: string | null = null;
+
+    if (!user.name) {
+      const ext = await extraerNombreEmail(history, userMessage);
+      nombre = ext.nombre;
+      email = email || ext.email;
+    }
+
+    // Guardar el nombre apenas lo conozcamos (arregla el bug de "repite el nombre")
+    if (nombre && !user.name) updates.name = nombre;
+    const nombreFinal = user.name || nombre;
+
+    // Con nombre + correo válido → enviarle el libro por correo (endpoint de producción)
+    if (email && EMAIL_RE.test(email) && nombreFinal) {
+      const ok = await enviarLibroPorCorreo(email, nombreFinal);
+      if (ok) {
+        libroRecienEnviado = true;
+        updates.funnel_stage = 'libro_enviado';
+      }
+    }
   }
 
-  // 3. Prompt con el nombre ya actualizado para ESTE turno
-  const userParaPrompt: WaUser = { ...user, name: updates.name ?? user.name };
-  const systemPrompt = buildSystemPrompt(userParaPrompt);
+  // 3. Prompt con nombre + estado del libro de ESTE turno
+  const userParaPrompt: WaUser = {
+    ...user,
+    name: updates.name ?? user.name,
+    funnel_stage: updates.funnel_stage ?? user.funnel_stage,
+  };
+  const systemPrompt = buildSystemPrompt(userParaPrompt, libroRecienEnviado);
 
   // 4. Modelo principal
   const messages = [...history, { role: 'user', content: userMessage }];
@@ -314,7 +418,7 @@ export async function processPaulaMessage(
   await saveMessage(manychatId, 'user', userMessage);
   await saveMessage(manychatId, 'assistant', paulaResponse);
 
-  // 6. Persistir el nombre (ahora SÍ se guarda, ya no lo vuelve a preguntar)
+  // 6. Persistir nombre / etapa (nombre ya no se vuelve a preguntar; libro_enviado evita re-envío)
   await updateUser(manychatId, updates);
 
   return paulaResponse;
