@@ -225,7 +225,7 @@ export async function callOpenRouter(systemPrompt: string, messages: Array<{ rol
     throw new Error('OPENROUTER_API_KEY no está configurada en .env.local');
   }
 
-  const model = process.env.PAULA_MODEL || 'openai/gpt-4.1';
+  const model = process.env.PAULA_MODEL || 'openai/gpt-4.1-mini';
 
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
