@@ -1,18 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createLead, primerNombre } from '@/lib/leads/airtable';
-import { sendEmail } from '@/lib/email/resend-client';
-import {
-  CORREO_1_SUBJECT,
-  correo1BienvenidaHTML,
-  correo1BienvenidaText,
-} from '@/lib/email/templates/correo-1-bienvenida';
-
-const URL_LIBRO =
-  'https://drive.google.com/file/d/1_lI21koXBdoHqR8KaOfrk2uUTJnwrplT/view?usp=sharing';
+import { enviarLibroGratis, EMAIL_RE } from '@/lib/leads/enviar-libro';
 
 const FUENTE = 'Clase Gratis Y Libro';
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT_MAX = 5;
@@ -63,39 +52,11 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let airtableOk = false;
-  let resendOk = false;
-  const warnings: string[] = [];
-
-  try {
-    await createLead({ email, nombre, fuente: FUENTE });
-    airtableOk = true;
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error('[leads/capture] Airtable falló:', msg);
-    warnings.push(`airtable: ${msg.slice(0, 120)}`);
-  }
-
-  try {
-    const pNombre = primerNombre(nombre);
-    const params = {
-      primerNombre: pNombre,
-      urlLibro: URL_LIBRO,
-      unsubscribeUrl: `https://historiasdelamente.com/unsubscribe?email=${encodeURIComponent(email)}`,
-    };
-    await sendEmail({
-      to: email,
-      subject: CORREO_1_SUBJECT(pNombre),
-      html: correo1BienvenidaHTML(params),
-      text: correo1BienvenidaText(params),
-      unsubscribeUrl: params.unsubscribeUrl,
-    });
-    resendOk = true;
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error('[leads/capture] Resend falló:', msg);
-    warnings.push(`resend: ${msg.slice(0, 120)}`);
-  }
+  const { airtableOk, resendOk, warnings } = await enviarLibroGratis({
+    email,
+    nombre,
+    fuente: FUENTE,
+  });
 
   return NextResponse.json({
     success: airtableOk || resendOk,
