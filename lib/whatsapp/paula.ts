@@ -176,26 +176,31 @@ ${protocoloCrisis}`;
  * Estado del libro para que Paula sepa qué hacer en ESTE turno.
  * El ENVÍO del libro lo hace el código (no el modelo) cuando detecta nombre+correo.
  */
+const GRUPO_LINK = 'https://chat.whatsapp.com/E0W15Gwuvrx3FlgrRC0I0x';
+const CURSO_LINK = 'https://youtu.be/rm2Kim3CnP8';
+
 function buildLibroState(user: WaUser, libroRecienEnviado: boolean): string {
   if (libroRecienEnviado) {
     return `
 # ⚡ ACCIÓN DEL SISTEMA EN ESTE TURNO
-El sistema ACABA de registrar a esta mujer y de enviarle el libro "Cómo Dejar al Narcisista" a su correo.
-- Confírmaselo con calidez: dile que ya se lo enviaste a su correo.
-- Pídele que revise también Promociones y Spam, y que busque un correo de "Javier Vieira".
-- Pídele que te confirme cuando le llegue.
-- A partir de aquí tu foco pasa a APEGO DETOX: cuando ella confirme o siga conversando, empieza a venderlo con fuerza (toca su dolor, pinta la transformación, ofrécelo). NO vuelvas a pedir su correo.`;
+El sistema ACABA de enviarle el libro "Cómo Dejar al Narcisista" a su correo.
+- Confírmaselo con calidez: dile que ya se lo enviaste a su correo (que revise también Promociones y Spam, remitente "Javier Vieira").
+- Y ENTRÉGALE EN EL CHAT, en un segundo mensaje, sus dos accesos gratis:
+  • El grupo de la comunidad: ${GRUPO_LINK}
+  • El curso de apego gratis en YouTube (paso a paso): ${CURSO_LINK}
+- Invítala a empezar por el primer video y a presentarse en el grupo.
+- NO vendas nada. NO menciones precios ni ningún programa de pago. Solo entrega con cariño. NO vuelvas a pedir su correo.`;
   }
   if (user.funnel_stage === 'libro_enviado') {
     return `
 # ESTADO DEL LIBRO
-Esta mujer YA recibió el libro en su correo. NO le pidas el correo otra vez ni le ofrezcas el libro de nuevo.
-Tu foco ahora es APEGO DETOX: vende con fuerza tocando su dolor y pintando la transformación. Si dice que el libro no le llegó, ayúdala (Promociones, Spam, correo de "Javier Vieira").`;
+Esta mujer YA recibió el libro, el grupo y el curso. NO le pidas el correo otra vez ni repitas la bienvenida.
+Acompáñala con calidez y pregúntale cómo va. Si pregunta, reenvíale el grupo (${GRUPO_LINK}) o el curso (${CURSO_LINK}). Si dice que el libro no le llegó, ayúdala (Promociones, Spam, remitente "Javier Vieira"). NO vendas nada ni menciones precios.`;
   }
   return `
 # ESTADO DEL LIBRO
 Aún NO tiene el libro. Para enviárselo necesitas su NOMBRE y su CORREO. Pídeselos con calidez (uno a la vez).
-IMPORTANTE: tú NO mandas el libro a mano — en cuanto ella escriba su correo, el sistema se lo envía solo y tú se lo confirmas. NO inventes que ya lo enviaste hasta que el sistema te lo indique. NO la mandes a ninguna página: el libro se lo enviamos aquí mismo por correo.`;
+IMPORTANTE: tú NO mandas el libro a mano — en cuanto ella escriba su correo, el sistema se lo envía solo, y entonces tú se lo confirmas y le entregas el grupo y el curso. NO inventes que ya lo enviaste hasta que el sistema te lo indique. NO la mandes a ninguna página externa: el libro se lo enviamos por correo, y el grupo y el curso se los das aquí mismo.`;
 }
 
 /**
