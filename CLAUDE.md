@@ -7,7 +7,7 @@
 | **Marca** | Historias de la Mente (@historiasdelamente) |
 | **Creador** | Javier Vieira — **Psicólogo Especialista** (COLPSIC 293219) |
 | **Audiencia** | Mujeres hispanohablantes 25-65 años, relaciones con narcisistas |
-| **Producto** | Apego Detox — programa de sanación emocional ($25 USD, Hotmart) |
+| **Producto** | Apego Detox — programa de sanación emocional (15 módulos, $37.97 USD/mes, Hotmart) |
 | **Visual** | Negro + dorado (#C9A84C), fuente Georgia |
 | **Tono Lives** | VOZ UNIFICADA — una sola voz que habla directo a ella, sin separar Marian/Riso |
 | **Tono TikTok** | Fusión Walter Riso (40%) + Marian Rojas Estapé (60%) — solo para TikTok cortos |

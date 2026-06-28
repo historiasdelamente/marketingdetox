@@ -6,9 +6,9 @@ import {
   correo1BienvenidaText,
 } from '@/lib/email/templates/correo-1-bienvenida';
 
-/** URL del libro gratuito "Cómo Dejar al Narcisista" (Google Drive). */
+/** URL del libro gratuito "Cómo Dejar al Narcisista" (PDF hospedado, lleva a Apego Detox). */
 export const URL_LIBRO =
-  'https://drive.google.com/file/d/1_lI21koXBdoHqR8KaOfrk2uUTJnwrplT/view?usp=sharing';
+  'https://historiasdelamente.com/libros/como-dejar-al-narcisista.pdf';
 
 /** Valida un email completo (string entero). */
 export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
