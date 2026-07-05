@@ -1,8 +1,50 @@
 import fs from 'fs';
 import path from 'path';
-import { enviarLibroGratis, EMAIL_RE, EMAIL_FIND_RE } from '@/lib/leads/enviar-libro';
+
+// ============================================================================
+// PAULA — CERRADORA DE APEGO DETOX
+// Flujo único de venta: conectar con el dolor -> prescribir Apego Detox ->
+// cerrar. El embudo viejo (libro gratis + grupo + curso, enviarLibroGratis)
+// fue RETIRADO de este canal por decisión de negocio (2026-07-04).
+//
+// Etapas (wa_users.funnel_stage):
+//   new_lead      -> conversando, aún sin link
+//   link_enviado  -> Paula ya entregó el link (pago o landing)
+//   compradora    -> ella confirmó la compra (modo post-venta, cero venta)
+//   no_molestar   -> pidió no recibir más mensajes (sin recordatorios)
+// El valor legacy 'libro_enviado' (embudo viejo) se trata como new_lead.
+// ============================================================================
 
 const PROMPTS_DIR = path.join(process.cwd(), 'agents-source', 'prompts', 'whatsapp');
+
+// Links canon (mismos que la landing — si cambian allá, cambiar acá y en el maestro).
+const CHECKOUT_MARKER = 'pay.hotmart.com/W102751360L';
+const LANDING_MARKER = 'historiasdelamente.com/apegodetox';
+
+// --- Marcas ocultas que emite la IA (se borran antes de responder) ---
+const COMPRA_TAG_RE = /\[\[\s*COMPRA\s*\]\]/gi;
+const NO_MOLESTAR_TAG_RE = /\[\[\s*NO_MOLESTAR\s*\]\]/gi;
+// Marca del embudo viejo: ya no dispara nada, pero se borra por si el modelo
+// la emite por inercia del historial.
+const LEGACY_LEAD_TAG_RE = /\[\[\s*LEAD:[^\]]*\]\]/gi;
+
+function stripHiddenTags(text: string): string {
+  return (text || '')
+    .replace(COMPRA_TAG_RE, '')
+    .replace(NO_MOLESTAR_TAG_RE, '')
+    .replace(LEGACY_LEAD_TAG_RE, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+// --- Detección determinista en el mensaje de ELLA (no depende del LLM) ---
+
+// "ya pagué", "acabo de comprar", "ya me inscribí"...
+// OJO: sin \b al final — en JS \b falla tras vocales acentuadas ("pagué").
+const COMPRA_USER_RE = /\b(ya\s+(pagu[eé]|compr[eé]|me\s+inscrib[ií])|acabo\s+de\s+(pagar|comprar|inscribirme)|ya\s+hice\s+el\s+pago|ya\s+estoy\s+(dentro|inscrita))/i;
+
+// "no me escribas más", "deja de escribirme", "bórrame"...
+const NO_MOLESTAR_USER_RE = /(no\s+me\s+escriba[sn]\s+m[aá]s|no\s+me\s+escriba[sn]\b|deja\s+de\s+escribirme|dejen\s+de\s+escribirme|no\s+quiero\s+(m[aá]s\s+)?mensajes|no\s+me\s+contacten|b[oó]rrame|qu[ií]tame\s+de\s+(la\s+)?lista)/i;
 
 // --- Supabase Config ---
 
@@ -76,7 +118,6 @@ type SupabaseMessage = {
 // --- Database Operations (Supabase) ---
 
 export async function getOrCreateUser(manychatId: string): Promise<WaUser> {
-  // Check if user exists in wa_users table
   const users = await supabaseQuery(
     `wa_users?manychat_id=eq.${manychatId}&limit=1`
   );
@@ -85,7 +126,6 @@ export async function getOrCreateUser(manychatId: string): Promise<WaUser> {
     return users[0] as WaUser;
   }
 
-  // Create new user
   const now = new Date().toISOString();
   const newUsers = await supabaseQuery('wa_users', {
     method: 'POST',
@@ -102,14 +142,12 @@ export async function getOrCreateUser(manychatId: string): Promise<WaUser> {
 }
 
 export async function getConversationHistory(manychatId: string, limit = 20): Promise<Array<{ role: 'user' | 'assistant'; content: string }>> {
-  // Read from whatsapp_memoria (legacy n8n format)
   const messages: SupabaseMessage[] = await supabaseQuery(
     `whatsapp_memoria?session_id=eq.${manychatId}&order=id.desc&limit=${limit}`
   );
 
   if (!messages || messages.length === 0) return [];
 
-  // Reverse to chronological order and convert format
   return messages.reverse().map((msg) => ({
     role: msg.message.type === 'human' ? 'user' as const : 'assistant' as const,
     content: msg.message.content,
@@ -117,7 +155,6 @@ export async function getConversationHistory(manychatId: string, limit = 20): Pr
 }
 
 export async function saveMessage(manychatId: string, role: 'user' | 'assistant', message: string) {
-  // Save in whatsapp_memoria format (compatible with n8n legacy)
   await supabaseQuery('whatsapp_memoria', {
     method: 'POST',
     body: JSON.stringify({
@@ -146,17 +183,27 @@ export async function updateUser(manychatId: string, updates: Partial<Pick<WaUse
   });
 }
 
+// Columnas opcionales (origen/canal — pueden no existir en schemas viejos).
+// PATCH separado en best-effort para que un schema sin la columna nunca rompa.
+async function updateUserOptional(manychatId: string, col: 'origen' | 'canal', val: string) {
+  try {
+    await supabaseQuery(`wa_users?manychat_id=eq.${manychatId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ [col]: val }),
+    });
+  } catch (e) {
+    console.warn(`[Paula] columna opcional '${col}' no persistida:`, (e as Error).message);
+  }
+}
+
 // --- Prompt Assembly ---
 
-function buildSystemPrompt(user: WaUser, libroRecienEnviado = false): string {
-  // Prompt MAESTRO autocontenido — incluye TODO lo necesario.
-  // No cargar banco_respuestas / config_dinamica / libro_nina_callada (ya están dentro del maestro).
-  // Mantener protocolo_crisis solo como referencia adicional de seguridad.
+function buildSystemPrompt(user: WaUser, origen: string): string {
+  // Prompt MAESTRO autocontenido (venta Apego Detox) + contexto + crisis.
   const sistemaPrompt = loadPrompt('00_sistema_paula.md');
   const protocoloCrisis = loadPrompt('03_protocolo_crisis.md');
 
-  const userContext = buildUserContext(user);
-  const libroState = buildLibroState(user, libroRecienEnviado);
+  const userContext = buildUserContext(user, origen);
 
   return `${sistemaPrompt}
 
@@ -164,59 +211,54 @@ function buildSystemPrompt(user: WaUser, libroRecienEnviado = false): string {
 
 # CONTEXTO DE ESTA USUARIA
 ${userContext}
-${libroState}
 
 ---
 
-# PROTOCOLO DE CRISIS (REFERENCIA DETALLADA)
+# PROTOCOLO DE CRISIS (REFERENCIA DETALLADA — PRIORIDAD MÁXIMA)
 ${protocoloCrisis}`;
 }
 
-/**
- * Estado del libro para que Paula sepa qué hacer en ESTE turno.
- * El ENVÍO del libro lo hace el código (no el modelo) cuando detecta nombre+correo.
- */
-const GRUPO_LINK = 'https://chat.whatsapp.com/E0W15Gwuvrx3FlgrRC0I0x';
-const CURSO_LINK = 'https://youtu.be/rm2Kim3CnP8';
+function buildUserContext(user: WaUser, origen: string): string {
+  const lines: string[] = [];
 
-function buildLibroState(user: WaUser, libroRecienEnviado: boolean): string {
-  if (libroRecienEnviado) {
-    return `
-# ⚡ ACCIÓN DEL SISTEMA EN ESTE TURNO
-El sistema ACABA de enviarle el libro "Cómo Dejar al Narcisista" a su correo.
-- Confírmaselo con calidez: dile que ya se lo enviaste a su correo (que revise también Promociones y Spam, remitente "Javier Vieira").
-- Y ENTRÉGALE EN EL CHAT, en un segundo mensaje, sus dos accesos gratis:
-  • El grupo de la comunidad: ${GRUPO_LINK}
-  • El curso de apego gratis en YouTube (paso a paso): ${CURSO_LINK}
-- Invítala a empezar por el primer video y a presentarse en el grupo.
-- NO vendas nada. NO menciones precios ni ningún programa de pago. Solo entrega con cariño. NO vuelvas a pedir su correo.`;
+  if (user.name) {
+    lines.push(`- Nombre: ${user.name}`);
+  } else {
+    lines.push('- Nombre: NO LO SABEMOS TODAVÍA — preguntarlo (Paso 1)');
   }
-  if (user.funnel_stage === 'libro_enviado') {
-    return `
-# ESTADO DEL LIBRO
-Esta mujer YA recibió el libro, el grupo y el curso. NO le pidas el correo otra vez ni repitas la bienvenida.
-Acompáñala con calidez y pregúntale cómo va. Si pregunta, reenvíale el grupo (${GRUPO_LINK}) o el curso (${CURSO_LINK}). Si dice que el libro no le llegó, ayúdala (Promociones, Spam, remitente "Javier Vieira"). NO vendas nada ni menciones precios.`;
+
+  if (origen) {
+    lines.push(`- Origen: ${origen} (adapta la apertura a este canal)`);
   }
-  return `
-# ESTADO DEL LIBRO
-Aún NO tiene el libro. Para enviárselo necesitas su NOMBRE y su CORREO. Pídeselos con calidez (uno a la vez).
-IMPORTANTE: tú NO mandas el libro a mano — en cuanto ella escriba su correo, el sistema se lo envía solo, y entonces tú se lo confirmas y le entregas el grupo y el curso. NO inventes que ya lo enviaste hasta que el sistema te lo indique. NO la mandes a ninguna página externa: el libro se lo enviamos por correo, y el grupo y el curso se los das aquí mismo.`;
+
+  const stage = user.funnel_stage || 'new_lead';
+  if (stage === 'compradora') {
+    lines.push('- ETAPA: COMPRADORA. Ya pagó Apego Detox. MODO POST-VENTA: cero venta, no mandes links de pago. Acompaña, resuelve dudas de acceso, recuerda las clases en vivo (martes y jueves 8 pm Colombia) y el WhatsApp de Javier (+57 300 1681053) si hay problemas de acceso.');
+  } else if (stage === 'link_enviado') {
+    lines.push('- ETAPA: LINK YA ENVIADO. No repitas el link salvo que ella lo pida. Tu foco ahora: descubrir qué la frena (pregunta directa) y resolver ESA objeción, luego cerrar de nuevo.');
+  } else if (stage === 'no_molestar') {
+    lines.push('- ETAPA: PIDIÓ NO RECIBIR MENSAJES. Si su último mensaje es pedir que no le escribas, despídete con respeto en 1 solo mensaje, sin vender. Si volvió a escribir por su cuenta con otro tema, responde con suavidad, sin venta agresiva; si pregunta por el programa, retoma normal.');
+  } else {
+    lines.push('- ETAPA: EN CONVERSACIÓN. Objetivo: validar su dolor, prescribir Apego Detox y cerrar la venta (ver flujo).');
+  }
+
+  lines.push(`- Mensajes intercambiados: ${user.conversation_count}`);
+
+  if (user.situacion_resumen) {
+    lines.push(`- Resumen de su situación: ${user.situacion_resumen}`);
+  }
+
+  return lines.join('\n');
 }
 
-/**
- * Extrae nombre de pila y email del historial + último mensaje, usando un modelo rápido.
- * Solo se usa mientras la mujer aún no tiene el libro (fase de captura). Nunca inventa.
- */
-async function extraerNombreEmail(
+// --- Extractor de NOMBRE (modelo rápido; solo mientras no lo sabemos) ---
+
+async function extraerNombre(
   history: Array<{ role: string; content: string }>,
   userMessage: string
-): Promise<{ nombre: string | null; email: string | null }> {
-  // Email por regex primero (barato y confiable).
-  const emailMatch = userMessage.match(EMAIL_FIND_RE);
-  const emailRegex = emailMatch && EMAIL_RE.test(emailMatch[0]) ? emailMatch[0].toLowerCase() : null;
-
+): Promise<string | null> {
   const apiKey = process.env.OPENROUTER_API_KEY;
-  if (!apiKey) return { nombre: null, email: emailRegex };
+  if (!apiKey) return null;
 
   const model = process.env.PAULA_EXTRACT_MODEL || 'openai/gpt-4.1-mini';
   const contexto = [...history.slice(-6), { role: 'user', content: userMessage }]
@@ -224,8 +266,8 @@ async function extraerNombreEmail(
     .join('\n');
 
   const sys =
-    'Eres un extractor de datos. Del siguiente chat de WhatsApp, extrae el NOMBRE de pila con el que ELLA se presentó y su EMAIL si lo dio. ' +
-    'Responde SOLO un JSON válido, sin texto extra: {"nombre": string|null, "email": string|null}. ' +
+    'Eres un extractor de datos. Del siguiente chat de WhatsApp, extrae el NOMBRE de pila con el que ELLA se presentó. ' +
+    'Responde SOLO un JSON válido, sin texto extra: {"nombre": string|null}. ' +
     'nombre = como ella se llama (ej "Ana", "María José"). Si no se ha presentado, null. NUNCA inventes datos.';
 
   try {
@@ -243,49 +285,22 @@ async function extraerNombreEmail(
           { role: 'system', content: sys },
           { role: 'user', content: contexto },
         ],
-        max_tokens: 80,
+        max_tokens: 60,
         temperature: 0,
         response_format: { type: 'json_object' },
       }),
     });
-    if (!response.ok) return { nombre: null, email: emailRegex };
+    if (!response.ok) return null;
     const data = await response.json();
     const raw = data.choices?.[0]?.message?.content || '{}';
-    const parsed = JSON.parse(raw) as { nombre?: unknown; email?: unknown };
+    const parsed = JSON.parse(raw) as { nombre?: unknown };
 
-    const nombre =
-      typeof parsed.nombre === 'string' && parsed.nombre.trim().length >= 2
-        ? parsed.nombre.trim().slice(0, 80)
-        : null;
-    const emailLlm =
-      typeof parsed.email === 'string' && EMAIL_RE.test(parsed.email.trim())
-        ? parsed.email.trim().toLowerCase()
-        : null;
-
-    return { nombre, email: emailRegex || emailLlm };
+    return typeof parsed.nombre === 'string' && parsed.nombre.trim().length >= 2
+      ? parsed.nombre.trim().slice(0, 80)
+      : null;
   } catch {
-    return { nombre: null, email: emailRegex };
+    return null;
   }
-}
-
-function buildUserContext(user: WaUser): string {
-  const lines: string[] = [];
-
-  if (user.name) {
-    lines.push(`- Nombre: ${user.name}`);
-  } else {
-    lines.push('- Nombre: NO LO SABEMOS TODAVÍA — preguntarlo');
-  }
-
-  lines.push(`- Etapa del funnel: ${user.funnel_stage}`);
-  lines.push(`- Mensajes intercambiados: ${user.conversation_count}`);
-  lines.push(`- Primer contacto: ${user.first_contact}`);
-
-  if (user.situacion_resumen) {
-    lines.push(`- Resumen de su situación: ${user.situacion_resumen}`);
-  }
-
-  return lines.join('\n');
 }
 
 // --- OpenRouter API Call ---
@@ -331,66 +346,82 @@ export async function callOpenRouter(systemPrompt: string, messages: Array<{ rol
 export async function processPaulaMessage(
   manychatId: string,
   userMessage: string,
+  origen = '',
+  canal = '',
 ): Promise<string> {
   // 1. Usuaria + historial
   const user = await getOrCreateUser(manychatId);
   const history = await getConversationHistory(manychatId, 10);
 
-  // 2. Captura de lead: mientras aún no tenga el libro, intentar extraer nombre + correo
   const updates: Partial<Pick<WaUser, 'name' | 'funnel_stage'>> = {};
-  let libroRecienEnviado = false;
-  const yaTieneLibro = user.funnel_stage === 'libro_enviado';
 
-  if (!yaTieneLibro) {
-    // Email por regex (barato y confiable)
-    const emailMatch = userMessage.match(EMAIL_FIND_RE);
-    let email: string | null =
-      emailMatch && EMAIL_RE.test(emailMatch[0]) ? emailMatch[0].toLowerCase() : null;
-    let nombre: string | null = null;
+  // 2. Detección determinista ANTES del LLM (no depende del modelo)
 
-    // Solo gastamos la llamada extra de extracción si todavía NO sabemos su nombre
-    if (!user.name) {
-      const ext = await extraerNombreEmail(history, userMessage);
-      nombre = ext.nombre;
-      email = email || ext.email;
-    }
-
-    // Guardar el nombre apenas lo conozcamos (arregla el bug de "repite el nombre")
-    if (nombre && !user.name) updates.name = nombre;
-    const nombreFinal = user.name || nombre;
-
-    // Con nombre + correo válido → registrar lead y enviarle el libro al correo
-    if (email && EMAIL_RE.test(email) && nombreFinal) {
-      const { airtableOk, resendOk } = await enviarLibroGratis({
-        email,
-        nombre: nombreFinal,
-        fuente: 'WhatsApp Paula',
-      });
-      if (airtableOk || resendOk) {
-        libroRecienEnviado = true;
-        updates.funnel_stage = 'libro_enviado';
-      }
-    }
+  // Nombre — para personalizar chat y recordatorios.
+  if (!user.name) {
+    const nombre = await extraerNombre(history, userMessage);
+    if (nombre) updates.name = nombre;
   }
 
-  // 3. Prompt con el estado del libro de ESTE turno (nombre/etapa ya actualizados)
+  // Confirmación de compra dicha por ella.
+  if (user.funnel_stage !== 'compradora' && COMPRA_USER_RE.test(userMessage)) {
+    updates.funnel_stage = 'compradora';
+  }
+
+  // Pidió no recibir más mensajes (no pisa 'compradora').
+  const stageTrasCompra = updates.funnel_stage ?? user.funnel_stage;
+  if (stageTrasCompra !== 'compradora' && stageTrasCompra !== 'no_molestar' && NO_MOLESTAR_USER_RE.test(userMessage)) {
+    updates.funnel_stage = 'no_molestar';
+  }
+
+  // 3. Prompt con la etapa de ESTE turno (nombre/etapa ya actualizados)
   const userParaPrompt: WaUser = {
     ...user,
     name: updates.name ?? user.name,
     funnel_stage: updates.funnel_stage ?? user.funnel_stage,
   };
-  const systemPrompt = buildSystemPrompt(userParaPrompt, libroRecienEnviado);
+  const systemPrompt = buildSystemPrompt(userParaPrompt, origen);
 
   // 4. Modelo principal
   const messages = [...history, { role: 'user', content: userMessage }];
-  const paulaResponse = await callOpenRouter(systemPrompt, messages);
+  let paulaResponse = await callOpenRouter(systemPrompt, messages);
 
-  // 5. Guardar conversación
+  // 5. Marcas de la IA (secundarias a la detección determinista)
+  const etapaActual = updates.funnel_stage ?? user.funnel_stage ?? 'new_lead';
+  if (etapaActual !== 'compradora' && COMPRA_TAG_RE.test(paulaResponse)) {
+    updates.funnel_stage = 'compradora';
+  }
+  COMPRA_TAG_RE.lastIndex = 0;
+
+  const etapaTrasTag = updates.funnel_stage ?? user.funnel_stage ?? 'new_lead';
+  if (etapaTrasTag !== 'compradora' && etapaTrasTag !== 'no_molestar' && NO_MOLESTAR_TAG_RE.test(paulaResponse)) {
+    updates.funnel_stage = 'no_molestar';
+  }
+  NO_MOLESTAR_TAG_RE.lastIndex = 0;
+
+  paulaResponse = stripHiddenTags(paulaResponse);
+
+  // 6. Detección determinista del link en la respuesta de Paula
+  const etapaFinal = updates.funnel_stage ?? user.funnel_stage ?? 'new_lead';
+  const linkEntregado = paulaResponse.includes(CHECKOUT_MARKER) || paulaResponse.includes(LANDING_MARKER);
+  if (
+    linkEntregado &&
+    etapaFinal !== 'compradora' &&
+    etapaFinal !== 'no_molestar' &&
+    etapaFinal !== 'link_enviado'
+  ) {
+    updates.funnel_stage = 'link_enviado';
+  }
+
+  // 7. Guardar conversación + persistir etapa/nombre
   await saveMessage(manychatId, 'user', userMessage);
   await saveMessage(manychatId, 'assistant', paulaResponse);
-
-  // 6. Persistir nombre / etapa (ahora SÍ guarda el nombre y el estado del libro)
   await updateUser(manychatId, updates);
+
+  // Origen y canal (transporte whatsapp/instagram) — best-effort, para que los
+  // recordatorios salgan por el canal correcto.
+  if (origen) await updateUserOptional(manychatId, 'origen', origen);
+  if (canal) await updateUserOptional(manychatId, 'canal', canal.toLowerCase() === 'instagram' ? 'instagram' : 'whatsapp');
 
   return paulaResponse;
 }
