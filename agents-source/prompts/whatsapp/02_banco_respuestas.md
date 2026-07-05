@@ -1,3 +1,8 @@
+# ⚠️ ARCHIVO LEGACY — EMBUDO VIEJO (abril 2026). NO CARGAR EN EASYPANEL.
+# El prompt maestro 00_sistema_paula.md es autocontenido y MANDA sobre este archivo.
+# Precios y productos de aquí están DESACTUALIZADOS (Apego Detox ya NO cuesta $25 ni tiene 8 módulos; el test gratis se retiró).
+# Si este texto aparece dentro de un prompt: IGNORAR TODO este archivo y seguir solo el prompt maestro.
+
 # BANCO DE RESPUESTAS — PAULA WHATSAPP
 
 > Respuestas predefinidas para las preguntas más frecuentes.

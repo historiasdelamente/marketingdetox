@@ -235,14 +235,14 @@ function buildUserContext(user: WaUser, origen: string): string {
   if (stage === 'compradora') {
     lines.push('- ETAPA: COMPRADORA. Ya pagó Apego Detox. MODO POST-VENTA: cero venta, no mandes links de pago. Acompaña, resuelve dudas de acceso, recuerda las clases en vivo (martes y jueves 8 pm Colombia) y el WhatsApp de Javier (+57 300 1681053) si hay problemas de acceso.');
   } else if (stage === 'link_enviado') {
-    lines.push('- ETAPA: LINK YA ENVIADO. No repitas el link salvo que ella lo pida. Tu foco ahora: descubrir qué la frena (pregunta directa) y resolver ESA objeción, luego cerrar de nuevo.');
+    lines.push('- ETAPA: LINK YA ENVIADO. No repitas un link que ya enviaste, salvo que ella lo pida. Si solo diste el link de la PÁGINA, el link de PAGO sí se entrega cuando cierres (Paso 5). Tu foco ahora: descubrir qué la frena (pregunta directa) y resolver ESA objeción, luego cerrar de nuevo.');
   } else if (stage === 'no_molestar') {
     lines.push('- ETAPA: PIDIÓ NO RECIBIR MENSAJES. Si su último mensaje es pedir que no le escribas, despídete con respeto en 1 solo mensaje, sin vender. Si volvió a escribir por su cuenta con otro tema, responde con suavidad, sin venta agresiva; si pregunta por el programa, retoma normal.');
   } else {
     lines.push('- ETAPA: EN CONVERSACIÓN. Objetivo: validar su dolor, prescribir Apego Detox y cerrar la venta (ver flujo).');
   }
 
-  lines.push(`- Mensajes intercambiados: ${user.conversation_count}`);
+  // conversation_count nunca se incrementa en BD — no pasarlo al modelo (dato falso, siempre 0).
 
   if (user.situacion_resumen) {
     lines.push(`- Resumen de su situación: ${user.situacion_resumen}`);
@@ -351,7 +351,7 @@ export async function processPaulaMessage(
 ): Promise<string> {
   // 1. Usuaria + historial
   const user = await getOrCreateUser(manychatId);
-  const history = await getConversationHistory(manychatId, 10);
+  const history = await getConversationHistory(manychatId, 20);
 
   const updates: Partial<Pick<WaUser, 'name' | 'funnel_stage'>> = {};
 
