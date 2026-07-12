@@ -17,9 +17,40 @@ import path from 'path';
 
 const PROMPTS_DIR = path.join(process.cwd(), 'agents-source', 'prompts', 'whatsapp');
 
+// ⚠️ CAMPAÑA TEMPORAL "Volver a mí" (hasta 17 jul 2026).
+// Poner en false para REVERTIR a la venta normal de Apego Detox.
+const CAMPANA_VOLVER_A_MI = true;
+
 // Links canon (mismos que la landing — si cambian allá, cambiar acá y en el maestro).
-const CHECKOUT_MARKER = 'pay.hotmart.com/W102751360L';
-const LANDING_MARKER = 'historiasdelamente.com/apegodetox';
+const CHECKOUT_MARKER = CAMPANA_VOLVER_A_MI ? 'pay.hotmart.com/H106712135H' : 'pay.hotmart.com/W102751360L';
+const LANDING_MARKER = CAMPANA_VOLVER_A_MI ? 'historiasdelamente.com/volver-a-mi' : 'historiasdelamente.com/apegodetox';
+
+// Bloque de campaña que se antepone al prompt maestro (override de PRIORIDAD MÁXIMA).
+const CAMPANA_OVERRIDE = `# ⚠️ CAMPAÑA ACTIVA — PRIORIDAD MÁXIMA (hasta el 17 de julio)
+
+Durante esta campaña tu ÚNICA oferta es la **clase en vivo "Volver a mí"**. Queda SUSPENDIDO todo lo que este prompt diga más abajo sobre vender Apego Detox: NO ofreces Apego Detox ni mandas su link; TODO lo rediriges a esta clase. (Única excepción: el PROTOCOLO DE CRISIS manda sobre todo, siempre.)
+
+Sigues siendo Paula, del equipo de Javier: cálida, cercana, hermana mayor. Trátala muy bien y con respeto — pero NUNCA uses "amor", "mi amor", "cielo", "reina" ni apodos. Háblale de "tú".
+
+## La clase (tu única oferta)
+- "Volver a mí": clase EN VIVO, 3 horas, una sola vez. Jueves 17 de julio, 8:00 PM Colombia (7 PM México, 9 PM Miami/Chile, 10 PM Argentina).
+- Para mujeres que siguen atadas a un vínculo que las lastima y no logran soltar.
+- Incluye: entender de dónde viene ese vínculo + herramientas para soltar, terapia en vivo, meditación guiada, testimonios, área de miembros, la grabación y el libro "Volver a mí".
+- Precio único, el mismo en tu país: 17.000 COP / 5 USD / 87 MXN. Cupos limitados, se están llenando.
+
+## Cómo vendes (igual que siempre: valor primero, precio al final)
+Conecta con su dolor, muéstrale lo que va a vivir en la clase y, cuando ya vea el valor, cierra con el precio y el link.
+
+## Cierre y pago (entrega el link cuando cierres)
+- Con tarjeta / desde cualquier país: https://pay.hotmart.com/H106712135H
+- En Colombia también hay pago directo por Nequi: que le escriba al WhatsApp de Javier https://wa.me/573001681053 y ahí lo coordinan.
+- Página con todo el detalle: https://historiasdelamente.com/volver-a-mi
+
+## Si ya es COMPRADORA de Apego Detox
+No le vendas nada con presión: salúdala con cariño e invítala a la clase como un encuentro especial (mismo link si quiere entrar).
+
+---
+`;
 
 // --- Marcas ocultas que emite la IA (se borran antes de responder) ---
 const COMPRA_TAG_RE = /\[\[\s*COMPRA\s*\]\]/gi;
@@ -205,7 +236,7 @@ function buildSystemPrompt(user: WaUser, origen: string): string {
 
   const userContext = buildUserContext(user, origen);
 
-  return `${sistemaPrompt}
+  return `${CAMPANA_VOLVER_A_MI ? CAMPANA_OVERRIDE + '\n' : ''}${sistemaPrompt}
 
 ---
 
@@ -238,6 +269,8 @@ function buildUserContext(user: WaUser, origen: string): string {
     lines.push('- ETAPA: LINK YA ENVIADO. No repitas un link que ya enviaste, salvo que ella lo pida. Si solo diste el link de la PÁGINA, el link de PAGO sí se entrega cuando cierres (Paso 5). Tu foco ahora: descubrir qué la frena (pregunta directa) y resolver ESA objeción, luego cerrar de nuevo.');
   } else if (stage === 'no_molestar') {
     lines.push('- ETAPA: PIDIÓ NO RECIBIR MENSAJES. Si su último mensaje es pedir que no le escribas, despídete con respeto en 1 solo mensaje, sin vender. Si volvió a escribir por su cuenta con otro tema, responde con suavidad, sin venta agresiva; si pregunta por el programa, retoma normal.');
+  } else if (CAMPANA_VOLVER_A_MI) {
+    lines.push('- ETAPA: EN CONVERSACIÓN. Objetivo: validar su dolor y llevarla a la clase en vivo "Volver a mí" (ver CAMPAÑA arriba). Cierra con el link cuando ya vea el valor.');
   } else {
     lines.push('- ETAPA: EN CONVERSACIÓN. Objetivo: validar su dolor, prescribir Apego Detox y cerrar la venta (ver flujo).');
   }
@@ -289,6 +322,7 @@ async function extraerNombre(
         temperature: 0,
         response_format: { type: 'json_object' },
       }),
+      signal: AbortSignal.timeout(12000),
     });
     if (!response.ok) return null;
     const data = await response.json();
@@ -305,6 +339,8 @@ async function extraerNombre(
 
 // --- OpenRouter API Call ---
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 export async function callOpenRouter(systemPrompt: string, messages: Array<{ role: string; content: string }>): Promise<string> {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
@@ -312,33 +348,54 @@ export async function callOpenRouter(systemPrompt: string, messages: Array<{ rol
   }
 
   const model = process.env.PAULA_MODEL || 'openai/gpt-4.1';
-
-  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-      'HTTP-Referer': 'https://historiasdelamente.com',
-      'X-Title': 'Paula - Historias de la Mente',
-    },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        ...messages,
-      ],
-      max_tokens: 512,
-      temperature: 0.7,
-    }),
+  const body = JSON.stringify({
+    model,
+    messages: [{ role: 'system', content: systemPrompt }, ...messages],
+    max_tokens: 512,
+    temperature: 0.7,
   });
 
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`OpenRouter error (${response.status}): ${error}`);
-  }
+  // Reintento + timeout: OpenRouter (tras Cloudflare) a veces da ConnectTimeout.
+  // Sin esto, cualquier lentitud de red tumbaba el webhook entero. 2 intentos, ~18s c/u.
+  const MAX_ATTEMPTS = 2;
+  let lastErr: unknown;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': 'https://historiasdelamente.com',
+          'X-Title': 'Paula - Historias de la Mente',
+        },
+        body,
+        signal: AbortSignal.timeout(18000),
+      });
 
-  const data = await response.json();
-  return data.choices[0]?.message?.content || '';
+      if (!response.ok) {
+        const error = await response.text();
+        // 429 / 5xx suelen ser transitorios → reintentar; el resto, fallar ya.
+        if ((response.status === 429 || response.status >= 500) && attempt < MAX_ATTEMPTS) {
+          lastErr = new Error(`OpenRouter ${response.status}: ${error}`);
+          await sleep(500 * attempt);
+          continue;
+        }
+        throw new Error(`OpenRouter error (${response.status}): ${error}`);
+      }
+
+      const data = await response.json();
+      return data.choices[0]?.message?.content || '';
+    } catch (err) {
+      lastErr = err;
+      // Errores de red / timeout (ConnectTimeout, AbortError) → reintentar.
+      if (attempt < MAX_ATTEMPTS) {
+        await sleep(500 * attempt);
+        continue;
+      }
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error('OpenRouter: fallo de red tras reintentos');
 }
 
 // --- Main Entry Point ---
