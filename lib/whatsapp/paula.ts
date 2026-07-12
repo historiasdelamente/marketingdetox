@@ -43,7 +43,7 @@ Conecta con su dolor, muéstrale lo que va a vivir en la clase y, cuando ya vea 
 
 ## Cierre y pago (entrega el link cuando cierres)
 - Con tarjeta / desde cualquier país: https://pay.hotmart.com/H106712135H
-- En Colombia también hay pago directo por Nequi: que le escriba al WhatsApp de Javier https://wa.me/573001681053 y ahí lo coordinan.
+- En Colombia también hay pago directo por Nequi: que envíe 17.000 COP al número Nequi 3116329202 y, cuando pague, mande el comprobante y su correo por WhatsApp (https://wa.me/573001681053) para darle su acceso.
 - Página con todo el detalle: https://historiasdelamente.com/volver-a-mi
 
 ## Si ya es COMPRADORA de Apego Detox
