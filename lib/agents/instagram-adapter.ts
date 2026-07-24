@@ -17,7 +17,6 @@ async function runInstagram(
   );
 
   // Step 2: Generate specific format
-  let content: string;
   const promptMap: Record<string, string> = {
     carousel: "02_carousels",
     reels: "03_reels",
@@ -28,7 +27,7 @@ async function runInstagram(
   const formatoPrompt = loadPrompt("instagram", promptFile);
 
   onProgress(`Generando ${tipo}`, 50);
-  content = await callClaudeCli(
+  const content = await callClaudeCli(
     `PLAN DEL DIRECTOR:\n${plan}\n\nTEMA: ${tema}\n\nGenera el contenido completo para ${tipo} de Instagram.`,
     { systemPrompt: formatoPrompt, model: "opus" }
   );

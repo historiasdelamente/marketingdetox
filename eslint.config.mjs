@@ -12,6 +12,12 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Carpetas de RESULTADOS, no de código fuente: aquí caen los outputs de
+    // los agentes y los scripts sueltos de Node (CommonJS). Pasarles el
+    // ruleset de Next/TypeScript solo produce ruido — prohíbe require() en
+    // archivos que se ejecutan con node, no con Next.
+    "output/**",
+    "data/**",
   ]),
 ]);
 
