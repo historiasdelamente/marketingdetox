@@ -13,9 +13,15 @@ import { processPaulaMessage } from '@/lib/whatsapp/paula';
  * {
  *   "user_id": "123456",           // ManyChat subscriber ID
  *   "user_message": "Hola",        // Último mensaje de la usuaria
+ *   "phone": "+521234567890",      // (opcional) su número internacional
  *   "origen": "tiktok_live",       // (opcional) de dónde viene: tiktok_live | instagram | anuncio...
  *   "canal": "whatsapp"            // (opcional) transporte: whatsapp | instagram
  * }
+ *
+ * ⚠️ `phone` es lo que le permite a Paula saber de qué país escribe ella, y con
+ * eso darle la hora de la clase en SU zona horaria y el precio en SU moneda.
+ * Si ManyChat no lo manda ({{phone}} en la External Request), Paula no asume
+ * Colombia: le pregunta el país. Instagram no trae número, y ahí es normal.
  *
  * Devuelve:
  * {
@@ -31,6 +37,7 @@ export async function POST(request: NextRequest) {
     const userMessage = body.user_message || body.last_input_text || body.message;
     const origen = body.origen || body.source || body.utm_source || '';
     const canal = body.canal || body.channel || '';
+    const telefono = body.phone || body.whatsapp_phone || body.telefono || '';
 
     if (!userId || !userMessage) {
       return NextResponse.json(
@@ -45,6 +52,7 @@ export async function POST(request: NextRequest) {
       String(userMessage),
       String(origen),
       String(canal),
+      String(telefono),
     );
 
     // ManyChat expects bot_response in the JSON response

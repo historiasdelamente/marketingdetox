@@ -20,11 +20,16 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { CLASE, bloqueContextoVivo, cuentaRegresiva, datosParaElla } from '@/lib/whatsapp/contexto-clase';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 const CRON_SECRET = process.env.CRON_SECRET;
+
+// Mientras haya clase en vivo, los recordatorios venden LA CLASE, no Apego
+// Detox: si el chat vende una cosa y el recordatorio otra, ella se pierde.
+const CAMPANA_CLASE = CLASE.activa;
 
 const CHECKOUT_URL = 'https://pay.hotmart.com/W102751360L?bid=1771690985611';
 const LANDING_URL = 'https://historiasdelamente.com/apegodetox';
@@ -61,6 +66,8 @@ type WaUserRow = {
   followup_sent?: boolean;
   followup2_sent?: boolean;
   canal?: string | null;
+  /** Para darle la hora de la clase en su zona y el precio en su moneda. */
+  phone?: string | null;
 };
 
 async function supabaseQuery(endpoint: string, options: RequestInit = {}) {
@@ -167,6 +174,44 @@ function copyInvitacionGrupo(nombre: string | null): string {
   ], (nombre || '') + '3'));
 }
 
+// --- Copys de CAMPAÑA: la clase en vivo, en SU hora y SU moneda ---
+// El link siempre es la página de la clase (el pago se hace ahí, no en Hotmart).
+
+function copyClase(user: WaUserRow, toque: 1 | 2): string {
+  const n = saludo(user.name);
+  const { precio, horaClase, fechaClase } = datosParaElla(user.phone);
+  const cuenta = cuentaRegresiva(new Date());
+  const link = CLASE.landing;
+  const seed = (user.name || '') + 'c' + toque;
+
+  // Si la clase ya pasó, prometer un "en vivo" que no va a ocurrir es mentirle.
+  if (cuenta.estado === 'pasada') {
+    if (!CLASE.quedaGrabada) {
+      return cap(`${n}la clase "${CLASE.nombre}" ya se dio 💛 Si quieres, te aviso apenas Javier abra la próxima.`);
+    }
+    return cap(pick([
+      `${n}la clase "${CLASE.nombre}" ya se dio, pero quedó grabada y todavía puedes verla completa: ${link}\n\nSon ${precio}, un solo pago, y te llevas también el libro y el área de miembros. ¿Te la dejo lista? 💛`,
+      `${n}se te pasó la clase en vivo, pero no te quedaste sin nada 💛 La grabación completa sigue disponible aquí: ${link}\n\n${precio}, pago único, con el libro y el área de miembros incluidos. ¿Entras?`,
+    ], seed));
+  }
+
+  const cuando = cuenta.estado === 'en_vivo'
+    ? 'está empezando ahora mismo'
+    : `es el ${fechaClase} a las ${horaClase} — ${cuenta.frase.toLowerCase()}`;
+
+  if (toque === 1) {
+    return cap(pick([
+      `${n}soy Paula 💛 La clase "${CLASE.nombre}" con Javier ${cuando}. Aseguras tu lugar aquí: ${link}\n\nSon ${precio}, un solo pago, y queda grabada por si no alcanzas a conectarte en vivo. ¿Te guardo tu cupo?`,
+      `${n}te escribo por la clase "${CLASE.nombre}" de Javier: ${cuando} 💛 Aquí aseguras el tuyo: ${link}\n\n${precio}, pago único, y te llevas la grabación, el libro y el área de miembros. ¿Entras?`,
+    ], seed));
+  }
+
+  return cap(pick([
+    `${n}no quiero que se te pase: la clase ${cuando}. Son ${CLASE.duracionHoras} horas en vivo con Javier y sales con herramientas de verdad, no con teoría.\n\nAseguras tu lugar aquí: ${link} — ${precio}, un solo pago, y queda grabada. ¿Te veo ahí? ✨`,
+    `${n}te dejo el enlace una vez más, sin presionarte 💛 La clase ${cuando}: ${link}\n\n${precio}, un solo pago. Y si no puedes conectarte en vivo, la grabación te queda igual. ¿Aseguro tu cupo?`,
+  ], seed));
+}
+
 // --- Generador INTELIGENTE (LLM): recordatorio personalizado al dolor de ELLA ---
 // Lee el historial real de la conversación y escribe un recordatorio de VENTA
 // hecho a su medida. Si falla o devuelve algo inválido, cae al copy fijo.
@@ -180,7 +225,9 @@ async function generarRecordatorioLLM(
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) return null;
 
-  const linkRequerido = toque === 2 || linkYaEnviado ? CHECKOUT_URL : LANDING_URL;
+  const linkRequerido = CAMPANA_CLASE
+    ? CLASE.landing
+    : toque === 2 || linkYaEnviado ? CHECKOUT_URL : LANDING_URL;
 
   const historial = messages
     .slice(0, 10)
@@ -188,11 +235,30 @@ async function generarRecordatorioLLM(
     .map((m) => `${m.message.type === 'human' ? 'ELLA' : 'PAULA'}: ${m.message.content}`)
     .join('\n');
 
-  const objetivo = toque === 1
-    ? `TOQUE 1 (lleva ~4h en silencio): retoma SU dolor exacto (usa sus palabras del historial, no frases genéricas), preséntale Apego Detox como el tratamiento para ESO, entrega este link UNA vez: ${linkRequerido} y cierra con UNA pregunta de decisión.`
-    : `TOQUE 2 (lleva ~16h en silencio, último toque): cierre directo. Su dolor en una frase, el link de pago UNA vez: ${linkRequerido}, la clase en vivo con Javier (martes y jueves 8 pm hora Colombia), la garantía de 7 días, y UNA pregunta de decisión que invite a entrar HOY.`;
+  const objetivo = CAMPANA_CLASE
+    ? (toque === 1
+      ? `TOQUE 1 (lleva ~4h en silencio): retómala con calidez, recuérdale la clase con la fecha y la hora EXACTAS del bloque de arriba (las de SU país), entrega este link UNA vez: ${linkRequerido} y cierra con UNA pregunta de decisión.`
+      : `TOQUE 2 (lleva ~16h en silencio, último toque): cierre directo. La clase con su fecha, SU hora y cuánto falta, el precio EN SU MONEDA, que queda grabada, el link UNA vez: ${linkRequerido}, y UNA pregunta de decisión.`)
+    : (toque === 1
+      ? `TOQUE 1 (lleva ~4h en silencio): retoma SU dolor exacto (usa sus palabras del historial, no frases genéricas), preséntale Apego Detox como el tratamiento para ESO, entrega este link UNA vez: ${linkRequerido} y cierra con UNA pregunta de decisión.`
+      : `TOQUE 2 (lleva ~16h en silencio, último toque): cierre directo. Su dolor en una frase, el link de pago UNA vez: ${linkRequerido}, la clase en vivo con Javier (martes y jueves 8 pm hora Colombia), la garantía de 7 días, y UNA pregunta de decisión que invite a entrar HOY.`);
 
-  const sys = `Eres Paula, asesora de Apego Detox del equipo de Javier Vieira, Psicólogo Especialista. Escribes UN mensaje de seguimiento de VENTA por WhatsApp/Instagram para una mujer que dejó de responder. Tu único objetivo es acercarla HOY a comprar Apego Detox ($37.97 USD al mes, suscripción mensual, cancela cuando quiera, garantía total de 7 días, 15 módulos, clases en vivo con Javier martes y jueves 8 pm hora Colombia).
+  const encargo = CAMPANA_CLASE
+    ? `${bloqueContextoVivo(new Date(), user.phone)}
+---
+
+Eres Paula, del equipo de Javier Vieira, Psicólogo Especialista. Escribes UN mensaje de seguimiento de VENTA por WhatsApp/Instagram para una mujer que dejó de responder. Tu único objetivo es que asegure su lugar en la clase en vivo "${CLASE.nombre}" (${CLASE.duracionHoras} horas, una sola vez, PAGO ÚNICO; incluye herramientas, terapia en vivo, meditación, el libro de la clase, área de miembros y la grabación).
+
+La fecha, la hora en el país de ELLA, el precio en SU moneda y cuánto falta están arriba, ya calculados: úsalos TAL CUAL, no los deduzcas ni los cambies. NUNCA menciones Apego Detox, ni "$37.97", ni módulos, ni suscripción mensual.`
+    : `Eres Paula, asesora de Apego Detox del equipo de Javier Vieira, Psicólogo Especialista. Escribes UN mensaje de seguimiento de VENTA por WhatsApp/Instagram para una mujer que dejó de responder. Tu único objetivo es acercarla HOY a comprar Apego Detox ($37.97 USD al mes, suscripción mensual, cancela cuando quiera, garantía total de 7 días, 15 módulos, clases en vivo con Javier martes y jueves 8 pm hora Colombia).`;
+
+  // En Apego Detox decir "pago único" o "cupos" sería mentira (es suscripción).
+  // En la clase son verdad, así que ahí no se prohíben.
+  const prohibido = CAMPANA_CLASE
+    ? `"oferta", "descuento", "última oportunidad"`
+    : `"oferta", "descuento", "cupos limitados", "última oportunidad", "pago único"`;
+
+  const sys = `${encargo}
 
 ${objetivo}
 
@@ -200,7 +266,7 @@ REGLAS DURAS:
 - Máximo 2 globos separados por UNA línea en blanco, ~250 caracteres por globo.
 - El link va UNA sola vez, completo y sin modificar.
 - Texto plano de WhatsApp: sin markdown, sin listas. Emojis solo 💛 y ✨ (máximo 1 por globo).
-- PROHIBIDO: "oferta", "descuento", "cupos limitados", "última oportunidad", "pago único", reprocharle el silencio ("vi que no respondiste"), decir que es un mensaje automático, diagnosticar, prometer cura.
+- PROHIBIDO: ${prohibido}, reprocharle el silencio ("vi que no respondiste"), decir que es un mensaje automático, diagnosticar, prometer cura.
 - Tono: hermana mayor con criterio clínico. Cálida, directa, sutil y firme. Nunca de feria, nunca rogando.
 - Si el nombre de ella aparece en el contexto, úsalo una vez.
 - Si en el historial hay señales de crisis (suicidio, autolesión, violencia física), responde EXACTAMENTE: NO_ENVIAR
@@ -238,7 +304,10 @@ Responde SOLO con el mensaje final (o NO_ENVIAR). Nada de explicaciones.`;
     texto = texto.replace(/\[\[[^\]]*\]\]/g, '').trim();
     if (!texto.includes(linkRequerido)) return null;
     if (texto.length > 900) return null;
-    if (/oferta|descuento|cupos|última oportunidad|ultima oportunidad|pago único|pago unico/i.test(texto)) return null;
+    const prohibidoRe = CAMPANA_CLASE
+      ? /oferta|descuento|última oportunidad|ultima oportunidad/i
+      : /oferta|descuento|cupos|última oportunidad|ultima oportunidad|pago único|pago unico/i;
+    if (prohibidoRe.test(texto)) return null;
     return texto;
   } catch {
     return null;
@@ -308,9 +377,11 @@ async function handle(req: NextRequest) {
       const hoursSinceHuman = (now.getTime() - lastHumanTime.getTime()) / 3600000;
       if (hoursSinceHuman >= 23.5) continue;
 
+      // En campaña el link que cuenta es el de la página de la clase.
+      const marcaLink = CAMPANA_CLASE ? [CLASE.landing.replace(/^https?:\/\//, '')] : ['apegodetox', 'hotmart'];
       const linkYaEnviado = stage === 'link_enviado' || messages.some((m) =>
         m.message && m.message.type === 'ai' &&
-        ((m.message.content || '').includes('apegodetox') || (m.message.content || '').includes('hotmart'))
+        marcaLink.some((marca) => (m.message.content || '').includes(marca))
       );
 
       // ¿Ya tiene el link del grupo? (incluye a las del embudo viejo — a esas
@@ -349,9 +420,11 @@ async function handle(req: NextRequest) {
         msg = await generarRecordatorioLLM(user, messages, toque, linkYaEnviado);
         if (msg === 'NO_ENVIAR') continue; // el generador detectó crisis
         if (!msg) {
-          msg = toque === 1
-            ? copyRecordatorio1(user.name, linkYaEnviado)
-            : copyRecordatorio2(user.name);
+          msg = CAMPANA_CLASE
+            ? copyClase(user, toque)
+            : toque === 1
+              ? copyRecordatorio1(user.name, linkYaEnviado)
+              : copyRecordatorio2(user.name);
         }
       }
 
