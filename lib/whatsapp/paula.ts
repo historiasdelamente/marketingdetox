@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { CLASE, bloqueContextoVivo } from './contexto-clase';
 
 // ============================================================================
 // PAULA — CERRADORA DE APEGO DETOX
@@ -17,51 +18,63 @@ import path from 'path';
 
 const PROMPTS_DIR = path.join(process.cwd(), 'agents-source', 'prompts', 'whatsapp');
 
-// ⚠️ CAMPAÑA TEMPORAL "Mujer Fuerte" (clase del jueves 23 jul 2026).
-// Poner en false para REVERTIR a la venta normal de Apego Detox.
-// OJO: la clase se llama "Mujer Fuerte" pero la landing sigue viviendo en
-// la ruta /volver-a-mi (así no se rompen los anuncios ya publicados).
-const CAMPANA_MUJER_FUERTE = true;
+// ⚠️ CAMPAÑA TEMPORAL DE CLASE EN VIVO.
+// La fecha, la hora por país, la moneda y la cuenta regresiva NO viven aquí:
+// se calculan en cada mensaje en lib/whatsapp/contexto-clase.ts. Para cambiar
+// de clase se edita ese archivo (CLASE.nombre / CLASE.inicioISO / CLASE.landing)
+// y para volver a la venta normal de Apego Detox se pone CLASE.activa = false.
+const CAMPANA_CLASE = CLASE.activa;
 
 // Links canon (mismos que la landing — si cambian allá, cambiar acá y en el maestro).
-const CHECKOUT_MARKER = CAMPANA_MUJER_FUERTE ? 'pay.hotmart.com/H106712135H' : 'pay.hotmart.com/W102751360L';
-const LANDING_MARKER = CAMPANA_MUJER_FUERTE ? 'historiasdelamente.com/volver-a-mi' : 'historiasdelamente.com/apegodetox';
+// En campaña el checkout NO se comparte (el pago se hace en la página de la
+// clase): este marcador solo sirve para detectar que ya se entregó un link.
+const CHECKOUT_MARKER = CAMPANA_CLASE ? 'pay.hotmart.com/H106712135H' : 'pay.hotmart.com/W102751360L';
+const LANDING_MARKER = CAMPANA_CLASE
+  ? CLASE.landing.replace(/^https?:\/\//, '')
+  : 'historiasdelamente.com/apegodetox';
 
 // Bloque de campaña que se antepone al prompt maestro (override de PRIORIDAD MÁXIMA).
-const CAMPANA_OVERRIDE = `# ⚠️ CAMPAÑA ACTIVA — PRIORIDAD MÁXIMA (hasta el 23 de julio)
+// OJO: aquí NO se escribe la fecha, ni la hora por país, ni el precio en cada
+// moneda, ni cuánto falta. Todo eso lo calcula contexto-clase.ts y se inyecta
+// arriba de este bloque en cada mensaje. Si se duplica, se contradice.
+const CAMPANA_OVERRIDE = `# ⚠️ CAMPAÑA ACTIVA — PRIORIDAD MÁXIMA
 
-Durante esta campaña eres una ESTRATEGA DE VENTAS, NO una terapeuta. Tu ÚNICO objetivo es que ella asegure HOY su lugar en la clase en vivo "Mujer Fuerte". Queda SUSPENDIDO todo lo que este prompt diga más abajo (Apego Detox, el flujo de "pasos", el discovery). Única excepción: el PROTOCOLO DE CRISIS manda sobre todo, siempre.
+Durante esta campaña eres una ESTRATEGA DE VENTAS, NO una terapeuta. Tu ÚNICO objetivo es que ella asegure HOY su lugar en la clase en vivo "${CLASE.nombre}". Queda SUSPENDIDO todo lo que este prompt diga más abajo (Apego Detox, el flujo de "pasos", el discovery). Única excepción: el PROTOCOLO DE CRISIS manda sobre todo, siempre.
 
 ## Cómo te comportas (LO MÁS IMPORTANTE)
 - Suenas a PERSONA REAL, cálida y natural — NUNCA a respuesta automática ni a robot. Nada de fórmulas repetidas ni de pegar el link en cada mensaje.
-- Desde tu PRIMER mensaje le hablas de la CLASE "Mujer Fuerte" con calidez y ganas de verdad (qué es, cuándo, qué se lleva). NO le preguntes por su caso: nada de "¿cómo estás?", "¿en qué momento estás con esa persona?", "¿qué te pasa?" ni "cuéntame". La charla es sobre la clase, no sobre diagnosticarla.
+- Desde tu PRIMER mensaje le hablas de la CLASE "${CLASE.nombre}" con calidez y ganas de verdad (qué es, cuándo, qué se lleva). NO le preguntes por su caso: nada de "¿cómo estás?", "¿en qué momento estás con esa persona?", "¿qué te pasa?" ni "cuéntame". La charla es sobre la clase, no sobre diagnosticarla.
 - Estás centrada en la venta, con calma: resuelves en 1-2 frases lo que pregunte y la vas guiando a que asegure su cupo.
 - Comparte el link de la clase cuando muestre interés o pregunte cómo entrar (no a la fuerza desde el saludo).
 - Mensajes cortos y humanos. Trátala bien pero SIN apodos ("amor", "cielo", "reina"). Háblale de "tú".
 
 ## La clase (tu ÚNICO producto)
-Solo vendes la clase "Mujer Fuerte". NUNCA menciones Apego Detox, ni "$37.97", ni "módulos", ni "suscripción/membresía mensual" — eso quedó suspendido. Tu precio es 25.000 COP, PAGO ÚNICO.
-"Mujer Fuerte": clase EN VIVO, 3 horas, una sola vez — JUEVES 23 DE JULIO, 8:00 PM Colombia. Entiendes por qué no has podido soltar y sales con herramientas + terapia en vivo + meditación + testimonios + el libro "Mujer Fuerte" + área de miembros + la grabación. Precio único: 25.000 COP (7 USD / 120 MXN). Cupos limitados, se están llenando.
+Solo vendes la clase "${CLASE.nombre}". NUNCA menciones Apego Detox, ni "$37.97", ni "módulos", ni "suscripción/membresía mensual" — eso quedó suspendido. Es PAGO ÚNICO, no mensualidad.
+"${CLASE.nombre}": clase EN VIVO, ${CLASE.duracionHoras} horas, una sola vez. Sale con herramientas + terapia en vivo + meditación + testimonios + el libro de la clase + área de miembros + la grabación (si no puede conectarse en vivo, no pierde nada). Cupos limitados, se están llenando.
 
-## ⛔ LA FECHA — REGLA DURA, NO LA EQUIVOQUES
-La clase es el **JUEVES 23 de julio**. Escribe SIEMPRE "jueves 23 de julio".
-NUNCA digas "martes 23", ni ningún otro día: el 23 de julio es JUEVES.
-Más abajo este prompt menciona unas "clases en vivo martes y jueves" — ESAS SON DE APEGO DETOX y están SUSPENDIDAS en esta campaña. NO las mezcles con la fecha de "Mujer Fuerte". Si dudas del día, di solo "el 23 de julio a las 8:00 PM hora Colombia".
+## ⛔ LA FECHA Y LA HORA — REGLA DURA
+La fecha, la hora en el país de ELLA y cuánto falta están calculadas arriba, en el bloque "RELOJ Y CALENDARIO". Úsalas TAL CUAL. No las deduzcas, no las estimes, no cambies el día de la semana.
+Más abajo este prompt menciona unas "clases en vivo martes y jueves" — ESAS SON DE APEGO DETOX y están SUSPENDIDAS en esta campaña. NO las mezcles con la fecha de "${CLASE.nombre}".
 
 ## EL ÁNGULO DE ESTA CLASE (úsalo, es lo que engancha)
-Ella es fuerte para TODO EL MUNDO — el trabajo, la casa, los hijos, los demás — menos para él. Todos le dicen "qué fuerte eres" y nadie sabe que le escribe y borra el mensaje, que revisa la hora del último visto, que pide perdón por cosas que no hizo.
-La vuelta que da la clase: AGUANTAR NO ES SER FUERTE. Su fuerza está intacta, solo está apuntando al lado equivocado — la gasta en soportarlo a él en vez de en sostenerse a ella. Frase de cierre: "Ser fuerte no es aguantar más. Es dejar de aguantar."
-Nunca le digas que es débil ni que "no ha podido". El mensaje es que su fuerza YA existe.
-
-## LA HORA EN SU PAÍS (si pregunta, dísela exacta)
-8:00 PM Colombia = 7:00 PM México · 9:00 PM Miami y Chile · 8:00 PM Perú y Ecuador · 10:00 PM Argentina.
+Ella se perdió a sí misma dentro de esa relación. Dejó de ver a sus amigas, dejó lo que le gustaba, se volvió cuidadosa con lo que dice para no provocarlo, se mide hasta para escribir un mensaje. Un día se miró al espejo y no reconoció a la mujer que estaba ahí.
+La vuelta que da la clase: ella no está rota, está ESCONDIDA. La mujer que era antes de él no se murió — la guardó para sobrevivir. Y lo que se guardó, se puede sacar. Frase de cierre: "No vas a recuperarlo a él. Te vas a recuperar a ti."
+Nunca le digas que se dejó anular, ni que perdió el tiempo, ni que es débil. Lo que hizo fue sobrevivir.
 
 ## EL LINK
-- El único link que compartes es el de la clase: https://historiasdelamente.com/volver-a-mi — ahí ella ve todo y asegura su lugar. (Es la página de "Mujer Fuerte" aunque la dirección diga volver-a-mi; NO le expliques eso, solo pásale el link. NO mandes links de pago de Hotmart; el pago se hace en esa página.)
-- Si está en Colombia y prefiere Nequi: que envíe 25.000 COP al 3116329202 y luego mande el comprobante + su correo por WhatsApp (https://wa.me/573001681053) para su acceso.
+- El único link que compartes es el de la clase: ${CLASE.landing} — ahí ella ve todo y asegura su lugar. NO mandes links de pago de Hotmart; el pago se hace en esa página.
+- Si está en Colombia y prefiere Nequi: que envíe ${CLASE.nequi.monto} al ${CLASE.nequi.numero} y luego mande el comprobante + su correo por WhatsApp (https://wa.me/573001681053) para su acceso.
 
 ## Precio
-Si pregunta cuánto cuesta, dilo con naturalidad y COMPLETO, con las tres monedas: 25.000 COP en Colombia, 7 USD desde Estados Unidos o cualquier otro país, y 120 MXN en México. Es el mismo valor en cada país, un solo pago. Luego compártele el link de la clase para que asegure su lugar.
+Si pregunta cuánto cuesta, dile el valor EN SU MONEDA (está calculado arriba, en el bloque del reloj) y aclara que es un solo pago, no mensualidad. Si no sabes de qué país te escribe, dile el valor en dólares y pregúntale el país en la misma frase. Luego compártele el link para que asegure su lugar.
+
+## ⭐ SI ELLA DICE QUE YA PAGÓ (pasa MUCHO — atiéndelo bien)
+Cambias a modo post-venta: CERO venta, cero links de pago, no le vuelvas a ofrecer la clase.
+1. Felicítala corto y cálido, sin exagerar.
+2. Dile que su acceso le llega al correo con el que pagó — que revise también Promociones y Spam.
+3. Dile CUÁNDO es la clase EN SU HORA LOCAL y CUÁNTO FALTA. Los tres datos (fecha, hora de ella, días que faltan) los copias del bloque del reloj — no los inventes ni los redondees.
+4. Si no le llegó el acceso o algo falla, pásale el WhatsApp directo de Javier: ${CLASE.soporte}.
+Y emite la marca oculta [[COMPRA]] (ver sección de marcas ocultas).
 
 ## Si ya es COMPRADORA de Apego Detox
 Salúdala con cariño e invítala a la clase como un encuentro especial (mismo link). Sin presión.
@@ -152,6 +165,8 @@ export type WaUser = {
   first_contact: string;
   last_interaction: string;
   conversation_count: number;
+  /** Número internacional que manda ManyChat. De aquí sale su país. */
+  phone?: string | null;
 };
 
 type SupabaseMessage = {
@@ -233,7 +248,7 @@ export async function updateUser(manychatId: string, updates: Partial<Pick<WaUse
 
 // Columnas opcionales (origen/canal — pueden no existir en schemas viejos).
 // PATCH separado en best-effort para que un schema sin la columna nunca rompa.
-async function updateUserOptional(manychatId: string, col: 'origen' | 'canal', val: string) {
+async function updateUserOptional(manychatId: string, col: 'origen' | 'canal' | 'phone', val: string) {
   try {
     await supabaseQuery(`wa_users?manychat_id=eq.${manychatId}`, {
       method: 'PATCH',
@@ -246,14 +261,18 @@ async function updateUserOptional(manychatId: string, col: 'origen' | 'canal', v
 
 // --- Prompt Assembly ---
 
-function buildSystemPrompt(user: WaUser, origen: string): string {
+function buildSystemPrompt(user: WaUser, origen: string, telefono: string): string {
   // Prompt MAESTRO autocontenido (venta Apego Detox) + contexto + crisis.
   const sistemaPrompt = loadPrompt('00_sistema_paula.md');
   const protocoloCrisis = loadPrompt('03_protocolo_crisis.md');
 
   const userContext = buildUserContext(user, origen);
 
-  return `${CAMPANA_MUJER_FUERTE ? CAMPANA_OVERRIDE + '\n' : ''}${sistemaPrompt}
+  // Reloj + país de ella: se recalcula en CADA mensaje, nunca se cachea.
+  // Va PRIMERO para que el modelo lo lea antes que cualquier otra cosa.
+  const contextoVivo = CAMPANA_CLASE ? bloqueContextoVivo(new Date(), telefono) + '\n---\n\n' : '';
+
+  return `${contextoVivo}${CAMPANA_CLASE ? CAMPANA_OVERRIDE + '\n' : ''}${sistemaPrompt}
 
 ---
 
@@ -271,7 +290,7 @@ function buildUserContext(user: WaUser, origen: string): string {
 
   if (user.name) {
     lines.push(`- Nombre: ${user.name}`);
-  } else if (CAMPANA_MUJER_FUERTE) {
+  } else if (CAMPANA_CLASE) {
     lines.push('- Nombre: no lo sabemos — NO se lo preguntes. En campaña vas directa a la venta y al link.');
   } else {
     lines.push('- Nombre: NO LO SABEMOS TODAVÍA — preguntarlo (Paso 1)');
@@ -282,14 +301,18 @@ function buildUserContext(user: WaUser, origen: string): string {
   }
 
   const stage = user.funnel_stage || 'new_lead';
-  if (stage === 'compradora') {
+  if (stage === 'compradora' && CAMPANA_CLASE) {
+    // En campaña, "compradora" = pagó LA CLASE, no Apego Detox. Si aquí le
+    // hablamos de módulos y de las clases de los martes, la confundimos.
+    lines.push(`- ETAPA: YA PAGÓ LA CLASE "${CLASE.nombre}". MODO POST-VENTA: cero venta, cero links de pago, no le vuelvas a ofrecer la clase. Confírmale que su acceso llega al correo con el que pagó (que revise Promociones y Spam), recuérdale la fecha EN SU HORA LOCAL y cuánto falta (bloque del reloj, arriba), y si algo falla pásale el WhatsApp de Javier (${CLASE.soporte}). NO le hables de Apego Detox ni de las clases de los martes y jueves.`);
+  } else if (stage === 'compradora') {
     lines.push('- ETAPA: COMPRADORA. Ya pagó Apego Detox. MODO POST-VENTA: cero venta, no mandes links de pago. Acompaña, resuelve dudas de acceso, recuerda las clases en vivo (martes y jueves 8 pm Colombia) y el WhatsApp de Javier (+57 300 1681053) si hay problemas de acceso.');
   } else if (stage === 'link_enviado') {
     lines.push('- ETAPA: LINK YA ENVIADO. No repitas un link que ya enviaste, salvo que ella lo pida. Si solo diste el link de la PÁGINA, el link de PAGO sí se entrega cuando cierres (Paso 5). Tu foco ahora: descubrir qué la frena (pregunta directa) y resolver ESA objeción, luego cerrar de nuevo.');
   } else if (stage === 'no_molestar') {
     lines.push('- ETAPA: PIDIÓ NO RECIBIR MENSAJES. Si su último mensaje es pedir que no le escribas, despídete con respeto en 1 solo mensaje, sin vender. Si volvió a escribir por su cuenta con otro tema, responde con suavidad, sin venta agresiva; si pregunta por el programa, retoma normal.');
-  } else if (CAMPANA_MUJER_FUERTE) {
-    lines.push('- ETAPA: EN CONVERSACIÓN. Céntrate en vender la clase "Mujer Fuerte" con naturalidad (ver CAMPAÑA arriba): guíala y comparte el link de la página cuando muestre interés. Nada de terapia, discovery ni sonar automática.');
+  } else if (CAMPANA_CLASE) {
+    lines.push(`- ETAPA: EN CONVERSACIÓN. Céntrate en vender la clase "${CLASE.nombre}" con naturalidad (ver CAMPAÑA arriba): guíala y comparte el link de la página cuando muestre interés. Nada de terapia, discovery ni sonar automática.`);
   } else {
     lines.push('- ETAPA: EN CONVERSACIÓN. Objetivo: validar su dolor, prescribir Apego Detox y cerrar la venta (ver flujo).');
   }
@@ -424,6 +447,7 @@ export async function processPaulaMessage(
   userMessage: string,
   origen = '',
   canal = '',
+  telefono = '',
 ): Promise<string> {
   // 1. Usuaria + historial
   const user = await getOrCreateUser(manychatId);
@@ -456,7 +480,7 @@ export async function processPaulaMessage(
     name: updates.name ?? user.name,
     funnel_stage: updates.funnel_stage ?? user.funnel_stage,
   };
-  const systemPrompt = buildSystemPrompt(userParaPrompt, origen);
+  const systemPrompt = buildSystemPrompt(userParaPrompt, origen, telefono);
 
   // 4. Modelo principal
   const messages = [...history, { role: 'user', content: userMessage }];
@@ -495,9 +519,11 @@ export async function processPaulaMessage(
   await updateUser(manychatId, updates);
 
   // Origen y canal (transporte whatsapp/instagram) — best-effort, para que los
-  // recordatorios salgan por el canal correcto.
+  // recordatorios salgan por el canal correcto. El teléfono se guarda para que
+  // los recordatorios también sepan su país, su hora y su moneda.
   if (origen) await updateUserOptional(manychatId, 'origen', origen);
   if (canal) await updateUserOptional(manychatId, 'canal', canal.toLowerCase() === 'instagram' ? 'instagram' : 'whatsapp');
+  if (telefono) await updateUserOptional(manychatId, 'phone', telefono);
 
   return paulaResponse;
 }
