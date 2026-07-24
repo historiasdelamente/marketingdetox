@@ -134,7 +134,7 @@ export default function OutputsPage() {
               </svg>
             </div>
             <p className="text-sm text-muted-foreground/40 mb-1">Aún no hay archivos guardados</p>
-            <p className="text-xs text-muted-foreground/25">Genera contenido con un agente y haz click en "Guardar"</p>
+            <p className="text-xs text-muted-foreground/25">Genera contenido con un agente y haz click en &quot;Guardar&quot;</p>
           </div>
         ) : (
           <div className="space-y-2">
