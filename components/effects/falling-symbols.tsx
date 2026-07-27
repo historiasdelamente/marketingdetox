@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 
 const THOUGHTS = [
   "\u2727", "\u2726", "\u2022", "\u25CB", "\u25CF", "\u2023",
@@ -40,12 +40,23 @@ function createParticle(): Particle {
   };
 }
 
-export function FallingSymbols() {
-  const [particles, setParticles] = useState<Particle[]>([]);
+// Las partículas son aleatorias: si el servidor las generara, no coincidirían
+// con las del cliente y rompería la hidratación. useSyncExternalStore devuelve
+// false en el render del servidor y true ya en el cliente, así que las
+// partículas solo existen después de hidratar.
+const subscribeToNothing = () => () => {};
 
-  useEffect(() => {
-    setParticles(Array.from({ length: 14 }, () => createParticle()));
-  }, []);
+export function FallingSymbols() {
+  const isClient = useSyncExternalStore(
+    subscribeToNothing,
+    () => true,
+    () => false
+  );
+
+  const particles = useMemo<Particle[]>(
+    () => (isClient ? Array.from({ length: 14 }, () => createParticle()) : []),
+    [isClient]
+  );
 
   return (
     <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 1 }}>
