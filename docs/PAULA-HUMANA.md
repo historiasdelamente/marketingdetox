@@ -140,6 +140,14 @@ Las reglas que lo corrigen viven en el bloque de campaña de [`lib/whatsapp/paul
 
 Resultado tras el ajuste, en las mismas 8 respuestas: **0 preguntas, 0 psicoeducación, 0 contenido de otro producto**, y el link entregado siempre que correspondía.
 
+### El formato del mensaje
+
+- **Negrita en el dato clave** (el día, la hora o el precio), una por mensaje, dos como máximo.
+  WhatsApp usa `*palabra*` con UN asterisco, no el `**palabra**` de markdown. El modelo escribe markdown por costumbre, así que [`normalizarNegritas()`](../lib/whatsapp/manychat.ts) lo convierte antes de enviar y recorta de la tercera en adelante.
+  **Instagram no tiene negrita**: allá los asteriscos se verían literales, así que se quitan del todo. Por eso la conversión depende del canal.
+- **Uno o dos emojis por mensaje** (solo 💛 y ✨), separados entre sí — nunca dos pegados ni uno por línea.
+- **Su país no se pregunta: se lee del teléfono.** `detectarPais()` saca la zona horaria y la moneda del indicativo. Con un `+54` responde "10:00 PM en Argentina, unos 9.000 ARS" sin preguntar nada. Solo cuando ManyChat no manda `phone` (Instagram) usa dólares y hora Colombia explícita — y ni ahí pregunta de entrada.
+
 ---
 
 ## 7. Desplegar

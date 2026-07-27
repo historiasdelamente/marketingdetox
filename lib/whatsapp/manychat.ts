@@ -58,6 +58,40 @@ export async function enviarManyChat(
 }
 
 // ---------------------------------------------------------------------------
+// NEGRITAS — WhatsApp no entiende markdown
+// ---------------------------------------------------------------------------
+
+/** Máximo de palabras en negrita por mensaje. Más de esto grita, no resalta. */
+const MAX_NEGRITAS = 2;
+
+/**
+ * Deja las negritas como cada canal las entiende:
+ *   - WhatsApp: `*palabra*` (asterisco simple). El modelo tiende a escribir
+ *     `**palabra**` por costumbre de markdown, y eso se ve literal en el chat.
+ *   - Instagram: no tiene negrita. Los asteriscos se quitan del todo.
+ * Y se limita a MAX_NEGRITAS: la negrita solo funciona si es escasa.
+ */
+export function normalizarNegritas(texto: string, canal: Canal = 'whatsapp'): string {
+  // **x** y __x__ → *x*
+  let out = (texto || '')
+    .replace(/\*\*([^*\n]+)\*\*/g, '*$1*')
+    .replace(/__([^_\n]+)__/g, '*$1*');
+
+  if (canal === 'instagram') {
+    return out.replace(/\*([^*\n]+)\*/g, '$1');
+  }
+
+  // De la tercera negrita en adelante, se quita el resaltado (no el texto).
+  let vistas = 0;
+  out = out.replace(/\*([^*\n]+)\*/g, (_m, contenido) => {
+    vistas += 1;
+    return vistas <= MAX_NEGRITAS ? `*${contenido}*` : String(contenido);
+  });
+
+  return out;
+}
+
+// ---------------------------------------------------------------------------
 // RITMO HUMANO
 // ---------------------------------------------------------------------------
 

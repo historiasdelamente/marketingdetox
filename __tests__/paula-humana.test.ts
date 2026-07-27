@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 import { auditarRespuesta, instruccionCorreccion, motivoHandoff } from "@/lib/whatsapp/blindaje";
-import { partirEnGlobos } from "@/lib/whatsapp/manychat";
+import { normalizarNegritas, partirEnGlobos } from "@/lib/whatsapp/manychat";
 
 // La clase configurada en contexto-clase.ts: jueves 30 jul 2026, 8 PM Colombia.
 const LUNES_27 = new Date("2026-07-27T15:00:00Z"); // 10:00 AM Colombia
@@ -86,6 +86,30 @@ describe("blindaje anti-invento", () => {
     expect(motivoHandoff("esto es un bot?")).toBe("pide_humano");
     expect(motivoHandoff("el link no me deja pagar")).toBe("problema_pago");
     expect(motivoHandoff("hola, vi el video")).toBeNull();
+  });
+});
+
+describe("negritas por canal", () => {
+  it("convierte el markdown del modelo al formato de WhatsApp", () => {
+    expect(normalizarNegritas("Es este **jueves 30**", "whatsapp")).toBe("Es este *jueves 30*");
+    expect(normalizarNegritas("Cuesta __25.000 COP__", "whatsapp")).toBe("Cuesta *25.000 COP*");
+  });
+
+  it("en Instagram no deja asteriscos sueltos (allá no hay negrita)", () => {
+    expect(normalizarNegritas("Es este **jueves 30** a las *8 PM*", "instagram")).toBe(
+      "Es este jueves 30 a las 8 PM",
+    );
+  });
+
+  it("de la tercera negrita en adelante quita el resaltado, no el texto", () => {
+    const r = normalizarNegritas("*uno* y *dos* y *tres* y *cuatro*", "whatsapp");
+    expect(r).toBe("*uno* y *dos* y tres y cuatro");
+    expect((r.match(/\*[^*]+\*/g) || []).length).toBe(2);
+  });
+
+  it("no toca un mensaje que ya viene bien", () => {
+    const ok = "Es este *jueves 30 de julio* 💛";
+    expect(normalizarNegritas(ok, "whatsapp")).toBe(ok);
   });
 });
 
