@@ -1,6 +1,13 @@
 import fs from 'fs';
 import path from 'path';
 import { CLASE, bloqueContextoVivo } from './contexto-clase';
+import {
+  auditarRespuesta,
+  instruccionCorreccion,
+  instruccionHandoff,
+  motivoHandoff,
+  type MotivoHandoff,
+} from './blindaje';
 
 // ============================================================================
 // PAULA — CERRADORA DE APEGO DETOX
@@ -43,6 +50,8 @@ Durante esta campaña eres una ESTRATEGA DE VENTAS, NO una terapeuta. Tu ÚNICO 
 
 ## Cómo te comportas (LO MÁS IMPORTANTE)
 - Suenas a PERSONA REAL, cálida y natural — NUNCA a respuesta automática ni a robot. Nada de fórmulas repetidas ni de pegar el link en cada mensaje.
+- Ella te escribe en varios mensajitos seguidos y tú los recibes TODOS JUNTOS. Respóndele UNA sola vez, a todo lo que preguntó. No contestes mensaje por mensaje.
+- Escribe de 1 a 3 globos cortos, separados por UNA línea en blanco. Así se lee como un chat de verdad, no como un comunicado.
 - Desde tu PRIMER mensaje le hablas de la CLASE "${CLASE.nombre}" con calidez y ganas de verdad (qué es, cuándo, qué se lleva). NO le preguntes por su caso: nada de "¿cómo estás?", "¿en qué momento estás con esa persona?", "¿qué te pasa?" ni "cuéntame". La charla es sobre la clase, no sobre diagnosticarla.
 - Estás centrada en la venta, con calma: resuelves en 1-2 frases lo que pregunte y la vas guiando a que asegure su cupo.
 - Comparte el link de la clase cuando muestre interés o pregunte cómo entrar (no a la fuerza desde el saludo).
@@ -51,6 +60,12 @@ Durante esta campaña eres una ESTRATEGA DE VENTAS, NO una terapeuta. Tu ÚNICO 
 ## La clase (tu ÚNICO producto)
 Solo vendes la clase "${CLASE.nombre}". NUNCA menciones Apego Detox, ni "$37.97", ni "módulos", ni "suscripción/membresía mensual" — eso quedó suspendido. Es PAGO ÚNICO, no mensualidad.
 "${CLASE.nombre}": clase EN VIVO, ${CLASE.duracionHoras} horas, una sola vez. Sale con herramientas + terapia en vivo + meditación + testimonios + el libro de la clase + área de miembros + la grabación (si no puede conectarse en vivo, no pierde nada). Cupos limitados, se están llenando.
+
+## QUÉ SE VIVE EN LAS ${CLASE.duracionHoras} HORAS (si pregunta "¿qué se ve?", esto le respondes)
+- Hora 1 — Cómo se fue borrando: el mecanismo exacto, con ejemplos reales, nada de teoría. Cuando lo ve claro, deja de parecerle culpa suya.
+- Hora 2 — Acompañamiento terapéutico en vivo: trabajo en directo, meditación y relajación guiada, y mujeres reales contando cómo volvieron a sí mismas.
+- Hora 3 — Sus preguntas respondidas en vivo, apertura del área de miembros y entrega del libro de la clase.
+Si te dice que a esa hora no puede, NO la sueltes: se lleva la GRABACIÓN y el área de miembros, así que la vive completa igual.
 
 ## ⛔ LA FECHA Y LA HORA — REGLA DURA
 La fecha, la hora en el país de ELLA y cuánto falta están calculadas arriba, en el bloque "RELOJ Y CALENDARIO". Úsalas TAL CUAL. No las deduzcas, no las estimes, no cambies el día de la semana.
@@ -261,7 +276,14 @@ async function updateUserOptional(manychatId: string, col: 'origen' | 'canal' | 
 
 // --- Prompt Assembly ---
 
-function buildSystemPrompt(user: WaUser, origen: string, telefono: string): string {
+function buildSystemPrompt(
+  user: WaUser,
+  origen: string,
+  telefono: string,
+  opciones: { ahora?: Date; handoff?: MotivoHandoff } = {},
+): string {
+  const ahora = opciones.ahora ?? new Date();
+
   // Prompt MAESTRO autocontenido (venta Apego Detox) + contexto + crisis.
   const sistemaPrompt = loadPrompt('00_sistema_paula.md');
   const protocoloCrisis = loadPrompt('03_protocolo_crisis.md');
@@ -270,9 +292,12 @@ function buildSystemPrompt(user: WaUser, origen: string, telefono: string): stri
 
   // Reloj + país de ella: se recalcula en CADA mensaje, nunca se cachea.
   // Va PRIMERO para que el modelo lo lea antes que cualquier otra cosa.
-  const contextoVivo = CAMPANA_CLASE ? bloqueContextoVivo(new Date(), telefono) + '\n---\n\n' : '';
+  const contextoVivo = CAMPANA_CLASE ? bloqueContextoVivo(ahora, telefono) + '\n---\n\n' : '';
 
-  return `${contextoVivo}${CAMPANA_CLASE ? CAMPANA_OVERRIDE + '\n' : ''}${sistemaPrompt}
+  // Escalado a humano: va antes que todo, para que no lo tape la venta.
+  const handoff = opciones.handoff ? instruccionHandoff(opciones.handoff) + '\n\n---\n\n' : '';
+
+  return `${handoff}${contextoVivo}${CAMPANA_CLASE ? CAMPANA_OVERRIDE + '\n' : ''}${sistemaPrompt}
 
 ---
 
@@ -480,11 +505,36 @@ export async function processPaulaMessage(
     name: updates.name ?? user.name,
     funnel_stage: updates.funnel_stage ?? user.funnel_stage,
   };
-  const systemPrompt = buildSystemPrompt(userParaPrompt, origen, telefono);
+  const ahora = new Date();
+  const handoff = motivoHandoff(userMessage); // ¿pide una persona real / falló el pago?
+  const systemPrompt = buildSystemPrompt(userParaPrompt, origen, telefono, { ahora, handoff });
 
   // 4. Modelo principal
   const messages = [...history, { role: 'user', content: userMessage }];
   let paulaResponse = await callOpenRouter(systemPrompt, messages);
+
+  // 4b. BLINDAJE ANTI-INVENTO — se audita ANTES de que ella lo lea.
+  // Si el modelo se inventó una fecha, un precio o un link, se le pide que
+  // reescriba el mensaje UNA vez con la corrección exacta. Si en el segundo
+  // intento sigue mal, gana la versión saneada (links borrados, día corregido).
+  let auditoria = auditarRespuesta(stripHiddenTags(paulaResponse), ahora);
+  if (auditoria.hallazgos.length > 0) {
+    console.warn('[Paula blindaje]', manychatId, auditoria.hallazgos.map((h) => h.tipo).join(', '));
+    try {
+      const reintento = await callOpenRouter(systemPrompt, [
+        ...messages,
+        { role: 'assistant', content: paulaResponse },
+        { role: 'user', content: instruccionCorreccion(auditoria.hallazgos) },
+      ]);
+      const auditoria2 = auditarRespuesta(stripHiddenTags(reintento), ahora);
+      if (auditoria2.texto && auditoria2.hallazgos.length <= auditoria.hallazgos.length) {
+        paulaResponse = reintento;
+        auditoria = auditoria2;
+      }
+    } catch (err) {
+      console.error('[Paula blindaje] reintento falló:', (err as Error).message);
+    }
+  }
 
   // 5. Marcas de la IA (secundarias a la detección determinista)
   const etapaActual = updates.funnel_stage ?? user.funnel_stage ?? 'new_lead';
@@ -499,7 +549,8 @@ export async function processPaulaMessage(
   }
   NO_MOLESTAR_TAG_RE.lastIndex = 0;
 
-  paulaResponse = stripHiddenTags(paulaResponse);
+  // Texto final = el ya auditado y saneado (sin tags, sin links inventados).
+  paulaResponse = auditoria.texto;
 
   // 6. Detección determinista del link en la respuesta de Paula
   const etapaFinal = updates.funnel_stage ?? user.funnel_stage ?? 'new_lead';

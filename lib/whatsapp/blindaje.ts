@@ -1,0 +1,169 @@
+// ============================================================================
+// BLINDAJE ANTI-INVENTO
+//
+// El modelo, por bueno que sea, tarde o temprano se inventa una fecha, un
+// precio o un link. Esto revisa CADA respuesta de Paula antes de que ella la
+// lea: repara solo lo que se puede reparar (links y el día de la semana) y
+// reporta el resto, para que el motor le pida al modelo que lo corrija.
+//
+// Todos los datos de la clase salen de `contexto-clase.ts` — acá no se escribe
+// ni una fecha a mano. Si se duplica, se contradice.
+//
+// Regla de oro: es preferible que Paula diga "eso prefiero confirmártelo" a
+// que le prometa a una mujer una fecha que no existe.
+// ============================================================================
+
+import { CLASE, cuentaRegresiva } from './contexto-clase';
+
+export type Hallazgo = {
+  tipo:
+    | 'link_inventado'
+    | 'dia_equivocado'
+    | 'fecha_inventada'
+    | 'precio_prohibido'
+    | 'urgencia_falsa'
+    | 'clase_caducada';
+  detalle: string;
+};
+
+const TZ_COLOMBIA = 'America/Bogota';
+
+/** Dominios/rutas que Paula tiene permitido enviar. Todo lo demás se borra. */
+const LINKS_OK = [
+  'historiasdelamente.com',
+  'pay.hotmart.com',
+  'wa.me/',
+  'chat.whatsapp.com',
+];
+
+const URL_RE = /https?:\/\/[^\s<>()"']+/gi;
+
+const MESES = 'enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre';
+const DIAS_SEMANA = 'lunes|martes|mi[ée]rcoles|jueves|viernes|s[áa]bado|domingo';
+
+/** El día, el número y el mes reales de la clase, sacados de CLASE.inicioISO. */
+function fechaDeLaClase() {
+  const inicio = new Date(CLASE.inicioISO);
+  const fmt = (opts: Intl.DateTimeFormatOptions) =>
+    new Intl.DateTimeFormat('es-CO', { timeZone: TZ_COLOMBIA, ...opts }).format(inicio);
+  return {
+    diaSemana: fmt({ weekday: 'long' }).toLowerCase(),
+    numero: Number(new Intl.DateTimeFormat('en-CA', { timeZone: TZ_COLOMBIA, day: 'numeric' }).format(inicio)),
+    mes: fmt({ month: 'long' }).toLowerCase(),
+  };
+}
+
+// Producto suspendido durante la campaña de la clase.
+const PRECIO_PROHIBIDO = /\$?\s*37[.,]97|suscripci[óo]n\s+mensual|membres[íi]a\s+mensual|al\s+mes\b/i;
+
+const URGENCIA_FALSA = /[úu]ltimo\s+cupo|queda\s+1\s+cupo|solo\s+queda\s+un\s+cupo|[úu]ltima\s+oportunidad/i;
+
+// Promesas de futuro — prohibidas cuando la clase ya se dictó.
+const PROMESA_FUTURO = /pr[óo]xim[oa]\s+jueves|este\s+jueves|faltan?\s+\d+\s+d[ií]as|es\s+ma[ñn]ana/i;
+
+/**
+ * Revisa y repara la respuesta de Paula.
+ * Devuelve el texto ya saneado + la lista de lo que estaba mal.
+ */
+export function auditarRespuesta(texto: string, ahora: Date = new Date()): { texto: string; hallazgos: Hallazgo[] } {
+  const hallazgos: Hallazgo[] = [];
+  const clase = fechaDeLaClase();
+  const estado = cuentaRegresiva(ahora).estado;
+  let out = texto || '';
+
+  // 1) Links: se borran los que no están en la lista blanca.
+  out = out.replace(URL_RE, (url) => {
+    const limpia = url.replace(/[.,;:)]+$/, '');
+    if (LINKS_OK.some((ok) => limpia.includes(ok))) return url;
+    hallazgos.push({ tipo: 'link_inventado', detalle: limpia });
+    return '';
+  });
+
+  // 2) Día de la semana pegado a la fecha de la clase: se corrige solo.
+  const diaPegado = new RegExp(`\\b(${DIAS_SEMANA})\\s+(${clase.numero})\\s+de\\s+${clase.mes}`, 'gi');
+  out = out.replace(diaPegado, (match, dia) => {
+    if (String(dia).toLowerCase() === clase.diaSemana) return match;
+    hallazgos.push({ tipo: 'dia_equivocado', detalle: match });
+    return `${clase.diaSemana} ${clase.numero} de ${clase.mes}`;
+  });
+
+  // 3) Cualquier otra fecha que no sea la de la clase.
+  const otraFecha = new RegExp(`\\b(\\d{1,2})\\s+de\\s+(${MESES})\\b`, 'gi');
+  for (const m of out.matchAll(otraFecha)) {
+    const esLaDeLaClase = Number(m[1]) === clase.numero && m[2].toLowerCase() === clase.mes;
+    if (!esLaDeLaClase) {
+      hallazgos.push({ tipo: 'fecha_inventada', detalle: m[0] });
+    }
+  }
+
+  // 4) La clase ya se dictó: puede vender la grabación, pero NO prometer futuro.
+  if (estado === 'pasada') {
+    const promesa = out.match(PROMESA_FUTURO);
+    if (promesa) hallazgos.push({ tipo: 'clase_caducada', detalle: promesa[0] });
+  }
+
+  // 5) Precio de otro producto.
+  const precio = out.match(PRECIO_PROHIBIDO);
+  if (precio) hallazgos.push({ tipo: 'precio_prohibido', detalle: precio[0] });
+
+  // 6) Urgencia falsa.
+  const urgencia = out.match(URGENCIA_FALSA);
+  if (urgencia) hallazgos.push({ tipo: 'urgencia_falsa', detalle: urgencia[0] });
+
+  out = out.replace(/[ \t]{2,}/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+
+  return { texto: out, hallazgos };
+}
+
+/** Instrucción de corrección que se le manda al modelo en el segundo intento. */
+export function instruccionCorreccion(hallazgos: Hallazgo[]): string {
+  const clase = fechaDeLaClase();
+  const fechaOk = `${clase.diaSemana} ${clase.numero} de ${clase.mes}`;
+
+  const lineas = hallazgos.map((h) => {
+    switch (h.tipo) {
+      case 'link_inventado':
+        return `- Enviaste un link que NO existe (${h.detalle}). El único link de la clase es ${CLASE.landing}, y para soporte el WhatsApp de Javier.`;
+      case 'dia_equivocado':
+        return `- Escribiste "${h.detalle}". La clase es el ${fechaOk}.`;
+      case 'fecha_inventada':
+        return `- Escribiste la fecha "${h.detalle}", que no es la de la clase. La única fecha es ${fechaOk}.`;
+      case 'clase_caducada':
+        return `- Escribiste "${h.detalle}" y la clase YA SE DICTÓ. No la vendas como si fuera a pasar: lo que ofreces ahora es el acceso con la grabación.`;
+      case 'precio_prohibido':
+        return `- Mencionaste "${h.detalle}". Esta clase es un PAGO ÚNICO, no una suscripción. No menciones otros productos ni mensualidades.`;
+      case 'urgencia_falsa':
+        return `- Usaste "${h.detalle}". Prohibido inventar escasez. Solo puedes decir que los cupos se están llenando.`;
+      default:
+        return `- ${h.detalle}`;
+    }
+  });
+
+  return `Tu respuesta anterior tenía errores de datos y NO se le envió a ella. Corrígelos y vuelve a escribir el mensaje completo, con el mismo tono, sin disculparte por el error ni mencionar esta corrección:\n${lineas.join('\n')}\n\nUsa SOLO los datos del bloque "RELOJ Y CALENDARIO" que está arriba. Si un dato no está ahí, no lo afirmes.`;
+}
+
+// ---------------------------------------------------------------------------
+// HANDOFF — cuándo pasarla a un humano
+// ---------------------------------------------------------------------------
+
+const PIDE_HUMANO_RE = /(hablar|habla|comunicar|comunicarme|contactar)\s+(con\s+)?(una?\s+)?(persona|humano|humana|asesor|asesora|alguien\s+real|javier|el\s+psic[óo]logo)|eres\s+(un\s+)?(bot|robot|m[áa]quina|ia)|esto\s+es\s+(un\s+)?(bot|robot|autom[áa]tico)|no\s+quiero\s+(hablar\s+con\s+)?(un\s+)?(bot|robot|m[áa]quina)|atenci[óo]n\s+humana/i;
+
+const PROBLEMA_PAGO_RE = /(no\s+me\s+(deja|carga|funciona|sirve)|error\s+(al|en|con)|fall[óo]\s+(el|la)|rechaz[óa]\s+(mi|la)|no\s+pude?\s+pagar|no\s+me\s+lleg[óo]|ya\s+pagu[ée]\s+y\s+no)/i;
+
+export type MotivoHandoff = 'pide_humano' | 'problema_pago' | null;
+
+export function motivoHandoff(mensaje: string): MotivoHandoff {
+  if (PIDE_HUMANO_RE.test(mensaje)) return 'pide_humano';
+  if (PROBLEMA_PAGO_RE.test(mensaje)) return 'problema_pago';
+  return null;
+}
+
+/** Bloque que se añade al prompt cuando toca escalar. */
+export function instruccionHandoff(motivo: Exclude<MotivoHandoff, null>): string {
+  if (motivo === 'pide_humano') {
+    return `# 🙋 ELLA PIDIÓ UN HUMANO — PRIORIDAD ALTA
+No lo niegues, no te defiendas y no discutas si eres o no un bot. En 1-2 frases: dile que la pasas con el equipo de Javier y dale su WhatsApp directo (${CLASE.soporte}). Nada de venta en este mensaje.`;
+  }
+  return `# 💳 PROBLEMA CON EL PAGO O EL ACCESO — PRIORIDAD ALTA
+No intentes resolverlo tú y NUNCA le pidas datos de su tarjeta. Discúlpate en una frase y pásala al equipo humano: ${CLASE.soporte}. Si lo que falla es que el link no le carga, puedes darle ${CLASE.landing} una vez.`;
+}
