@@ -181,6 +181,32 @@
 
 ---
 
+## DOCUMENTOS COMPLEMENTARIOS (no son de tecnicas)
+
+### Los 20 Miedos — Por que no se va del narcisista
+**Archivo:** [research-miedos-por-que-no-se-van.md](research-miedos-por-que-no-se-van.md)
+
+Mapa completo de las 20 barreras reales que impiden la salida, con: frases literales que
+ella dice, el miedo profundo debajo de cada miedo, el desarrollo educativo en voz de marca,
+el respaldo clinico y la frase de cierre para contenido.
+
+- **Riesgo real (nunca se empujan):** violencia mortal en la separacion, perdida de custodia,
+  amenaza de suicidio de el, abuso post-separacion
+- **Quimica:** abstinencia del trauma bond, intolerancia a la calma, ciclo de recaidas
+- **Identidad:** minimizacion, "y si la toxica soy yo", duelo por el hombre que no existio,
+  erosion del yo
+- **Estructura:** dependencia economica, mandato familiar/religioso, verguenza social, costo hundido
+- **Cierre:** paralisis (freeze/fawn) — por que entender no alcanza y el cambio pasa por el cuerpo
+
+**Investigadores clave:** Jacquelyn Campbell (Danger Assessment), Evan Stark (control coercitivo),
+Joan Meier (custodia), Adrienne Adams (abuso economico), Jennifer Freyd (DARVO), Lenore Walker,
+Michael P. Johnson, Pete Walker (4F), Pauline Boss (duelo ambiguo), Marlatt y Gordon (recaidas)
+
+**Uso:** insumo directo para TikTok (1 miedo = 1 video), emails (1 miedo = 1 email),
+lives (3-4 miedos por live), talleres (cada miedo = una estacion vivencial) y clases.
+
+---
+
 ## RESUMEN POR HERIDA QUE SANAN
 
 | Herida | Tecnicas clave |
