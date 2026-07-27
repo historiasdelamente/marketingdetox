@@ -109,6 +109,8 @@ En [`lib/whatsapp/blindaje.ts`](../lib/whatsapp/blindaje.ts), montado encima de 
 | Prometer la clase como futura cuando ya pasó | Se le pide que reescriba (puede vender la grabación, no la fecha) |
 | "$37.97 al mes" (otro producto) | Se le pide que reescriba |
 | "último cupo" (escasez falsa) | Se le pide que reescriba |
+| Ponerse a hacer terapia ("no es amor, es tu sistema nervioso...") | Se le pide que reescriba |
+| Prometer módulos o el protocolo de 8 pasos (eso es Apego Detox, no la clase) | Se le pide que reescriba |
 
 Si en el segundo intento sigue mal, sale la versión saneada. Prefiere quedarse corta antes que prometerle a una mujer algo que no existe.
 
@@ -120,6 +122,23 @@ Se tocan **dos archivos** y nada más:
 2. `marketingdetox/lib/whatsapp/contexto-clase.ts` (Paula) — `CLASE.nombre`, `CLASE.inicioISO` y `CLASE.landing`
 
 Para apagar la campaña y volver a vender Apego Detox: `CLASE.activa = false`.
+
+---
+
+## 6.b El tono: cercana, sin interrogar, sin hacer terapia
+
+Auditado con conversaciones reales contra el modelo (`openai/gpt-4.1-mini`). Antes del ajuste, **6 de cada 8 respuestas terminaban en una pregunta de permiso** — "¿quieres que te cuente más?", "¿quieres que te comparta el link?" — y ante un "quiero entrar a la clase" respondía con un párrafo de venta en vez del link.
+
+Las reglas que lo corrigen viven en el bloque de campaña de [`lib/whatsapp/paula.ts`](../lib/whatsapp/paula.ts):
+
+1. **Ella ya quiere ir.** No hay que convencerla ni descubrir su caso. Se le resuelve y se le abre la puerta.
+2. **Prohibido pedir permiso.** Si la información sirve, se da. Si el link aplica, se manda.
+3. **Máximo una pregunta cada tres mensajes**, y solo si el dato hace falta (su país). Lo normal es no preguntar.
+4. **Cierra invitando, no interrogando:** "Te espero adentro", "Cualquier cosa me dices".
+5. **No hace terapia.** Ante algo duro: una frase humana ("Uf, tres meses así agotan a cualquiera") y sigue con la clase. Nada de explicar mecanismos.
+6. **Solo promete lo que la clase tiene.** Módulos, protocolo de 8 pasos y comunidad privada son de Apego Detox, no de la clase.
+
+Resultado tras el ajuste, en las mismas 8 respuestas: **0 preguntas, 0 psicoeducación, 0 contenido de otro producto**, y el link entregado siempre que correspondía.
 
 ---
 

@@ -22,7 +22,9 @@ export type Hallazgo = {
     | 'fecha_inventada'
     | 'precio_prohibido'
     | 'urgencia_falsa'
-    | 'clase_caducada';
+    | 'clase_caducada'
+    | 'psicoeducacion'
+    | 'contenido_de_otro_producto';
   detalle: string;
 };
 
@@ -57,6 +59,14 @@ function fechaDeLaClase() {
 const PRECIO_PROHIBIDO = /\$?\s*37[.,]97|suscripci[óo]n\s+mensual|membres[íi]a\s+mensual|al\s+mes\b/i;
 
 const URGENCIA_FALSA = /[úu]ltimo\s+cupo|queda\s+1\s+cupo|solo\s+queda\s+un\s+cupo|[úu]ltima\s+oportunidad/i;
+
+// Paula acompaña y vende; NO psicoeduca. Explicarle el mecanismo por chat la
+// deja satisfecha con la explicación y sin entrar a la clase — y además suena
+// a terapeuta, que es justo lo que no es.
+const PSICOEDUCACION = /no\s+es\s+amor,?\s+es\b|sistema\s+nervioso|pidiendo\s+la\s+dosis|la\s+dosis\s+que|reca[íi]da\s+qu[íi]mica|es\s+qu[íi]mica\b|tu\s+cerebro\s+(te\s+)?(miente|est[áa]|te\s+enga)|est[áa]s\s+programada|refuerzo\s+intermitente|dopamina|cortisol/i;
+
+// Contenido del programa Apego Detox — NO viene incluido en la clase en vivo.
+const OTRO_PRODUCTO = /m[óo]dulo\s*\d+|\d+\s+m[óo]dulos|protocolo\s+de\s+\d+\s+pasos|comunidad\s+privada|apego\s+detox/i;
 
 // Promesas de futuro — prohibidas cuando la clase ya se dictó.
 const PROMESA_FUTURO = /pr[óo]xim[oa]\s+jueves|este\s+jueves|faltan?\s+\d+\s+d[ií]as|es\s+ma[ñn]ana/i;
@@ -110,6 +120,14 @@ export function auditarRespuesta(texto: string, ahora: Date = new Date()): { tex
   const urgencia = out.match(URGENCIA_FALSA);
   if (urgencia) hallazgos.push({ tipo: 'urgencia_falsa', detalle: urgencia[0] });
 
+  // 7) Se puso a hacer terapia por chat.
+  const psico = out.match(PSICOEDUCACION);
+  if (psico) hallazgos.push({ tipo: 'psicoeducacion', detalle: psico[0] });
+
+  // 8) Prometió contenido de Apego Detox como si viniera con la clase.
+  const otro = out.match(OTRO_PRODUCTO);
+  if (otro) hallazgos.push({ tipo: 'contenido_de_otro_producto', detalle: otro[0] });
+
   out = out.replace(/[ \t]{2,}/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
 
   return { texto: out, hallazgos };
@@ -134,6 +152,10 @@ export function instruccionCorreccion(hallazgos: Hallazgo[]): string {
         return `- Mencionaste "${h.detalle}". Esta clase es un PAGO ÚNICO, no una suscripción. No menciones otros productos ni mensualidades.`;
       case 'urgencia_falsa':
         return `- Usaste "${h.detalle}". Prohibido inventar escasez. Solo puedes decir que los cupos se están llenando.`;
+      case 'psicoeducacion':
+        return `- Escribiste "${h.detalle}": te pusiste a explicarle lo que le pasa por dentro, y eso NO lo haces por chat. Quita esa explicación. En su lugar: una frase humana y corta de que la escuchaste, y le abres la puerta de la clase.`;
+      case 'contenido_de_otro_producto':
+        return `- Mencionaste "${h.detalle}", que es del programa Apego Detox y NO viene con esta clase. Quítalo. Solo prometes lo que pasa en las ${CLASE.duracionHoras} horas de la clase.`;
       default:
         return `- ${h.detalle}`;
     }

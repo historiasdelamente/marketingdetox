@@ -125,6 +125,7 @@ export async function GET() {
     status: 'ok',
     agent: 'Paula - Historias de la Mente',
     modo: modoHumano() ? 'humano (buffer + globos)' : 'clasico (respuesta sincrona)',
+    modelo: process.env.PAULA_MODEL || 'openai/gpt-4.1 (por defecto)',
     oido: transcripcionDisponible() ? 'audios activos' : 'audios sin transcriptor',
     clase: { nombre: CLASE.nombre, activa: CLASE.activa, estado: cuenta.estado, cuenta: cuenta.frase },
     buffer: estadoBuffer(),

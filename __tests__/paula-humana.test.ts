@@ -37,6 +37,24 @@ describe("blindaje anti-invento", () => {
     expect(hallazgos).toHaveLength(0);
   });
 
+  it("no la deja hacer terapia por chat", () => {
+    const { hallazgos } = auditarRespuesta(
+      "Eso que sientes no es amor, es tu sistema nervioso pidiendo la dosis",
+      LUNES_27,
+    );
+    expect(hallazgos.map((h) => h.tipo)).toContain("psicoeducacion");
+
+    // Acompañar sin explicar sí está permitido.
+    const ok = auditarRespuesta("Uf, tres meses así agotan a cualquiera.", LUNES_27);
+    expect(ok.hallazgos).toHaveLength(0);
+  });
+
+  it("no deja prometer contenido de Apego Detox como si viniera con la clase", () => {
+    expect(
+      auditarRespuesta("Hay un módulo 7 con el protocolo de 8 pasos", LUNES_27).hallazgos.map((h) => h.tipo),
+    ).toContain("contenido_de_otro_producto");
+  });
+
   it("bloquea el precio de otro producto y la urgencia falsa", () => {
     expect(
       auditarRespuesta("Son $37.97 al mes", LUNES_27).hallazgos.map((h) => h.tipo),
