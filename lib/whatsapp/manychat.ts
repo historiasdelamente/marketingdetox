@@ -2,7 +2,7 @@
 // CLIENTE MANYCHAT — envío PROACTIVO de mensajes (Paula responde por su cuenta)
 //
 // Por qué existe: la "Solicitud externa" de ManyChat se cae a los 10 segundos.
-// Si Paula tiene que esperar 7 segundos a que la mujer termine de escribir y
+// Si Paula tiene que esperar 10 segundos a que la mujer termine de escribir y
 // además pensar la respuesta, NO cabe en esos 10 segundos. La salida es
 // invertir el flujo: el webhook contesta vacío al instante y Paula empuja la
 // respuesta después, por la API de ManyChat. Este archivo es ese empujón.

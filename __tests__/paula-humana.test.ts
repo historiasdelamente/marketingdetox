@@ -150,7 +150,7 @@ describe("globos de WhatsApp", () => {
 });
 
 // ---------------------------------------------------------------------------
-// El corazón del pedido: esperar 7 segundos y responder UNA vez.
+// El corazón del pedido: esperar 10 segundos y responder UNA vez.
 // ---------------------------------------------------------------------------
 
 const procesarMock = vi.fn();
@@ -170,7 +170,7 @@ vi.mock("@/lib/whatsapp/manychat", async () => {
   };
 });
 
-describe("buffer de 7 segundos", () => {
+describe("buffer de 10 segundos", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     procesarMock.mockReset().mockResolvedValue("Claro, es este jueves 💛");
@@ -190,11 +190,11 @@ describe("buffer de 7 segundos", () => {
     await vi.advanceTimersByTimeAsync(3000);
     encolarMensaje({ manychatId: "111", texto: "es este jueves?" });
 
-    // A los 6 s del último mensaje todavía no contestó: sigue esperándola.
-    await vi.advanceTimersByTimeAsync(6000);
+    // A los 9 s del último mensaje todavía no contestó: sigue esperándola.
+    await vi.advanceTimersByTimeAsync(9000);
     expect(procesarMock).not.toHaveBeenCalled();
 
-    // Pasados los 7 s de silencio, responde una vez con todo junto.
+    // Pasados los 10 s de silencio, responde una vez con todo junto.
     await vi.advanceTimersByTimeAsync(1500);
     expect(procesarMock).toHaveBeenCalledTimes(1);
     expect(procesarMock.mock.calls[0][1]).toBe("hola\nvi el video\nes este jueves?");
@@ -208,7 +208,7 @@ describe("buffer de 7 segundos", () => {
 
     encolarMensaje({ manychatId: "222", texto: "cuánto vale" });
     encolarMensaje({ manychatId: "333", texto: "a qué hora es" });
-    await vi.advanceTimersByTimeAsync(8000);
+    await vi.advanceTimersByTimeAsync(11000);
 
     expect(procesarMock).toHaveBeenCalledTimes(2);
     const mensajes = procesarMock.mock.calls.map((c) => c[1]).sort();
@@ -220,9 +220,9 @@ describe("buffer de 7 segundos", () => {
 
     for (let i = 0; i < 10; i++) {
       encolarMensaje({ manychatId: "444", texto: `mensaje ${i}` });
-      await vi.advanceTimersByTimeAsync(4000); // escribe cada 4 s, nunca calla 7
+      await vi.advanceTimersByTimeAsync(6000); // escribe cada 6 s, nunca calla 10
     }
-    // El tope de 25 s ya la obligó a contestar.
+    // El tope de 30 s ya la obligó a contestar.
     expect(procesarMock).toHaveBeenCalled();
   });
 
@@ -235,13 +235,13 @@ describe("buffer de 7 segundos", () => {
     );
 
     encolarMensaje({ manychatId: "555", texto: "hola" });
-    await vi.advanceTimersByTimeAsync(7500);
+    await vi.advanceTimersByTimeAsync(10500);
     expect(procesarMock).toHaveBeenCalledTimes(1);
 
     // Llega mientras el primer turno sigue en el aire.
     encolarMensaje({ manychatId: "555", texto: "ah y una cosa más" });
     liberar("respuesta 1");
-    await vi.advanceTimersByTimeAsync(8000);
+    await vi.advanceTimersByTimeAsync(11000);
 
     expect(procesarMock).toHaveBeenCalledTimes(2);
     expect(procesarMock.mock.calls[1][1]).toBe("ah y una cosa más");

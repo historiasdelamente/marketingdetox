@@ -1,4 +1,4 @@
-# Paula humana — espera de 7 segundos, globos y blindaje
+# Paula humana — espera de 10 segundos, globos y blindaje
 
 Guía corta de qué cambió, qué hay que tocar en ManyChat y cómo mantenerlo.
 
@@ -15,7 +15,7 @@ Las mujeres escriben como se habla, en ráfaga:
 
 Paula contestaba **cuatro veces**, una por mensaje. Se notaba el robot a un kilómetro.
 
-Ahora Paula **espera 7 segundos** a que ella termine, junta los cuatro mensajes en uno solo, y responde **una sola vez** a todo — en 2 o 3 globos, con la pausa que tomaría escribirlos.
+Ahora Paula **espera 10 segundos** a que ella termine, junta los cuatro mensajes en uno solo, y responde **una sola vez** a todo — en 2 o 3 globos, con la pausa que tomaría escribirlos.
 
 ---
 
@@ -23,12 +23,12 @@ Ahora Paula **espera 7 segundos** a que ella termine, junta los cuatro mensajes 
 
 La "Solicitud externa" de ManyChat **se cae a los 10 segundos** ([límite documentado, no configurable](https://community.manychat.com/ideas/webhook-10-second-timeout-limit-7425)).
 
-Esperar 7 s + pensar la respuesta (3-6 s) **no cabe** en esos 10 s. Por eso el flujo se invirtió:
+Esperar 10 s + pensar la respuesta (3-6 s) **no cabe** en esos 10 s. Por eso el flujo se invirtió:
 
 | Antes (modo clásico) | Ahora (modo humano) |
 |---|---|
 | ManyChat pregunta → Paula piensa → responde en la misma petición | ManyChat avisa → el webhook contesta vacío en milisegundos → Paula responde **por su cuenta** vía la API de ManyChat |
-| Sin espera posible | Espera 7 s, junta mensajes, responde en globos |
+| Sin espera posible | Espera 10 s, junta mensajes, responde en globos |
 
 El token que hace posible el empujón (`MANYCHAT_API_TOKEN`) **ya estaba configurado** — es el mismo que usan los recordatorios de venta.
 
@@ -54,7 +54,7 @@ El body de la solicitud externa, completo:
 }
 ```
 
-- `phone` es lo que le permite a Paula darle a cada mujer **su hora local y su moneda**. Sin él no asume Colombia: le pregunta el país.
+- `phone` es lo que le permite a Paula darle a cada mujer **su hora local y su moneda**. Sin él no asume Colombia: da dólares y dice "hora Colombia" explícito, sin preguntarle nada.
 - `audio_url` es opcional, solo si quieres que Paula **oiga las notas de voz**.
 
 > El "delay de 3 segundos" que hoy tienes configurado en ManyChat ya no hace falta: la espera y las pausas las maneja Paula.
@@ -69,13 +69,13 @@ Abre en el navegador `https://<tu-host>/api/whatsapp/webhook` (GET). Debe decir:
 {
   "modo": "humano (buffer + globos)",
   "clase": { "nombre": "Recuperando mi Ser", "activa": true, "estado": "futura", "cuenta": "faltan 3 días" },
-  "buffer": { "espera_ms": 7000, "conversaciones_en_espera": 0 }
+  "buffer": { "espera_ms": 10000, "conversaciones_en_espera": 0 }
 }
 ```
 
 Si dice `"modo": "clasico (respuesta sincrona)"` es que falta `MANYCHAT_API_TOKEN` en las variables de entorno del servicio.
 
-Después, escríbele por WhatsApp tres mensajitos seguidos. Debe contestar **una sola vez**, unos 8-10 segundos después del último.
+Después, escríbele por WhatsApp tres mensajitos seguidos. Debe contestar **una sola vez**, unos 12-13 segundos después del último.
 
 ---
 
@@ -83,8 +83,8 @@ Después, escríbele por WhatsApp tres mensajitos seguidos. Debe contestar **una
 
 | Variable | Por defecto | Para qué |
 |---|---|---|
-| `PAULA_ESPERA_MS` | `7000` | Segundos que espera a que ella termine de escribir |
-| `PAULA_MAX_ESPERA_MS` | `25000` | Tope: aunque siga escribiendo, contesta a los 25 s |
+| `PAULA_ESPERA_MS` | `10000` | Milisegundos de silencio que espera a que ella termine de escribir |
+| `PAULA_MAX_ESPERA_MS` | `30000` | Tope: aunque siga escribiendo, contesta a los 30 s |
 | `PAULA_MODO` | — | `sync` fuerza el modo clásico (útil para depurar) |
 | `GROQ_API_KEY` | — | Activa la transcripción de notas de voz (la opción más barata) |
 | `OPENAI_API_KEY` | — | Alternativa para transcribir, si no usas Groq |
@@ -181,7 +181,7 @@ Las pausas de tecleo también se recalibraron: la fórmula estaba pensada para p
 ## 7. Desplegar
 
 ```bash
-git add -A && git commit -m "feat(paula): espera de 7s, globos humanos y blindaje anti-invento" && git push origin master
+git add -A && git commit -m "feat(paula): espera de 10s, globos humanos y blindaje anti-invento" && git push origin master
 ```
 
 Luego bumpear `CACHE_BUST` en el `Dockerfile` y dar **Implementar** en el panel.

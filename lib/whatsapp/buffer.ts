@@ -1,15 +1,15 @@
 // ============================================================================
-// BUFFER DE MENSAJES — "espera 7 segundos antes de contestar"
+// BUFFER DE MENSAJES — "espera 10 segundos antes de contestar"
 //
 // El problema real: las mujeres escriben como se habla, en ráfaga.
 //   "hola"  ·  "vi el video"  ·  "es este jueves?"  ·  "cuánto vale"
 // Un bot normal contesta CUATRO veces, una por mensaje, y se nota que es un
-// bot. Paula ahora espera a que ella termine (7 s de silencio), junta todo y
+// bot. Paula ahora espera a que ella termine (10 s de silencio), junta todo y
 // responde UNA sola vez, entendiendo las cuatro cosas.
 //
 // Cómo funciona:
-//   - Cada mensaje reinicia un temporizador de 7 s (debounce).
-//   - Si ella sigue escribiendo, la espera se alarga hasta un tope de 25 s
+//   - Cada mensaje reinicia un temporizador de 10 s (debounce).
+//   - Si ella sigue escribiendo, la espera se alarga hasta un tope de 30 s
 //     (para que nunca se quede esperando indefinidamente).
 //   - Al vencer, se juntan los fragmentos y se procesan como un solo turno.
 //   - Si ella escribe MIENTRAS Paula está pensando, ese mensaje no se pierde:
@@ -24,8 +24,8 @@
 import { processPaulaMessage } from './paula';
 import { normalizarCanal, responderComoHumana, type Canal } from './manychat';
 
-const ESPERA_MS = Number(process.env.PAULA_ESPERA_MS || 7000);
-const MAX_ESPERA_MS = Number(process.env.PAULA_MAX_ESPERA_MS || 25000);
+const ESPERA_MS = Number(process.env.PAULA_ESPERA_MS || 10000);
+const MAX_ESPERA_MS = Number(process.env.PAULA_MAX_ESPERA_MS || 30000);
 const MAX_FRAGMENTOS = 15;
 
 type Turno = {

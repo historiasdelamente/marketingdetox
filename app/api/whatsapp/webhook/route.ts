@@ -15,18 +15,18 @@ import { CLASE, cuentaRegresiva } from '@/lib/whatsapp/contexto-clase';
  * MODO HUMANO (por defecto, requiere MANYCHAT_API_TOKEN)
  *   El webhook contesta 200 vacío en milisegundos y Paula responde después,
  *   por su cuenta, vía la API de ManyChat. Esto es lo que permite:
- *     · esperar 7 segundos a que ella termine de escribir (buffer),
+ *     · esperar 10 segundos a que ella termine de escribir (buffer),
  *     · juntar sus mensajitos en un solo turno,
  *     · responder en 2-3 globos con pausas de tecleo reales.
  *   Necesario porque la "Solicitud externa" de ManyChat se cae a los 10 s y
- *   esperar 7 s + pensar la respuesta no cabe ahí.
+ *   esperar 10 s + pensar la respuesta no cabe ahí ni de lejos.
  *   → En ManyChat: dejar SOLO el nodo de Solicitud externa. Quitar el nodo
  *     que enviaba {{bot_response}}, porque ahora el mensaje lo manda Paula.
  *
  * MODO CLÁSICO (fallback automático si no hay MANYCHAT_API_TOKEN, o con
  * PAULA_MODO=sync)
  *   Responde en la misma petición con {"bot_response": "..."} como siempre.
- *   Sin espera de 7 s (no cabe en el timeout de ManyChat).
+ *   Sin espera de 10 s (no cabe en el timeout de ManyChat).
  *
  * ── PAYLOAD ────────────────────────────────────────────────────────────────
  * {
@@ -41,7 +41,8 @@ import { CLASE, cuentaRegresiva } from '@/lib/whatsapp/contexto-clase';
  * ⚠️ `phone` es lo que le permite a Paula saber de qué país escribe ella, y con
  * eso darle la hora de la clase en SU zona horaria y el precio en SU moneda.
  * Si ManyChat no lo manda ({{phone}} en la External Request), Paula no asume
- * Colombia: le pregunta el país. Instagram no trae número, y ahí es normal.
+ * Colombia: da dólares y dice "hora Colombia" explícito, sin preguntarle nada.
+ * Instagram no trae número, y ahí es normal.
  */
 
 function modoHumano(): boolean {
