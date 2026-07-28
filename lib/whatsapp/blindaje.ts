@@ -25,6 +25,7 @@ export type Hallazgo = {
     | 'clase_caducada'
     | 'psicoeducacion'
     | 'contenido_de_otro_producto'
+    | 'grabacion_inexistente'
     | 'demasiado_largo';
   detalle: string;
 };
@@ -80,6 +81,30 @@ const PSICOEDUCACION = /no\s+es\s+amor,?\s+es\b|sistema\s+nervioso|pidiendo\s+la
 
 // Contenido del programa Apego Detox — NO viene incluido en la clase en vivo.
 const OTRO_PRODUCTO = /m[óo]dulo\s*\d+|\d+\s+m[óo]dulos|protocolo\s+de\s+\d+\s+pasos|comunidad\s+privada|apego\s+detox/i;
+
+// La clase NO se graba (CLASE.quedaGrabada). Prometer la grabación es la
+// promesa más cara de todas: la mujer paga contando con verla después y no
+// existe. Se revisa solo mientras la campaña de la clase está activa — las
+// clases de Apego Detox SÍ quedan grabadas y ahí decirlo es correcto.
+const MENCIONA_GRABACION = /grabaci[óo]n|grabad[oa]|se\s+graba|la\s+ves\s+despu[ée]s|verla\s+despu[ée]s|queda\s+guardada|repetici[óo]n/gi;
+const NEGACION = /\b(no|nunca|tampoco|sin|ni)\b/i;
+
+/**
+ * ¿Está PROMETIENDO la grabación, o está diciendo que no existe?
+ * "no queda grabada" es exactamente lo que queremos que diga — marcarlo
+ * dispararía un reintento inútil en cada mensaje.
+ * Se mira solo la cláusula en la que aparece (desde el último signo de
+ * puntuación), para que un "no te preocupes, queda grabada" NO se cuele.
+ */
+function prometeGrabacion(texto: string): string | null {
+  for (const m of texto.matchAll(MENCIONA_GRABACION)) {
+    const hasta = m.index ?? 0;
+    const inicioClausula = Math.max(...[...texto.slice(0, hasta).matchAll(/[.,;:!?¡¿\n]/g)].map((p) => (p.index ?? 0) + 1), 0);
+    const clausula = texto.slice(inicioClausula, hasta);
+    if (!NEGACION.test(clausula)) return m[0];
+  }
+  return null;
+}
 
 // Promesas de futuro — prohibidas cuando la clase ya se dictó.
 const PROMESA_FUTURO = /pr[óo]xim[oa]\s+jueves|este\s+jueves|faltan?\s+\d+\s+d[ií]as|es\s+ma[ñn]ana/i;
@@ -141,6 +166,12 @@ export function auditarRespuesta(texto: string, ahora: Date = new Date()): { tex
   const otro = out.match(OTRO_PRODUCTO);
   if (otro) hallazgos.push({ tipo: 'contenido_de_otro_producto', detalle: otro[0] });
 
+  // 8b) Prometió una grabación que no existe (decir que NO existe sí se permite).
+  if (CLASE.activa && !CLASE.quedaGrabada) {
+    const promesa = prometeGrabacion(out);
+    if (promesa) hallazgos.push({ tipo: 'grabacion_inexistente', detalle: promesa });
+  }
+
   out = out.replace(/[ \t]{2,}/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
 
   // 9) Se le fue la mano con el largo. Va de último: se mide el texto ya limpio.
@@ -170,7 +201,9 @@ export function instruccionCorreccion(hallazgos: Hallazgo[]): string {
       case 'fecha_inventada':
         return `- Escribiste la fecha "${h.detalle}", que no es la de la clase. La única fecha es ${fechaOk}.`;
       case 'clase_caducada':
-        return `- Escribiste "${h.detalle}" y la clase YA SE DICTÓ. No la vendas como si fuera a pasar: lo que ofreces ahora es el acceso con la grabación.`;
+        return CLASE.quedaGrabada
+          ? `- Escribiste "${h.detalle}" y la clase YA SE DICTÓ. No la vendas como si fuera a pasar: lo que ofreces ahora es el acceso con la grabación.`
+          : `- Escribiste "${h.detalle}" y la clase YA SE DICTÓ. No queda grabación, así que no hay nada que venderle de esa edición: díselo con calidez y ofrécele avisarle de la próxima.`;
       case 'precio_prohibido':
         return `- Mencionaste "${h.detalle}". Esta clase es un PAGO ÚNICO, no una suscripción. No menciones otros productos ni mensualidades.`;
       case 'urgencia_falsa':
@@ -181,6 +214,8 @@ export function instruccionCorreccion(hallazgos: Hallazgo[]): string {
         return `- Te saliste del largo de WhatsApp (${h.detalle}). Reescríbelo en 2 globos (3 solo si uno es el link), de una o dos frases cortas cada uno. Quita las enumeraciones y deja UNA sola idea: lo que ella preguntó. Lo demás lo ve en la página.`;
       case 'contenido_de_otro_producto':
         return `- Mencionaste "${h.detalle}", que es del programa Apego Detox y NO viene con esta clase. Quítalo. Solo prometes lo que pasa en las ${CLASE.duracionHoras} horas de la clase.`;
+      case 'grabacion_inexistente':
+        return `- Escribiste "${h.detalle}": la clase NO queda grabada. Es en vivo, una sola vez. Quita esa promesa por completo. Si ella dijo que a esa hora no puede, díselo de frente en vez de prometerle verla después.`;
       default:
         return `- ${h.detalle}`;
     }

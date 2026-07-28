@@ -114,15 +114,31 @@ function tiempoDeTecleo(texto: string): number {
  */
 export function partirEnGlobos(texto: string, maxChars = 150): string[] {
   const bloques = texto.split(/\n{2,}/).map((b) => b.trim()).filter(Boolean);
-  const globos: string[] = [];
+  const piezas: Array<{ url: boolean; valor: string }> = [];
 
   for (const bloque of bloques) {
-    if (bloque.length <= maxChars) {
-      globos.push(bloque);
+    // Las URLs se AÍSLAN ANTES de cortar por frases. Si no, el punto de
+    // "historiasdelamente.com" se lee como fin de oración y el link sale
+    // partido en dos mensajes — con eso deja de ser clicable.
+    let cursor = 0;
+    for (const m of bloque.matchAll(/https?:\/\/\S+/g)) {
+      const antes = bloque.slice(cursor, m.index).trim();
+      if (antes) piezas.push({ url: false, valor: antes });
+      piezas.push({ url: true, valor: m[0] });
+      cursor = (m.index ?? 0) + m[0].length;
+    }
+    const resto = bloque.slice(cursor).trim();
+    if (resto) piezas.push({ url: false, valor: resto });
+  }
+
+  const globos: string[] = [];
+  for (const pieza of piezas) {
+    if (pieza.url || pieza.valor.length <= maxChars) {
+      globos.push(pieza.valor);
       continue;
     }
-    // Corte por frases, agrupando hasta maxChars.
-    const frases = bloque.match(/[^.!?…]+[.!?…]*\s*/g) || [bloque];
+    // Corte por frases, agrupando hasta maxChars (aquí ya no hay URLs).
+    const frases = pieza.valor.match(/[^.!?…]+[.!?…]*\s*/g) || [pieza.valor];
     let acc = '';
     for (const frase of frases) {
       if ((acc + frase).trim().length > maxChars && acc.trim()) {
@@ -135,16 +151,22 @@ export function partirEnGlobos(texto: string, maxChars = 150): string[] {
     if (acc.trim()) globos.push(acc.trim());
   }
 
-  // Un link solo, en su propio globo.
+  // Cosido final: una frase corta de entrada ("Aquí aseguras tu lugar:") o una
+  // cola mínima ("💛") viajan pegadas al link, no como globo suelto.
   const finales: string[] = [];
-  for (const g of globos) {
-    const m = g.match(/^([\s\S]*?)\s*(https?:\/\/\S+)\s*([\s\S]*)$/);
-    if (m && m[1].trim().length > 40) {
-      finales.push(m[1].trim());
-      finales.push([m[2], m[3].trim()].filter(Boolean).join(' ').trim());
-    } else {
-      finales.push(g);
+  for (const globo of globos) {
+    const previo = finales[finales.length - 1];
+    const esUrl = /^https?:\/\//.test(globo);
+
+    if (esUrl && previo && !/^https?:\/\//.test(previo) && previo.length <= 40) {
+      finales[finales.length - 1] = `${previo} ${globo}`;
+      continue;
     }
+    if (!esUrl && globo.length <= 6 && previo && /https?:\/\/\S+$/.test(previo)) {
+      finales[finales.length - 1] = `${previo} ${globo}`;
+      continue;
+    }
+    finales.push(globo);
   }
 
   // Tope de seguridad: el largo real lo controla el blindaje (que pide

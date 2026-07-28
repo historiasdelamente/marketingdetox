@@ -45,8 +45,15 @@ export const CLASE = {
   /** WhatsApp directo de Javier (soporte de acceso, no venta). */
   soporte: '+57 300 1681053',
 
-  /** La clase queda grabada → después de que pase, todavía se puede vender. */
-  quedaGrabada: true,
+  /**
+   * ¿Queda grabada? NO. Es en vivo, una sola vez, y no se entrega grabación
+   * (confirmado por Javier el 2026-07-27).
+   * Consecuencias, todas automáticas:
+   *   - Paula NO puede prometer la grabación (lo bloquea blindaje.ts).
+   *   - Cuando la clase pase, deja de venderse: no hay nada que entregar.
+   * Si en una edición futura sí se graba, se pone `true` y todo vuelve solo.
+   */
+  quedaGrabada: false,
 } as const;
 
 /** Precio ancla en dólares. Todo lo demás es su equivalencia local. */
@@ -300,13 +307,17 @@ export function bloqueContextoVivo(ahora: Date, telefono?: string | null): strin
   const pais = detectarPais(telefono);
   const cuenta = cuentaRegresiva(ahora);
 
+  const noHayGrabacion = CLASE.quedaGrabada
+    ? ''
+    : '\n- ⛔ La clase NO queda grabada. Es en vivo, una sola vez. NUNCA le prometas grabación, ni "la ves después", ni "no pierdes nada si no puedes conectarte". Si te dice que a esa hora no puede, dile la verdad de frente: es en vivo y no se repite.';
+
   const instrucciones = cuenta.estado === 'pasada'
     ? (CLASE.quedaGrabada
       ? `- NO digas que la clase es "el jueves" ni la vendas como si fuera a pasar: ${cuenta.frase}.
 - Lo que SÍ vendes ahora es el acceso completo con LA GRABACIÓN de la clase, más todo lo que venía incluido. Dilo claro y sin rodeos: se la puede ver cuando quiera.`
       : `- ${cuenta.frase}. NO la vendas como si fuera a pasar. Avísale que ya pasó y ofrécele avisarle de la próxima.`)
     : cuenta.estado === 'en_vivo'
-      ? `- ${cuenta.frase}. Si quiere entrar, que asegure su lugar YA en el link — todavía alcanza, y además queda grabada.`
+      ? `- ${cuenta.frase}. Si quiere entrar, que asegure su lugar YA en el link — todavía alcanza, pero es AHORA: no queda grabada.`
       : `- Cuando ella pregunte cuánto falta, responde exactamente: "${cuenta.frase}". NO inventes otro número, NO digas otro día.`;
 
   return `# ⏰ RELOJ Y CALENDARIO — CALCULADO POR EL SISTEMA, ES LA VERDAD
@@ -315,7 +326,7 @@ Esto NO lo adivines ni lo calcules tú: ya viene resuelto. Léelo y úsalo tal c
 - Hoy es ${fechaLarga(ahora, TZ_COLOMBIA)} de ${new Intl.DateTimeFormat('es-CO', { timeZone: TZ_COLOMBIA, year: 'numeric' }).format(ahora)}. En Colombia son las ${hora12(ahora, TZ_COLOMBIA)}.
 - La clase "${CLASE.nombre}" es el ${fechaLarga(inicio, TZ_COLOMBIA)}, ${hora12(inicio, TZ_COLOMBIA)} hora Colombia.
 - 👉 ${cuenta.frase.toUpperCase()}
-${instrucciones}
+${instrucciones}${noHayGrabacion}
 
 ${bloqueSuPais(pais, ahora, inicio)}
 

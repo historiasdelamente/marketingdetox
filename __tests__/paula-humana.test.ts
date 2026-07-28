@@ -68,9 +68,9 @@ describe("blindaje anti-invento", () => {
     const { hallazgos } = auditarRespuesta("Es este jueves, no te lo pierdas", VIERNES_31);
     expect(hallazgos.map((h) => h.tipo)).toContain("clase_caducada");
 
-    // Pero sí puede seguir vendiendo la grabación nombrando la fecha real.
+    // Pero sí puede nombrar la fecha real para decirle que ya se dictó.
     const ok = auditarRespuesta(
-      "La clase fue el jueves 30 de julio y te llevas la grabación completa",
+      "La clase fue el jueves 30 de julio 💛 Te aviso apenas Javier abra la próxima.",
       VIERNES_31,
     );
     expect(ok.hallazgos).toHaveLength(0);
@@ -79,6 +79,34 @@ describe("blindaje anti-invento", () => {
   it("la instrucción de corrección le dice al modelo la fecha correcta", () => {
     const { hallazgos } = auditarRespuesta("La clase es el martes 30 de julio", LUNES_27);
     expect(instruccionCorreccion(hallazgos)).toContain("jueves 30 de julio");
+  });
+
+  it("no deja prometer una grabación que no existe", () => {
+    const casos = [
+      "Si no puedes en vivo, te queda la grabación",
+      "No te preocupes, la ves después",
+      "Queda grabada en tu área de miembros",
+    ];
+    for (const caso of casos) {
+      expect(auditarRespuesta(caso, LUNES_27).hallazgos.map((h) => h.tipo)).toContain(
+        "grabacion_inexistente",
+      );
+    }
+
+    // Decirle la VERDAD sí pasa — si no, Paula no podría ni negarlo.
+    const verdades = [
+      "Es en vivo y una sola vez, por eso vale la pena hacer el esfuerzo de estar 💛",
+      "No, la clase no queda grabada: es en vivo y solo se da una vez.",
+      "Si a esa hora no puedes, te aviso: no se repite ni queda grabada.",
+    ];
+    for (const v of verdades) {
+      expect(auditarRespuesta(v, LUNES_27).hallazgos).toHaveLength(0);
+    }
+
+    // Pero una negación de otra cosa no sirve de coartada.
+    expect(
+      auditarRespuesta("No te preocupes, queda grabada", LUNES_27).hallazgos.map((h) => h.tipo),
+    ).toContain("grabacion_inexistente");
   });
 
   it("no la deja escribir un folleto", () => {
@@ -131,6 +159,19 @@ describe("globos de WhatsApp", () => {
       "Hola, qué gusto.",
       "La clase es el jueves.",
     ]);
+  });
+
+  it("NUNCA parte un link en dos (el punto de .com no es fin de frase)", () => {
+    const largo =
+      "Uf, la clase es en vivo y solo se hace una vez, este jueves 30 de julio a las 8:00 PM hora Colombia. " +
+      "Si a esa hora no puedes, te aviso: no se repite. Aquí te dejo el link para que asegures tu lugar hoy: " +
+      "https://historiasdelamente.com/volver-a-mi 💛";
+
+    const globos = partirEnGlobos(largo);
+    const conLink = globos.filter((g) => g.includes("historiasdelamente"));
+    expect(conLink).toHaveLength(1);
+    expect(conLink[0]).toContain("https://historiasdelamente.com/volver-a-mi");
+    globos.forEach((g) => expect(g).not.toMatch(/^com\//));
   });
 
   it("saca el link a su propio globo", () => {

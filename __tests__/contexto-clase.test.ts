@@ -141,10 +141,13 @@ describe("bloqueContextoVivo", () => {
     }
   });
 
-  it("después de la clase deja de venderla en futuro y ofrece la grabación", () => {
+  // La clase NO se graba (CLASE.quedaGrabada = false). Cuando pasa no queda
+  // nada que vender de esa edición: se avisa y se ofrece la próxima.
+  it("después de la clase deja de venderla y no promete grabación", () => {
     const b = bloqueContextoVivo(new Date(INICIO.getTime() + 26 * 3_600_000), "+573116329202");
     expect(b).toContain("YA PASÓ");
-    expect(b).toContain("GRABACIÓN");
+    expect(b).toContain("ofrécele avisarle de la próxima");
+    expect(b).toContain("NO queda grabada");
   });
 });
 

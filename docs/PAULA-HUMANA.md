@@ -111,6 +111,7 @@ En [`lib/whatsapp/blindaje.ts`](../lib/whatsapp/blindaje.ts), montado encima de 
 | "último cupo" (escasez falsa) | Se le pide que reescriba |
 | Ponerse a hacer terapia ("no es amor, es tu sistema nervioso...") | Se le pide que reescriba |
 | Prometer módulos o el protocolo de 8 pasos (eso es Apego Detox, no la clase) | Se le pide que reescriba |
+| **Prometer la grabación** — la clase NO se graba | Se le pide que reescriba. Decir que *no* existe sí se permite |
 
 Si en el segundo intento sigue mal, sale la versión saneada. Prefiere quedarse corta antes que prometerle a una mujer algo que no existe.
 
@@ -122,6 +123,8 @@ Se tocan **dos archivos** y nada más:
 2. `marketingdetox/lib/whatsapp/contexto-clase.ts` (Paula) — `CLASE.nombre`, `CLASE.inicioISO` y `CLASE.landing`
 
 Para apagar la campaña y volver a vender Apego Detox: `CLASE.activa = false`.
+
+**`CLASE.quedaGrabada`** (hoy en `false`): la clase es en vivo, una sola vez, y no se entrega grabación. Con ese flag en `false`, Paula no puede prometerla (lo bloquea el blindaje) y, cuando la clase pasa, deja de venderse — no hay nada que entregar. Si una edición futura sí se graba, se pone `true` y todo vuelve solo.
 
 ---
 

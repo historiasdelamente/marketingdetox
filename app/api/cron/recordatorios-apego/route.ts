@@ -201,14 +201,14 @@ function copyClase(user: WaUserRow, toque: 1 | 2): string {
 
   if (toque === 1) {
     return cap(pick([
-      `${n}soy Paula 💛 La clase "${CLASE.nombre}" con Javier ${cuando}. Aseguras tu lugar aquí: ${link}\n\nSon ${precio}, un solo pago, y queda grabada por si no alcanzas a conectarte en vivo. ¿Te guardo tu cupo?`,
-      `${n}te escribo por la clase "${CLASE.nombre}" de Javier: ${cuando} 💛 Aquí aseguras el tuyo: ${link}\n\n${precio}, pago único, y te llevas la grabación, el libro y el área de miembros. ¿Entras?`,
+      `${n}soy Paula 💛 La clase "${CLASE.nombre}" con Javier ${cuando}. Aseguras tu lugar aquí: ${link}\n\nSon ${precio}, un solo pago. Es en vivo y una sola vez, así que separa tu cupo hoy.`,
+      `${n}te escribo por la clase "${CLASE.nombre}" de Javier: ${cuando} 💛 Aquí aseguras el tuyo: ${link}\n\n${precio}, pago único, y te llevas el libro y el área de miembros. ¿Entras?`,
     ], seed));
   }
 
   return cap(pick([
-    `${n}no quiero que se te pase: la clase ${cuando}. Son ${CLASE.duracionHoras} horas en vivo con Javier y sales con herramientas de verdad, no con teoría.\n\nAseguras tu lugar aquí: ${link} — ${precio}, un solo pago, y queda grabada. ¿Te veo ahí? ✨`,
-    `${n}te dejo el enlace una vez más, sin presionarte 💛 La clase ${cuando}: ${link}\n\n${precio}, un solo pago. Y si no puedes conectarte en vivo, la grabación te queda igual. ¿Aseguro tu cupo?`,
+    `${n}no quiero que se te pase: la clase ${cuando}. Son ${CLASE.duracionHoras} horas en vivo con Javier y sales con herramientas de verdad, no con teoría.\n\nAseguras tu lugar aquí: ${link} — ${precio}, un solo pago. ¿Te veo ahí? ✨`,
+    `${n}te dejo el enlace una vez más, sin presionarte 💛 La clase ${cuando}: ${link}\n\n${precio}, un solo pago. Es en vivo y no se repite, por eso te insisto. ¿Aseguro tu cupo?`,
   ], seed));
 }
 
@@ -238,7 +238,7 @@ async function generarRecordatorioLLM(
   const objetivo = CAMPANA_CLASE
     ? (toque === 1
       ? `TOQUE 1 (lleva ~4h en silencio): retómala con calidez, recuérdale la clase con la fecha y la hora EXACTAS del bloque de arriba (las de SU país), entrega este link UNA vez: ${linkRequerido} y cierra con UNA pregunta de decisión.`
-      : `TOQUE 2 (lleva ~16h en silencio, último toque): cierre directo. La clase con su fecha, SU hora y cuánto falta, el precio EN SU MONEDA, que queda grabada, el link UNA vez: ${linkRequerido}, y UNA pregunta de decisión.`)
+      : `TOQUE 2 (lleva ~16h en silencio, último toque): cierre directo. La clase con su fecha, SU hora y cuánto falta, el precio EN SU MONEDA, el link UNA vez: ${linkRequerido}, y UNA pregunta de decisión.`)
     : (toque === 1
       ? `TOQUE 1 (lleva ~4h en silencio): retoma SU dolor exacto (usa sus palabras del historial, no frases genéricas), preséntale Apego Detox como el tratamiento para ESO, entrega este link UNA vez: ${linkRequerido} y cierra con UNA pregunta de decisión.`
       : `TOQUE 2 (lleva ~16h en silencio, último toque): cierre directo. Su dolor en una frase, el link de pago UNA vez: ${linkRequerido}, la clase en vivo con Javier (martes y jueves 8 pm hora Colombia), la garantía de 7 días, y UNA pregunta de decisión que invite a entrar HOY.`);
@@ -247,7 +247,8 @@ async function generarRecordatorioLLM(
     ? `${bloqueContextoVivo(new Date(), user.phone)}
 ---
 
-Eres Paula, del equipo de Javier Vieira, Psicólogo Especialista. Escribes UN mensaje de seguimiento de VENTA por WhatsApp/Instagram para una mujer que dejó de responder. Tu único objetivo es que asegure su lugar en la clase en vivo "${CLASE.nombre}" (${CLASE.duracionHoras} horas, una sola vez, PAGO ÚNICO; incluye herramientas, terapia en vivo, meditación, el libro de la clase, área de miembros y la grabación).
+Eres Paula, del equipo de Javier Vieira, Psicólogo Especialista. Escribes UN mensaje de seguimiento de VENTA por WhatsApp/Instagram para una mujer que dejó de responder. Tu único objetivo es que asegure su lugar en la clase en vivo "${CLASE.nombre}" (${CLASE.duracionHoras} horas, una sola vez, PAGO ÚNICO; incluye herramientas, terapia en vivo, meditación, el libro de la clase y área de miembros).
+⛔ La clase NO queda grabada: es en vivo y no se repite. NUNCA prometas grabación, "la ves después" ni "no pierdes nada si no puedes conectarte".
 
 La fecha, la hora en el país de ELLA, el precio en SU moneda y cuánto falta están arriba, ya calculados: úsalos TAL CUAL, no los deduzcas ni los cambies. NUNCA menciones Apego Detox, ni "$37.97", ni módulos, ni suscripción mensual.`
     : `Eres Paula, asesora de Apego Detox del equipo de Javier Vieira, Psicólogo Especialista. Escribes UN mensaje de seguimiento de VENTA por WhatsApp/Instagram para una mujer que dejó de responder. Tu único objetivo es acercarla HOY a comprar Apego Detox ($37.97 USD al mes, suscripción mensual, cancela cuando quiera, garantía total de 7 días, 15 módulos, clases en vivo con Javier martes y jueves 8 pm hora Colombia).`;
