@@ -81,6 +81,18 @@ describe("blindaje anti-invento", () => {
     expect(instruccionCorreccion(hallazgos)).toContain("jueves 30 de julio");
   });
 
+  it("no la deja escribir un folleto", () => {
+    const folleto =
+      "Hola, soy Paula, del equipo de Javier. La clase en vivo Recuperando mi Ser es este jueves 30 de julio a las 7:00 PM hora de Ciudad de Mexico. Son 3 horas con terapia en vivo, meditacion, testimonios, el libro de la clase, el area de miembros y la grabacion por si no puedes conectarte en ese momento. Aqui te dejo el link para asegurar tu lugar.";
+    const { hallazgos } = auditarRespuesta(folleto, LUNES_27);
+    expect(hallazgos.map((h) => h.tipo)).toContain("demasiado_largo");
+  });
+
+  it("el link no cuenta para el largo (se ve como tarjeta, no como texto)", () => {
+    const corto = "Perfecto, aquí aseguras tu lugar:\n\nhttps://historiasdelamente.com/volver-a-mi\n\nTe espero adentro 💛";
+    expect(auditarRespuesta(corto, LUNES_27).hallazgos).toHaveLength(0);
+  });
+
   it("detecta cuándo hay que pasarla con una persona", () => {
     expect(motivoHandoff("quiero hablar con una persona")).toBe("pide_humano");
     expect(motivoHandoff("esto es un bot?")).toBe("pide_humano");

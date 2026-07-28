@@ -24,9 +24,22 @@ export type Hallazgo = {
     | 'urgencia_falsa'
     | 'clase_caducada'
     | 'psicoeducacion'
-    | 'contenido_de_otro_producto';
+    | 'contenido_de_otro_producto'
+    | 'demasiado_largo';
   detalle: string;
 };
+
+// --- Largo máximo de un mensaje de WhatsApp ---
+// Un mensaje real de chat anda entre 30 y 70 caracteres. Paula puede estirarse
+// hasta un par de frases, pero pasado esto deja de leerse como una persona y
+// empieza a leerse como un folleto. El link no cuenta: se ve como una tarjeta,
+// no como texto.
+const MAX_CHARS_MENSAJE = 300;
+const MAX_GLOBOS = 3;
+
+function largoSinLinks(texto: string): number {
+  return texto.replace(URL_RE, '').replace(/\s+/g, ' ').trim().length;
+}
 
 const TZ_COLOMBIA = 'America/Bogota';
 
@@ -130,6 +143,16 @@ export function auditarRespuesta(texto: string, ahora: Date = new Date()): { tex
 
   out = out.replace(/[ \t]{2,}/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
 
+  // 9) Se le fue la mano con el largo. Va de último: se mide el texto ya limpio.
+  const largo = largoSinLinks(out);
+  const globos = out.split(/\n{2,}/).filter((g) => g.trim()).length;
+  if (largo > MAX_CHARS_MENSAJE || globos > MAX_GLOBOS) {
+    hallazgos.push({
+      tipo: 'demasiado_largo',
+      detalle: `${largo} caracteres en ${globos} globos`,
+    });
+  }
+
   return { texto: out, hallazgos };
 }
 
@@ -154,6 +177,8 @@ export function instruccionCorreccion(hallazgos: Hallazgo[]): string {
         return `- Usaste "${h.detalle}". Prohibido inventar escasez. Solo puedes decir que los cupos se están llenando.`;
       case 'psicoeducacion':
         return `- Escribiste "${h.detalle}": te pusiste a explicarle lo que le pasa por dentro, y eso NO lo haces por chat. Quita esa explicación. En su lugar: una frase humana y corta de que la escuchaste, y le abres la puerta de la clase.`;
+      case 'demasiado_largo':
+        return `- Te saliste del largo de WhatsApp (${h.detalle}). Reescríbelo en 2 globos (3 solo si uno es el link), de una o dos frases cortas cada uno. Quita las enumeraciones y deja UNA sola idea: lo que ella preguntó. Lo demás lo ve en la página.`;
       case 'contenido_de_otro_producto':
         return `- Mencionaste "${h.detalle}", que es del programa Apego Detox y NO viene con esta clase. Quítalo. Solo prometes lo que pasa en las ${CLASE.duracionHoras} horas de la clase.`;
       default:

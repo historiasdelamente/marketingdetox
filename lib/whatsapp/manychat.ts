@@ -95,10 +95,15 @@ export function normalizarNegritas(texto: string, canal: Canal = 'whatsapp'): st
 // RITMO HUMANO
 // ---------------------------------------------------------------------------
 
-/** ms que "tarda en escribir" un globo: ~55 caracteres por segundo aparente. */
+/**
+ * ms que "tarda en escribir" un globo. Calibrado para globos cortos de chat:
+ * ~60 caracteres salen en 2 segundos, que es lo que tarda alguien escribiendo
+ * en el celular. Antes la fórmula estaba pensada para párrafos y dejaba pausas
+ * de 6 segundos entre frases de una línea — se sentía lento, no humano.
+ */
 function tiempoDeTecleo(texto: string): number {
-  const base = 700 + texto.length * 42;
-  return Math.min(Math.max(base, 1400), 6500);
+  const base = 400 + texto.length * 28;
+  return Math.min(Math.max(base, 900), 4000);
 }
 
 /**
@@ -107,7 +112,7 @@ function tiempoDeTecleo(texto: string): number {
  *   - si un globo quedó larguísimo, lo corta por frases
  *   - un link SIEMPRE va en su propio globo (así se ve limpio en WhatsApp)
  */
-export function partirEnGlobos(texto: string, maxChars = 320): string[] {
+export function partirEnGlobos(texto: string, maxChars = 150): string[] {
   const bloques = texto.split(/\n{2,}/).map((b) => b.trim()).filter(Boolean);
   const globos: string[] = [];
 
@@ -142,7 +147,9 @@ export function partirEnGlobos(texto: string, maxChars = 320): string[] {
     }
   }
 
-  return finales.filter(Boolean).slice(0, 4);
+  // Tope de seguridad: el largo real lo controla el blindaje (que pide
+  // reescribir, sin perder texto). Esto solo evita una ráfaga absurda.
+  return finales.filter(Boolean).slice(0, 5);
 }
 
 /**

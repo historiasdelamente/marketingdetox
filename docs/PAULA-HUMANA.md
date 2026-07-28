@@ -140,6 +140,34 @@ Las reglas que lo corrigen viven en el bloque de campaña de [`lib/whatsapp/paul
 
 Resultado tras el ajuste, en las mismas 8 respuestas: **0 preguntas, 0 psicoeducación, 0 contenido de otro producto**, y el link entregado siempre que correspondía.
 
+### El largo: 2 globos, no un folleto
+
+El error más caro de un bot de WhatsApp es contestar como si escribiera un correo. Paula llegó a responder un simple "hola" con **441 caracteres en 4 globos**: fecha, hora, precio, todo lo que incluye y el link, de una. Tres fallas de diseño:
+
+1. **Disparaba todo el inventario en el turno 1.** Un humano responde lo que le preguntaron y para.
+2. **Enumeraba** — "con terapia en vivo, meditación, testimonios, el libro y la grabación". Nadie escribe listas por WhatsApp.
+3. **Globos de 150+ caracteres**, cuando un mensaje real de chat anda entre 30 y 70.
+
+Ahora el largo está acotado en tres capas, para que no dependa de que el modelo se acuerde:
+
+| Capa | Qué hace |
+|---|---|
+| Prompt | 2 globos (3 si el tercero es el link), ~110 caracteres por globo, prohibido enumerar, una idea por mensaje |
+| Escalera de conversación | Un "hola" se responde con presentación + cuándo es la clase. **Sin link, sin precio, sin lista.** El link entra cuando ella pregunta algo concreto o dice que quiere entrar |
+| [`blindaje.ts`](../lib/whatsapp/blindaje.ts) | Si pasa de 300 caracteres (sin contar el link) o de 3 globos, le pide reescribirlo más corto. No trunca: pide comprimir |
+
+El link no cuenta para el largo: en WhatsApp se ve como una tarjeta, no como texto.
+
+Resultado con el mismo "hola": **2 globos, 141 caracteres.**
+
+```
+Hola 💛 Soy Paula, del equipo de Javier.
+
+La clase en vivo "Recuperando mi Ser" es *este jueves 30 a las 7:00 PM* (hora de Ciudad de México).
+```
+
+Las pausas de tecleo también se recalibraron: la fórmula estaba pensada para párrafos y dejaba 6 segundos entre frases de una línea. Ahora ~60 caracteres salen en 2 segundos, que es lo que tarda alguien escribiendo en el celular.
+
 ### El formato del mensaje
 
 - **Negrita en el dato clave** (el día, la hora o el precio), una por mensaje, dos como máximo.
