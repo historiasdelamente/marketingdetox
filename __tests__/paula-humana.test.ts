@@ -8,6 +8,23 @@ const LUNES_27 = new Date("2026-07-27T15:00:00Z"); // 10:00 AM Colombia
 const VIERNES_31 = new Date("2026-07-31T15:00:00Z"); // la clase ya pasó
 
 describe("blindaje anti-invento", () => {
+  it("deja el link de la clase perfecto, escriba el modelo lo que escriba", () => {
+    const CANON = "https://historiasdelamente.com/volver-a-mi";
+    const casos = [
+      "Entra aquí: historiasdelamente.com/volver-a-mi",           // sin https
+      "Entra aquí: www.historiasdelamente.com/volver-a-mi",       // con www
+      "Entra aquí: https://historiasdelamente.com/volver-a-mi.",  // punto pegado
+      "Entra aquí: https://historiasdelamente.com/volver-a-mi/",  // barra de más
+      "Entra aquí: (https://historiasdelamente.com/volver-a-mi)", // entre paréntesis
+    ];
+    for (const caso of casos) {
+      const { texto } = auditarRespuesta(caso, LUNES_27);
+      expect(texto).toContain(CANON);
+      // Y sin basura pegada que rompa el clic.
+      expect(texto).not.toMatch(/volver-a-mi[./)]/);
+    }
+  });
+
   it("borra un link que Paula se inventó", () => {
     const { texto, hallazgos } = auditarRespuesta(
       "Entra aquí https://historiasdelamente.com/volver-a-mi y también a https://bit.ly/abc123",
@@ -161,6 +178,18 @@ describe("globos de WhatsApp", () => {
     ]);
   });
 
+  it("un marcador raro en el texto no se convierte en link", () => {
+    // El enmascarado interno de URLs no puede tocar texto normal.
+    const conNumeros = "Son 3 horas y 2 sorpresas, este *jueves 30* 💛";
+    expect(normalizarNegritas(conNumeros, "whatsapp")).toBe(conNumeros);
+  });
+
+  it("no mutila un link con guiones bajos ni con asteriscos", () => {
+    const raro = "Entra aquí: https://historiasdelamente.com/a__b__c*d";
+    expect(normalizarNegritas(raro, "whatsapp")).toContain("/a__b__c*d");
+    expect(normalizarNegritas(raro, "instagram")).toContain("/a__b__c*d");
+  });
+
   it("NUNCA parte un link en dos (el punto de .com no es fin de frase)", () => {
     const largo =
       "Uf, la clase es en vivo y solo se hace una vez, este jueves 30 de julio a las 8:00 PM hora Colombia. " +
@@ -180,6 +209,21 @@ describe("globos de WhatsApp", () => {
     );
     expect(globos).toHaveLength(2);
     expect(globos[1]).toBe("https://historiasdelamente.com/volver-a-mi");
+  });
+
+  it("aunque haya que recortar globos, el link NUNCA se pierde", () => {
+    const parrafos = [
+      "Primero esto que te cuento.",
+      "Después esto otro.",
+      "Y también esto.",
+      "Y esto de acá.",
+      "Y una cosa más.",
+      "https://historiasdelamente.com/volver-a-mi",
+    ].join("\n\n");
+
+    const globos = partirEnGlobos(parrafos);
+    expect(globos.length).toBeLessThanOrEqual(5);
+    expect(globos.some((g) => g.includes("https://historiasdelamente.com/volver-a-mi"))).toBe(true);
   });
 
   it("parte por frases un párrafo demasiado largo", () => {

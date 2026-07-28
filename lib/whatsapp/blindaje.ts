@@ -109,6 +109,25 @@ function prometeGrabacion(texto: string): string | null {
 // Promesas de futuro — prohibidas cuando la clase ya se dictó.
 const PROMESA_FUTURO = /pr[óo]xim[oa]\s+jueves|este\s+jueves|faltan?\s+\d+\s+d[ií]as|es\s+ma[ñn]ana/i;
 
+// --- EL LINK ES SAGRADO --------------------------------------------------
+// Si llega mal escrito, ella no puede pagar. No basta con que el modelo lo
+// copie bien: cualquier variante se normaliza al link canónico exacto.
+
+const LANDING_SIN_ESQUEMA = CLASE.landing.replace(/^https?:\/\//, '');
+const VARIANTE_LANDING = new RegExp(
+  `(?:https?:\\/\\/)?(?:www\\.)?${LANDING_SIN_ESQUEMA.replace(/\./g, '\\.')}\\/?`,
+  'gi',
+);
+
+function repararLinks(texto: string): string {
+  let out = texto;
+  // Puntuación pegada al final: "…/volver-a-mi." rompe el clic en WhatsApp.
+  out = out.replace(/(https?:\/\/\S+?)[.,;:!?)]+(?=\s|$)/g, '$1');
+  // Sin https://, con www, con barra de más → el canónico exacto.
+  out = out.replace(VARIANTE_LANDING, CLASE.landing);
+  return out;
+}
+
 /**
  * Revisa y repara la respuesta de Paula.
  * Devuelve el texto ya saneado + la lista de lo que estaba mal.
@@ -117,7 +136,7 @@ export function auditarRespuesta(texto: string, ahora: Date = new Date()): { tex
   const hallazgos: Hallazgo[] = [];
   const clase = fechaDeLaClase();
   const estado = cuentaRegresiva(ahora).estado;
-  let out = texto || '';
+  let out = repararLinks(texto || '');
 
   // 1) Links: se borran los que no están en la lista blanca.
   out = out.replace(URL_RE, (url) => {

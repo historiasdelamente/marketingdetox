@@ -21,6 +21,34 @@ export function normalizarCanal(canal?: string | null): Canal {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+// ---------------------------------------------------------------------------
+// EL LINK ES SAGRADO
+// Un link partido, con un asterisco de más o recortado del mensaje deja a la
+// mujer sin poder pagar. Todo lo que toca el texto respeta estas dos reglas:
+// una URL nunca se corta, y una URL nunca se pierde.
+// ---------------------------------------------------------------------------
+
+const URL_RE = /https?:\/\/\S+/g;
+
+/** Tope de globos por respuesta. El del link nunca cae fuera. */
+const MAX_GLOBOS_ENVIO = 5;
+
+const tieneUrl = (texto: string) => /https?:\/\//.test(texto);
+
+/**
+ * Aplica `fn` solo al texto, dejando las URLs intactas.
+ * El marcador es deliberadamente improbable: con uno "normal" (por ejemplo
+ * " 0 ") un texto como "son 3 horas" terminaria convertido en una URL.
+ */
+function respetandoLinks(texto: string, fn: (fragmento: string) => string): string {
+  const urls: string[] = [];
+  const conMarcas = texto.replace(URL_RE, (url) => {
+    urls.push(url);
+    return `<<<URL${urls.length - 1}>>>`;
+  });
+  return fn(conMarcas).replace(/<<<URL(\d+)>>>/g, (_m, i) => urls[Number(i)] ?? '');
+}
+
 /** Envía un bloque de texto tal cual (línea en blanco = globo aparte). */
 export async function enviarManyChat(
   subscriberId: string,
@@ -72,23 +100,27 @@ const MAX_NEGRITAS = 2;
  * Y se limita a MAX_NEGRITAS: la negrita solo funciona si es escasa.
  */
 export function normalizarNegritas(texto: string, canal: Canal = 'whatsapp'): string {
-  // **x** y __x__ → *x*
-  let out = (texto || '')
-    .replace(/\*\*([^*\n]+)\*\*/g, '*$1*')
-    .replace(/__([^_\n]+)__/g, '*$1*');
+  // Las URLs se apartan primero: una con guiones bajos dobles, o con un
+  // asterisco, saldría mutilada por estas mismas reglas.
+  return respetandoLinks(texto || '', (fragmento) => {
+    // **x** y __x__ → *x*
+    let out = fragmento
+      .replace(/\*\*([^*\n]+)\*\*/g, '*$1*')
+      .replace(/__([^_\n]+)__/g, '*$1*');
 
-  if (canal === 'instagram') {
-    return out.replace(/\*([^*\n]+)\*/g, '$1');
-  }
+    if (canal === 'instagram') {
+      return out.replace(/\*([^*\n]+)\*/g, '$1');
+    }
 
-  // De la tercera negrita en adelante, se quita el resaltado (no el texto).
-  let vistas = 0;
-  out = out.replace(/\*([^*\n]+)\*/g, (_m, contenido) => {
-    vistas += 1;
-    return vistas <= MAX_NEGRITAS ? `*${contenido}*` : String(contenido);
+    // De la tercera negrita en adelante, se quita el resaltado (no el texto).
+    let vistas = 0;
+    out = out.replace(/\*([^*\n]+)\*/g, (_m, contenido) => {
+      vistas += 1;
+      return vistas <= MAX_NEGRITAS ? `*${contenido}*` : String(contenido);
+    });
+
+    return out;
   });
-
-  return out;
 }
 
 // ---------------------------------------------------------------------------
@@ -171,7 +203,17 @@ export function partirEnGlobos(texto: string, maxChars = 150): string[] {
 
   // Tope de seguridad: el largo real lo controla el blindaje (que pide
   // reescribir, sin perder texto). Esto solo evita una ráfaga absurda.
-  return finales.filter(Boolean).slice(0, 5);
+  const limpios = finales.filter(Boolean);
+  if (limpios.length <= MAX_GLOBOS_ENVIO) return limpios;
+
+  // Recortar NUNCA puede tragarse el link: sin link no hay venta. Si el globo
+  // del link cae fuera del tope, se queda con el último puesto.
+  const recorte = limpios.slice(0, MAX_GLOBOS_ENVIO);
+  if (!recorte.some(tieneUrl)) {
+    const globoConLink = limpios.slice(MAX_GLOBOS_ENVIO).find(tieneUrl);
+    if (globoConLink) recorte[MAX_GLOBOS_ENVIO - 1] = globoConLink;
+  }
+  return recorte;
 }
 
 /**
