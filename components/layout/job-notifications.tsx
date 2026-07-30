@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useActiveJobs, type ActiveJob } from "@/lib/jobs/use-active-jobs";
+import { useActiveJobs } from "@/lib/jobs/use-active-jobs";
 import { AGENT_CONFIGS } from "@/lib/chat/agent-configs";
 
 type Notification = {
@@ -11,52 +11,45 @@ type Notification = {
   agentType: string;
   title: string;
   status: "completed" | "failed";
-  timestamp: number;
 };
 
 export function JobNotifications() {
   const pathname = usePathname();
   const { jobs } = useActiveJobs();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [seenJobIds, setSeenJobIds] = useState<Set<string>>(new Set());
+  const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
 
-  // Watch for job completions that happen on other pages
-  useEffect(() => {
-    for (const job of jobs) {
-      if (job.status === "running") continue;
-      if (seenJobIds.has(job.jobId)) continue;
-
-      // Only notify if we're NOT on the agent's page
-      const agentPath = `/${job.agentType}`;
-      if (pathname === agentPath) continue;
-
-      const config = AGENT_CONFIGS[job.agentType];
-      setNotifications((prev) => [
-        ...prev,
-        {
+  // Las notificaciones se derivan de los jobs en el render: no hay que
+  // copiarlas a un estado propio desde un efecto. Lo único que guardamos es
+  // cuáles ya cerró ella (a mano o por el temporizador de 8 segundos).
+  const notifications = useMemo<Notification[]>(
+    () =>
+      jobs
+        .filter((job) => job.status !== "running")
+        .filter((job) => !dismissedIds.has(job.jobId))
+        // Solo avisamos si NO estamos en la página del agente
+        .filter((job) => pathname !== `/${job.agentType}`)
+        .map((job) => ({
           id: job.jobId,
           agentType: job.agentType,
-          title: config?.title || job.agentType,
+          title: AGENT_CONFIGS[job.agentType]?.title || job.agentType,
           status: job.status as "completed" | "failed",
-          timestamp: Date.now(),
-        },
-      ]);
-      setSeenJobIds((prev) => new Set(prev).add(job.jobId));
-    }
-  }, [jobs, pathname, seenJobIds]);
-
-  // Auto-dismiss after 8 seconds
-  useEffect(() => {
-    if (notifications.length === 0) return;
-    const timer = setTimeout(() => {
-      setNotifications((prev) => prev.slice(1));
-    }, 8000);
-    return () => clearTimeout(timer);
-  }, [notifications]);
+        })),
+    [jobs, pathname, dismissedIds]
+  );
 
   const dismiss = (id: string) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
+    setDismissedIds((prev) => new Set(prev).add(id));
   };
+
+  // Auto-dismiss after 8 seconds
+  const oldestId = notifications[0]?.id;
+  useEffect(() => {
+    if (!oldestId) return;
+    const timer = setTimeout(() => {
+      setDismissedIds((prev) => new Set(prev).add(oldestId));
+    }, 8000);
+    return () => clearTimeout(timer);
+  }, [oldestId]);
 
   if (notifications.length === 0) return null;
 
