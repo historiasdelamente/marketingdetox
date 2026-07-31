@@ -3,6 +3,8 @@ import { processPaulaMessage } from '@/lib/whatsapp/paula';
 import { encolarMensaje, estadoBuffer } from '@/lib/whatsapp/buffer';
 import { SIN_OIDO, transcribirAudio, transcripcionDisponible } from '@/lib/whatsapp/audio';
 import { CLASE, cuentaRegresiva } from '@/lib/whatsapp/contexto-clase';
+import { APEGO, proximoEncuentro } from '@/lib/whatsapp/apego-detox';
+import { MODO_VENTA } from '@/lib/whatsapp/blindaje';
 
 /**
  * POST /api/whatsapp/webhook
@@ -121,15 +123,25 @@ export async function POST(request: NextRequest) {
 
 // GET for health check / verification
 export async function GET() {
-  const cuenta = cuentaRegresiva(new Date());
+  const ahora = new Date();
+  const cuenta = cuentaRegresiva(ahora);
+  const encuentro = proximoEncuentro(ahora);
+
   return NextResponse.json({
     status: 'ok',
     agent: 'Paula - Historias de la Mente',
     modo: modoHumano() ? 'humano (buffer + globos)' : 'clasico (respuesta sincrona)',
+    // Qué está vendiendo ahora mismo. Se cambia con CLASE.activa.
+    vendiendo: MODO_VENTA === 'clase' ? `clase "${CLASE.nombre}"` : APEGO.nombre,
     modelo: process.env.PAULA_MODEL || 'openai/gpt-4.1 (por defecto)',
     oido: transcripcionDisponible() ? 'audios activos' : 'audios sin transcriptor',
     clase: { nombre: CLASE.nombre, activa: CLASE.activa, estado: cuenta.estado, cuenta: cuenta.frase },
+    apego_detox: {
+      precio: APEGO.precioFrase,
+      proximo_encuentro: `${encuentro.frase} (${encuentro.fecha}, ${APEGO.encuentros.horaTexto} Colombia)`,
+      en_vivo_ahora: encuentro.enVivo,
+    },
     buffer: estadoBuffer(),
-    timestamp: new Date().toISOString(),
+    timestamp: ahora.toISOString(),
   });
 }

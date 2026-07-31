@@ -21,6 +21,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { CLASE, bloqueContextoVivo, cuentaRegresiva, datosParaElla } from '@/lib/whatsapp/contexto-clase';
+import { APEGO, bloqueContextoApego, proximoEncuentro } from '@/lib/whatsapp/apego-detox';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -31,8 +32,8 @@ const CRON_SECRET = process.env.CRON_SECRET;
 // Detox: si el chat vende una cosa y el recordatorio otra, ella se pierde.
 const CAMPANA_CLASE = CLASE.activa;
 
-const CHECKOUT_URL = 'https://pay.hotmart.com/W102751360L?bid=1771690985611';
-const LANDING_URL = 'https://historiasdelamente.com/apegodetox';
+const CHECKOUT_URL = APEGO.checkout;
+const LANDING_URL = APEGO.landing;
 // Grupo gratuito de la comunidad — SOLO para el toque 3 (última ventana):
 // si tras 2 toques de venta no compró, se le da el grupo para no perder el
 // contacto (dentro del grupo no aplica la ventana de 24h de WhatsApp).
@@ -151,16 +152,19 @@ function copyRecordatorio1(nombre: string | null, linkYaEnviado: boolean): strin
     ], (nombre || '') + '1'));
   }
   return cap(pick([
-    `${n}soy Paula 💛 Eso que me contaste tiene nombre y tiene salida — y no es a punta de fuerza de voluntad. Javier creó Apego Detox exacto para esto: ${LANDING_URL}\n\nSon $37.97 al mes, con 7 días de garantía total. ¿Empezamos hoy?`,
-    `${n}te escribo porque lo que me contaste no se me olvidó 💛 No estás rota: tu sistema quedó enganchado, y eso se reentrena con proceso. Míralo aquí: ${LANDING_URL}\n\nCancelas cuando quieras y tienes 7 días de garantía. ¿Te animas a entrar hoy? ✨`,
+    `${n}soy Paula 💛 Eso que me contaste tiene nombre y tiene salida — y no es a punta de fuerza de voluntad. Javier creó ${APEGO.nombre} exacto para esto: ${LANDING_URL}\n\nSon ${APEGO.precioFrase}, con ${APEGO.garantiaDias} días de garantía total. ¿Empezamos hoy?`,
+    `${n}te escribo porque lo que me contaste no se me olvidó 💛 Adentro hay una comunidad de mujeres pasando por lo mismo, y no vas a tener que explicarle nada a nadie. Míralo aquí: ${LANDING_URL}\n\nCancelas cuando quieras y tienes ${APEGO.garantiaDias} días de garantía. ¿Te animas a entrar hoy? ✨`,
   ], (nombre || '') + '1'));
 }
 
-function copyRecordatorio2(nombre: string | null): string {
+function copyRecordatorio2(nombre: string | null, ahora: Date): string {
   const n = saludo(nombre);
+  const encuentro = proximoEncuentro(ahora);
+  const cuando = encuentro.enVivo ? 'está empezando ahora mismo' : `${encuentro.frase} (${encuentro.fecha})`;
+
   return cap(pick([
-    `${n}esta semana hay clase en vivo con Javier (martes y jueves, 8 pm hora Colombia). Si entras hoy, llegas con acceso a todo: ${CHECKOUT_URL}\n\nSon $37.97 al mes, cancelas cuando quieras y tienes 7 días de garantía total. ¿Te guardo el cupo de hoy? 💛`,
-    `${n}no te escribo para presionarte — te escribo porque sé cómo pesa cada semana más dentro del bucle 💛 La próxima clase en vivo con Javier es martes y jueves a las 8 pm (Colombia).\n\nEntras aquí, con 7 días de garantía y cancelas cuando quieras: ${CHECKOUT_URL} ¿Entras hoy? ✨`,
+    `${n}el próximo encuentro en vivo con Javier ${cuando}, a las ${APEGO.encuentros.horaTexto} hora Colombia. Si entras hoy, llegas con acceso a todo: ${CHECKOUT_URL}\n\nSon ${APEGO.precioFrase}, cancelas cuando quieras y tienes ${APEGO.garantiaDias} días de garantía total. ¿Entras hoy? 💛`,
+    `${n}no te escribo para presionarte — te escribo porque sé cómo pesa cada semana más dentro del bucle 💛 El próximo encuentro en vivo con Javier ${cuando}, y son dos cada semana.\n\nEntras aquí, con ${APEGO.garantiaDias} días de garantía y cancelas cuando quieras: ${CHECKOUT_URL} ¿Te veo ahí? ✨`,
   ], (nombre || '') + '2'));
 }
 
@@ -240,8 +244,8 @@ async function generarRecordatorioLLM(
       ? `TOQUE 1 (lleva ~4h en silencio): retómala con calidez, recuérdale la clase con la fecha y la hora EXACTAS del bloque de arriba (las de SU país), entrega este link UNA vez: ${linkRequerido} y cierra con UNA pregunta de decisión.`
       : `TOQUE 2 (lleva ~16h en silencio, último toque): cierre directo. La clase con su fecha, SU hora y cuánto falta, el precio EN SU MONEDA, el link UNA vez: ${linkRequerido}, y UNA pregunta de decisión.`)
     : (toque === 1
-      ? `TOQUE 1 (lleva ~4h en silencio): retoma SU dolor exacto (usa sus palabras del historial, no frases genéricas), preséntale Apego Detox como el tratamiento para ESO, entrega este link UNA vez: ${linkRequerido} y cierra con UNA pregunta de decisión.`
-      : `TOQUE 2 (lleva ~16h en silencio, último toque): cierre directo. Su dolor en una frase, el link de pago UNA vez: ${linkRequerido}, la clase en vivo con Javier (martes y jueves 8 pm hora Colombia), la garantía de 7 días, y UNA pregunta de decisión que invite a entrar HOY.`);
+      ? `TOQUE 1 (lleva ~4h en silencio): retoma SU dolor exacto (usa sus palabras del historial, no frases genéricas), preséntale ${APEGO.nombre} como el proceso para ESO, entrega este link UNA vez: ${linkRequerido} y cierra con UNA pregunta de decisión.`
+      : `TOQUE 2 (lleva ~16h en silencio, último toque): cierre directo. Su dolor en una frase, el link de pago UNA vez: ${linkRequerido}, la fecha del PRÓXIMO encuentro en vivo con Javier (está arriba, en el bloque del reloj), la garantía de ${APEGO.garantiaDias} días, y UNA pregunta de decisión que invite a entrar HOY.`);
 
   const encargo = CAMPANA_CLASE
     ? `${bloqueContextoVivo(new Date(), user.phone)}
@@ -251,7 +255,14 @@ Eres Paula, del equipo de Javier Vieira, Psicólogo Especialista. Escribes UN me
 ⛔ La clase NO queda grabada: es en vivo y no se repite. NUNCA prometas grabación, "la ves después" ni "no pierdes nada si no puedes conectarte".
 
 La fecha, la hora en el país de ELLA, el precio en SU moneda y cuánto falta están arriba, ya calculados: úsalos TAL CUAL, no los deduzcas ni los cambies. NUNCA menciones Apego Detox, ni "$37.97", ni módulos, ni suscripción mensual.`
-    : `Eres Paula, asesora de Apego Detox del equipo de Javier Vieira, Psicólogo Especialista. Escribes UN mensaje de seguimiento de VENTA por WhatsApp/Instagram para una mujer que dejó de responder. Tu único objetivo es acercarla HOY a comprar Apego Detox ($37.97 USD al mes, suscripción mensual, cancela cuando quiera, garantía total de 7 días, 15 módulos, clases en vivo con Javier martes y jueves 8 pm hora Colombia).`;
+    : `${bloqueContextoApego(new Date(), user.phone)}
+---
+
+Eres Paula, cerradora de ${APEGO.nombre} del equipo de Javier Vieira, Psicólogo Especialista. Escribes UN mensaje de seguimiento de VENTA por WhatsApp/Instagram para una mujer que dejó de responder. Tu único objetivo es acercarla HOY a entrar.
+
+Lo que vendes, y todo es verdad: ${APEGO.precioFrase} (SUSCRIPCIÓN mensual, cancela cuando quiera, garantía total de ${APEGO.garantiaDias} días), el programa completo paso a paso, la COMUNIDAD de mujeres viviendo lo mismo (ahí no está sola ni tiene que explicarse) y DOS encuentros en vivo con Javier cada semana (${APEGO.encuentros.diasTexto}, ${APEGO.encuentros.horaTexto} hora Colombia, por ${APEGO.encuentros.plataforma}).
+
+La fecha del próximo encuentro está arriba, ya calculada: úsala TAL CUAL. NUNCA nombres otro día de la semana, NUNCA digas "pago único" (es suscripción) y NUNCA prometas nada gratis ni un número de módulos: en la página ve 9 más el Súper Bonus.`;
 
   // En Apego Detox decir "pago único" o "cupos" sería mentira (es suscripción).
   // En la clase son verdad, así que ahí no se prohíben.
@@ -425,7 +436,7 @@ async function handle(req: NextRequest) {
             ? copyClase(user, toque)
             : toque === 1
               ? copyRecordatorio1(user.name, linkYaEnviado)
-              : copyRecordatorio2(user.name);
+              : copyRecordatorio2(user.name, now);
         }
       }
 

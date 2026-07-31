@@ -68,10 +68,18 @@ Abre en el navegador `https://<tu-host>/api/whatsapp/webhook` (GET). Debe decir:
 ```json
 {
   "modo": "humano (buffer + globos)",
-  "clase": { "nombre": "Recuperando mi Ser", "activa": true, "estado": "futura", "cuenta": "faltan 3 días" },
+  "vendiendo": "Apego Detox",
+  "clase": { "nombre": "Recuperando mi Ser", "activa": false, "estado": "pasada", "cuenta": "la clase YA PASÓ (hace 1 días)" },
+  "apego_detox": {
+    "precio": "$37.97 USD al mes",
+    "proximo_encuentro": "es el martes 4 de agosto (martes 4 de agosto, 8:00 PM Colombia)",
+    "en_vivo_ahora": false
+  },
   "buffer": { "espera_ms": 10000, "conversaciones_en_espera": 0 }
 }
 ```
+
+`vendiendo` es lo que hay que mirar de un vistazo: dice si Paula está en campaña de clase o cerrando Apego Detox.
 
 Si dice `"modo": "clasico (respuesta sincrona)"` es que falta `MANYCHAT_API_TOKEN` en las variables de entorno del servicio.
 
@@ -122,7 +130,7 @@ Se tocan **dos archivos** y nada más:
 1. `desing_web/src/config/claseEnVivo.ts` (la página)
 2. `marketingdetox/lib/whatsapp/contexto-clase.ts` (Paula) — `CLASE.nombre`, `CLASE.inicioISO` y `CLASE.landing`
 
-Para apagar la campaña y volver a vender Apego Detox: `CLASE.activa = false`.
+Para apagar la campaña y volver a vender Apego Detox: `CLASE.activa = false` (así está hoy — ver 6.c).
 
 **`CLASE.quedaGrabada`** (hoy en `false`): la clase es en vivo, una sola vez, y no se entrega grabación. Con ese flag en `false`, Paula no puede prometerla (lo bloquea el blindaje) y, cuando la clase pasa, deja de venderse — no hay nada que entregar. Si una edición futura sí se graba, se pone `true` y todo vuelve solo.
 
@@ -178,6 +186,54 @@ Las pausas de tecleo también se recalibraron: la fórmula estaba pensada para p
   **Instagram no tiene negrita**: allá los asteriscos se verían literales, así que se quitan del todo. Por eso la conversión depende del canal.
 - **Uno o dos emojis por mensaje** (solo 💛 y ✨), separados entre sí — nunca dos pegados ni uno por línea.
 - **Su país no se pregunta: se lee del teléfono.** `detectarPais()` saca la zona horaria y la moneda del indicativo. Con un `+54` responde "10:00 PM en Argentina, unos 9.000 ARS" sin preguntar nada. Solo cuando ManyChat no manda `phone` (Instagram) usa dólares y hora Colombia explícita — y ni ahí pregunta de entrada.
+
+---
+
+## 6.c Los DOS modos de venta (y por qué importan)
+
+Paula vende una cosa a la vez. El interruptor es **`CLASE.activa`** en `contexto-clase.ts`:
+
+| | `CLASE.activa = true` | `CLASE.activa = false` ← **hoy** |
+|---|---|---|
+| Vende | La clase en vivo de turno | **Apego Detox** |
+| Bloque de reglas | `CAMPANA_OVERRIDE` (`paula.ts`) | `APEGO_OVERRIDE` (`paula.ts`) |
+| Reloj inyectado | `bloqueContextoVivo()` — fecha de la clase | `bloqueContextoApego()` — próximo encuentro con Javier |
+| Precio | Pago único, en su moneda | `$37.97 USD al mes`, suscripción |
+| Blindaje | modo `'clase'` | modo `'apego'` |
+
+**El detalle que rompe todo si se pasa por alto:** las reglas de los dos modos son **opuestas**. En campaña, decir "$37.97 al mes" o "Apego Detox" es un error (otro producto). Vendiendo Apego Detox, esos son la verdad y decir "pago único" es la mentira. Por eso `blindaje.ts` recibe el modo: con las reglas cruzadas marcaría **cada** mensaje como fallo y gastaría un reintento por turno.
+
+### Lo que Paula hace vendiendo Apego Detox
+
+1. **Le contesta a lo que ella escribió.** Es la regla #1 del bloque. Si preguntó el precio, la primera frase es el precio — no un párrafo de venta que no viene a cuento.
+2. **No hace terapia.** Si ella viene a que le expliquen por qué él actúa así, Paula corta con la fórmula *escuché → eso se trabaja adentro → puerta abierta*. Explicar el mecanismo la deja satisfecha con la explicación y sin entrar.
+3. **Si quiere a Javier, le da su WhatsApp clicable** (`wa.me/573001681053?text=…`), solo, en su propio globo y sin venta encima. Si el modelo escribe el número suelto, `blindaje.ts` lo convierte en link: un número escrito a mano no se puede tocar desde WhatsApp.
+4. **Vende lo que de verdad mueve:** la comunidad de mujeres viviendo lo mismo (no vuelve a estar sola) y los **dos encuentros en vivo con Javier cada semana** — martes y jueves, 8:00 PM Colombia, 2 h, por Google Meet. La fecha del próximo va calculada en el prompt, en la hora de ELLA.
+
+### El blindaje en modo Apego Detox
+
+| Se detecta | Qué pasa |
+|---|---|
+| Un precio mensual que no es $37.97 | Se le pide reescribir |
+| "pago único" / "un solo pago" | Se le pide reescribir (es suscripción) |
+| "los 15 módulos" | Se le pide reescribir — en la página hay **9** + Súper Bonus |
+| Un día de sesión que no es martes ni jueves | Se le pide reescribir |
+| "¿quieres que te cuente más?" | Se le pide reescribir (pedir permiso la delata como bot) |
+| Algo gratis (libro, clase, prueba) | Se le pide reescribir — ese embudo se retiró |
+| El número de Javier suelto | Se convierte en link clicable |
+| Links de la página / pago / WhatsApp mal escritos | Se normalizan al canónico exacto |
+
+Se mantienen de antes: links fuera de lista blanca, terapia por chat, escasez falsa y el largo de folleto. Los testimonios en video de alumnas (`d3734kf5tip0j0.cloudfront.net`) sí están permitidos aquí.
+
+### Antes de dar por bueno un cambio de prompt
+
+`__tests__/_auditoria-manual.test.ts` manda **10 conversaciones reales** al modelo, aplica el mismo blindaje y reintento que producción, y deja el informe en `auditoria-paula.txt`. Quítale el `.skip` y córrelo:
+
+```bash
+npx vitest run __tests__/_auditoria-manual.test.ts
+```
+
+Así se cazaron el folleto de 5 globos, los "15 módulos" que no existen y el falso handoff de *"¿y si no me funciona?"* (una objeción de venta que la sacaba del embudo y la mandaba con Javier).
 
 ---
 

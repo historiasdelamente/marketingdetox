@@ -16,8 +16,18 @@
 // ---------------------------------------------------------------------------
 
 export const CLASE = {
-  /** false = Paula vuelve a vender Apego Detox normal (se apaga la campaña). */
-  activa: true,
+  /**
+   * false = Paula vuelve a vender Apego Detox normal (se apaga la campaña).
+   *
+   * APAGADA el 2026-07-31: la clase "Recuperando mi Ser" se dictó el jueves 30
+   * de julio y NO quedó grabada, así que no hay nada que vender de esa edición.
+   * Paula pasa a modo CERRADORA DE APEGO DETOX (ver `apego-detox.ts` y el
+   * bloque APEGO_OVERRIDE de `paula.ts`).
+   *
+   * Para la próxima clase: poner `true`, actualizar `nombre`, `inicioISO` y
+   * `landing`, y la campaña vuelve a mandar sobre todo lo demás.
+   */
+  activa: false,
 
   nombre: 'Recuperando mi Ser',
 
@@ -150,31 +160,31 @@ export function detectarPais(telefono?: string | null): Pais | null {
 // 3. FORMATO DE FECHAS Y HORAS
 // ---------------------------------------------------------------------------
 
-const TZ_COLOMBIA = 'America/Bogota';
+export const TZ_COLOMBIA = 'America/Bogota';
 
 /** "8:00 PM" — ASCII, sin los "p. m." raros de es-CO. */
-function hora12(fecha: Date, tz: string): string {
+export function hora12(fecha: Date, tz: string): string {
   return new Intl.DateTimeFormat('en-US', {
     timeZone: tz, hour: 'numeric', minute: '2-digit', hour12: true,
   }).format(fecha);
 }
 
 /** "jueves 30 de julio" (Intl mete una coma que aquí sobra). */
-function fechaLarga(fecha: Date, tz: string): string {
+export function fechaLarga(fecha: Date, tz: string): string {
   return new Intl.DateTimeFormat('es-CO', {
     timeZone: tz, weekday: 'long', day: 'numeric', month: 'long',
   }).format(fecha).replace(',', '');
 }
 
 /** "2026-07-24" en la zona pedida — para restar días de calendario. */
-function fechaISO(fecha: Date, tz: string): string {
+export function fechaISO(fecha: Date, tz: string): string {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit',
   }).format(fecha);
 }
 
 /** Días de calendario entre dos fechas, contados en la zona indicada. */
-function diasDeCalendario(desde: Date, hasta: Date, tz: string): number {
+export function diasDeCalendario(desde: Date, hasta: Date, tz: string): number {
   const a = Date.parse(`${fechaISO(desde, tz)}T00:00:00Z`);
   const b = Date.parse(`${fechaISO(hasta, tz)}T00:00:00Z`);
   return Math.round((b - a) / 86_400_000);

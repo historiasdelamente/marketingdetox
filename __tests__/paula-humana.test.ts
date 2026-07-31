@@ -7,7 +7,11 @@ import { normalizarNegritas, partirEnGlobos } from "@/lib/whatsapp/manychat";
 const LUNES_27 = new Date("2026-07-27T15:00:00Z"); // 10:00 AM Colombia
 const VIERNES_31 = new Date("2026-07-31T15:00:00Z"); // la clase ya pasó
 
-describe("blindaje anti-invento", () => {
+// La campaña de la clase está APAGADA en producción (CLASE.activa = false), así
+// que el modo por defecto es 'apego'. Estas pruebas piden 'clase' explícito.
+const auditarClase = (texto: string, ahora: Date) => auditarRespuesta(texto, ahora, "clase");
+
+describe("blindaje anti-invento — campaña de clase en vivo", () => {
   it("deja el link de la clase perfecto, escriba el modelo lo que escriba", () => {
     const CANON = "https://historiasdelamente.com/volver-a-mi";
     const casos = [
@@ -18,7 +22,7 @@ describe("blindaje anti-invento", () => {
       "Entra aquí: (https://historiasdelamente.com/volver-a-mi)", // entre paréntesis
     ];
     for (const caso of casos) {
-      const { texto } = auditarRespuesta(caso, LUNES_27);
+      const { texto } = auditarClase(caso, LUNES_27);
       expect(texto).toContain(CANON);
       // Y sin basura pegada que rompa el clic.
       expect(texto).not.toMatch(/volver-a-mi[./)]/);
@@ -26,7 +30,7 @@ describe("blindaje anti-invento", () => {
   });
 
   it("borra un link que Paula se inventó", () => {
-    const { texto, hallazgos } = auditarRespuesta(
+    const { texto, hallazgos } = auditarClase(
       "Entra aquí https://historiasdelamente.com/volver-a-mi y también a https://bit.ly/abc123",
       LUNES_27,
     );
@@ -36,18 +40,18 @@ describe("blindaje anti-invento", () => {
   });
 
   it("corrige el día de la semana equivocado", () => {
-    const { texto, hallazgos } = auditarRespuesta("La clase es el martes 30 de julio", LUNES_27);
+    const { texto, hallazgos } = auditarClase("La clase es el martes 30 de julio", LUNES_27);
     expect(texto).toBe("La clase es el jueves 30 de julio");
     expect(hallazgos[0].tipo).toBe("dia_equivocado");
   });
 
   it("marca una fecha que no es la de la clase", () => {
-    const { hallazgos } = auditarRespuesta("Nos vemos el 6 de agosto", LUNES_27);
+    const { hallazgos } = auditarClase("Nos vemos el 6 de agosto", LUNES_27);
     expect(hallazgos.map((h) => h.tipo)).toContain("fecha_inventada");
   });
 
   it("no molesta cuando la respuesta está bien", () => {
-    const { hallazgos } = auditarRespuesta(
+    const { hallazgos } = auditarClase(
       "La clase es el jueves 30 de julio a las 8:00 PM. Entras aquí: https://historiasdelamente.com/volver-a-mi",
       LUNES_27,
     );
@@ -55,38 +59,38 @@ describe("blindaje anti-invento", () => {
   });
 
   it("no la deja hacer terapia por chat", () => {
-    const { hallazgos } = auditarRespuesta(
+    const { hallazgos } = auditarClase(
       "Eso que sientes no es amor, es tu sistema nervioso pidiendo la dosis",
       LUNES_27,
     );
     expect(hallazgos.map((h) => h.tipo)).toContain("psicoeducacion");
 
     // Acompañar sin explicar sí está permitido.
-    const ok = auditarRespuesta("Uf, tres meses así agotan a cualquiera.", LUNES_27);
+    const ok = auditarClase("Uf, tres meses así agotan a cualquiera.", LUNES_27);
     expect(ok.hallazgos).toHaveLength(0);
   });
 
   it("no deja prometer contenido de Apego Detox como si viniera con la clase", () => {
     expect(
-      auditarRespuesta("Hay un módulo 7 con el protocolo de 8 pasos", LUNES_27).hallazgos.map((h) => h.tipo),
+      auditarClase("Hay un módulo 7 con el protocolo de 8 pasos", LUNES_27).hallazgos.map((h) => h.tipo),
     ).toContain("contenido_de_otro_producto");
   });
 
   it("bloquea el precio de otro producto y la urgencia falsa", () => {
     expect(
-      auditarRespuesta("Son $37.97 al mes", LUNES_27).hallazgos.map((h) => h.tipo),
+      auditarClase("Son $37.97 al mes", LUNES_27).hallazgos.map((h) => h.tipo),
     ).toContain("precio_prohibido");
     expect(
-      auditarRespuesta("¡Corre, queda el último cupo!", LUNES_27).hallazgos.map((h) => h.tipo),
+      auditarClase("¡Corre, queda el último cupo!", LUNES_27).hallazgos.map((h) => h.tipo),
     ).toContain("urgencia_falsa");
   });
 
   it("cuando la clase ya pasó, no deja prometerla como futura", () => {
-    const { hallazgos } = auditarRespuesta("Es este jueves, no te lo pierdas", VIERNES_31);
+    const { hallazgos } = auditarClase("Es este jueves, no te lo pierdas", VIERNES_31);
     expect(hallazgos.map((h) => h.tipo)).toContain("clase_caducada");
 
     // Pero sí puede nombrar la fecha real para decirle que ya se dictó.
-    const ok = auditarRespuesta(
+    const ok = auditarClase(
       "La clase fue el jueves 30 de julio 💛 Te aviso apenas Javier abra la próxima.",
       VIERNES_31,
     );
@@ -94,8 +98,8 @@ describe("blindaje anti-invento", () => {
   });
 
   it("la instrucción de corrección le dice al modelo la fecha correcta", () => {
-    const { hallazgos } = auditarRespuesta("La clase es el martes 30 de julio", LUNES_27);
-    expect(instruccionCorreccion(hallazgos)).toContain("jueves 30 de julio");
+    const { hallazgos } = auditarClase("La clase es el martes 30 de julio", LUNES_27);
+    expect(instruccionCorreccion(hallazgos, "clase")).toContain("jueves 30 de julio");
   });
 
   it("no deja prometer una grabación que no existe", () => {
@@ -105,7 +109,7 @@ describe("blindaje anti-invento", () => {
       "Queda grabada en tu área de miembros",
     ];
     for (const caso of casos) {
-      expect(auditarRespuesta(caso, LUNES_27).hallazgos.map((h) => h.tipo)).toContain(
+      expect(auditarClase(caso, LUNES_27).hallazgos.map((h) => h.tipo)).toContain(
         "grabacion_inexistente",
       );
     }
@@ -117,25 +121,25 @@ describe("blindaje anti-invento", () => {
       "Si a esa hora no puedes, te aviso: no se repite ni queda grabada.",
     ];
     for (const v of verdades) {
-      expect(auditarRespuesta(v, LUNES_27).hallazgos).toHaveLength(0);
+      expect(auditarClase(v, LUNES_27).hallazgos).toHaveLength(0);
     }
 
     // Pero una negación de otra cosa no sirve de coartada.
     expect(
-      auditarRespuesta("No te preocupes, queda grabada", LUNES_27).hallazgos.map((h) => h.tipo),
+      auditarClase("No te preocupes, queda grabada", LUNES_27).hallazgos.map((h) => h.tipo),
     ).toContain("grabacion_inexistente");
   });
 
   it("no la deja escribir un folleto", () => {
     const folleto =
       "Hola, soy Paula, del equipo de Javier. La clase en vivo Recuperando mi Ser es este jueves 30 de julio a las 7:00 PM hora de Ciudad de Mexico. Son 3 horas con terapia en vivo, meditacion, testimonios, el libro de la clase, el area de miembros y la grabacion por si no puedes conectarte en ese momento. Aqui te dejo el link para asegurar tu lugar.";
-    const { hallazgos } = auditarRespuesta(folleto, LUNES_27);
+    const { hallazgos } = auditarClase(folleto, LUNES_27);
     expect(hallazgos.map((h) => h.tipo)).toContain("demasiado_largo");
   });
 
   it("el link no cuenta para el largo (se ve como tarjeta, no como texto)", () => {
     const corto = "Perfecto, aquí aseguras tu lugar:\n\nhttps://historiasdelamente.com/volver-a-mi\n\nTe espero adentro 💛";
-    expect(auditarRespuesta(corto, LUNES_27).hallazgos).toHaveLength(0);
+    expect(auditarClase(corto, LUNES_27).hallazgos).toHaveLength(0);
   });
 
   it("detecta cuándo hay que pasarla con una persona", () => {
