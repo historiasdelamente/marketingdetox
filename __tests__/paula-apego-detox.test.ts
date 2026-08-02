@@ -139,6 +139,14 @@ describe('blindaje — escalón de la clase del jueves', () => {
     expect(auditar('Son *7 USD*, un solo pago 💛').hallazgos).toHaveLength(0);
   });
 
+  it('un link de pago suelto se cambia por la página', () => {
+    // Pedirle la tarjeta antes de contarle a qué la invitan es perderla.
+    // El botón de pago está DENTRO de la página.
+    const { texto } = auditar('Entra aquí: https://pay.hotmart.com/H106712135H');
+    expect(texto).toContain(CLASE_JUEVES.landing);
+    expect(texto).not.toContain('pay.hotmart.com');
+  });
+
   it('el link de Skool aquí es un error: la clase se paga en Hotmart', () => {
     const { hallazgos } = auditar('Entras aquí: https://www.skool.com/historias-de-la-mente-4978/about');
     expect(hallazgos.map((h) => h.tipo)).toContain('plataforma_cruzada');
@@ -254,7 +262,9 @@ describe('el prompt que se arma en cada turno', () => {
   it('en el escalón de la clase no le mete encima el material de Apego Detox', () => {
     const p = prompt('clase');
     expect(p).toContain('OFRECES: LA CLASE DEL JUEVES');
-    expect(p).toContain(CLASE_JUEVES.checkout);
+    // El link que lleva es la página, nunca el checkout suelto.
+    expect(p).toContain(CLASE_JUEVES.landing);
+    expect(p).not.toContain(CLASE_JUEVES.checkout);
     // Sabe que Apego Detox existe (para reconocerlo si ella pregunta)…
     expect(p).toContain('QUÉ ES APEGO DETOX');
     // …pero no lleva su precio ni su checkout encima.

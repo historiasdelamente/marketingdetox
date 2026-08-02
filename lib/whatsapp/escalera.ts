@@ -68,9 +68,11 @@ export function instruccionEscalon(escalon: Escalon): string {
   if (escalon === 'clase') {
     return `# 🪜 EN ESTE MENSAJE OFRECES: LA CLASE DEL JUEVES — EL PASO NÚMERO UNO
 Es lo único que ofreces. **La mayoría llega de TikTok y no conoce a Javier**: no des por hecho que sabe quién es, ni qué es Apego Detox, ni que existe un programa. Lo único que necesita saber hoy es que hay una clase el jueves.
+
+**Ella escribe porque quiere venir a esta clase.** No tienes que convencerla, ni descubrir su caso, ni ganarte el derecho a contarle. Trátala como a alguien que ya casi está adentro: despiértale la curiosidad de lo que va a pasar esa noche y ábrele la puerta. Nada de interrogatorio.
 - No nombres Apego Detox, ni su precio, ni su link, salvo que ELLA pregunte por el programa, los talleres o la terapia. Si lo hace, en ese momento cambias de escalón.
 - ⛔ NO nombres los encuentros en vivo de los martes y jueves: esos son de las que YA están dentro del programa. Aquí solo existe la clase del jueves.
-- El pago de la clase es por Hotmart. Skool NO se nombra aquí.
+- ⛔ **El link que mandas es la página de la clase, nunca un link de pago.** Ahí ella ve todo y aparta su lugar. Skool NO se nombra aquí.
 - Si pregunta "¿y después qué sigue?", le dices que sí hay un programa completo después y se lo cuentas. Ahí sí subes.`;
   }
 

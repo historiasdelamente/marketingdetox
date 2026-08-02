@@ -265,9 +265,9 @@ ${hoy}
 - 👉 LA CLASE ${cuando(clase)}, ${horaTexto} hora Colombia, ${duracionHoras} horas.
 - Es TODOS LOS JUEVES, a la misma hora. Nunca nombres otro día.
 - Precio: ${precios.COP} / ${precios.USD} / ${precios.MXN}. Es PAGO ÚNICO, no una suscripción.
-- Se paga aquí: ${checkout}
+- 👉 EL ÚNICO LINK QUE LE MANDAS ES LA PÁGINA: ${landing}
+  Ahí ella ve todo y aparta su lugar sola. **NUNCA le mandes un link de pago suelto**: el botón está en esa página, y pedirle la tarjeta antes de contarle a qué la invitas la espanta.
 - Colombia también puede por Nequi: ${nequi.monto} al ${nequi.numero}, y luego le manda el comprobante a Javier.
-- La página con todo el detalle: ${landing}
 
 ${bloqueSuPais(telefono, clase, ahora)}
 `;

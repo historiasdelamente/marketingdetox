@@ -246,8 +246,10 @@ function repararLinks(texto: string, modo: ModoVenta): string {
   out = out.replace(/(https?:\/\/\S+?)[.,;:!?)]+(?=\s|$)/g, '$1');
 
   if (modo === 'clase') {
-    // El checkout va PRIMERO: su variante sin `?bid=` es prefijo de sí misma.
-    out = out.replace(VARIANTE_CHECKOUT_CLASE, CLASE_JUEVES.checkout);
+    // El link de pago suelto se cambia por LA PÁGINA. El botón de pago está
+    // dentro de ella: mandarle el checkout de entrada es pedirle la tarjeta
+    // antes de contarle a qué la invitan, y eso la espanta.
+    out = out.replace(VARIANTE_CHECKOUT_CLASE, CLASE_JUEVES.landing);
     out = out.replace(VARIANTE_LANDING_CLASE, CLASE_JUEVES.landing);
   } else {
     out = out.replace(VARIANTE_CHECKOUT_APEGO, APEGO_DETOX.checkout);

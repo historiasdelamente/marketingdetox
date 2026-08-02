@@ -68,9 +68,10 @@ describe('el conocimiento sale del documento, no del código', () => {
 
   it('en la clase no le mete encima el material de venta de Apego Detox', () => {
     const texto = conocimientoPara('clase');
-    // Lleva la clase…
+    // Lleva la clase, con la PÁGINA como único link (nunca el checkout suelto).
     expect(texto).toContain('LA CLASE DEL JUEVES');
-    expect(texto).toContain(CLASE_JUEVES.checkout);
+    expect(texto).toContain(CLASE_JUEVES.landing);
+    expect(texto).not.toContain(CLASE_JUEVES.checkout);
     // …y sabe que Apego Detox existe, para reconocerlo si ella pregunta.
     expect(texto).toContain('QUÉ ES APEGO DETOX');
     // Pero no lleva su precio, ni su plataforma, ni sus objeciones.
