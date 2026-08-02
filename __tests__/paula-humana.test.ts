@@ -224,11 +224,35 @@ describe("globos de WhatsApp", () => {
       "Y también esto.",
       "Y esto de acá.",
       "Y una cosa más.",
+      "Y otra más todavía.",
+      "Y ya la última.",
       "https://historiasdelamente.com/volver-a-mi",
     ].join("\n\n");
 
     const globos = partirEnGlobos(parrafos);
-    expect(globos.length).toBeLessThanOrEqual(5);
+    expect(globos.length).toBeLessThanOrEqual(7);
+    expect(globos.some((g) => g.includes("https://historiasdelamente.com/volver-a-mi"))).toBe(true);
+  });
+
+  it("con DOS links, el recorte no se traga el segundo", () => {
+    // El caso real: Paula cierra por Nequi (WhatsApp de Javier) y además le
+    // deja la página para pagar con tarjeta. Antes bastaba con que sobreviviera
+    // el primero, y la mujer se quedaba sin la página donde pagar.
+    const parrafos = [
+      "Perfecto, te cuento cómo.",
+      "Mandas el pago por Nequi al número de Javier Vieira.",
+      "Después le pasas el comprobante y tu correo por aquí:",
+      "https://wa.me/573001681053",
+      "Si prefieres tarjeta, es en esta página.",
+      "Y ahí mismo apartas tu lugar.",
+      "Cualquier cosa me dices.",
+      "Aquí sigo si necesitas algo.",
+      "https://historiasdelamente.com/volver-a-mi",
+    ].join("\n\n");
+
+    const globos = partirEnGlobos(parrafos);
+    expect(globos.length).toBeLessThanOrEqual(7);
+    expect(globos.some((g) => g.includes("https://wa.me/573001681053"))).toBe(true);
     expect(globos.some((g) => g.includes("https://historiasdelamente.com/volver-a-mi"))).toBe(true);
   });
 

@@ -55,12 +55,22 @@ export type Hallazgo = {
 };
 
 // --- Largo máximo de un mensaje de WhatsApp ---
-// Un mensaje real de chat anda entre 30 y 70 caracteres. Paula puede estirarse
-// hasta un par de frases, pero pasado esto deja de leerse como una persona y
-// empieza a leerse como un folleto. El link no cuenta: se ve como una tarjeta,
-// no como texto.
-const MAX_CHARS_MENSAJE = 300;
-const MAX_GLOBOS = 3;
+// El link no cuenta en ninguno de los tres topes: se ve como una tarjeta, no
+// como texto.
+//
+// ⚠️ LO QUE DELATA UN FOLLETO ES EL GLOBO GIGANTE, NO EL TOTAL. El tope
+// anterior (300 chars en total) marcaba `demasiado_largo` justo en los dos
+// mensajes que más venden —el saludo con día, hora y link, y el cierre por
+// Nequi con sus tres pasos— y gastaba el único reintento en recortarlos: Paula
+// sonaba breve y dejaba a la mujer sin los datos con los que se decide.
+// Ahora el que manda es MAX_CHARS_GLOBO: tres frases cortas seguidas se leen
+// como una persona escribiendo; el mismo texto en un solo bloque, no. Así cabe
+// la información y el párrafo-folleto sigue prohibido.
+const MAX_CHARS_GLOBO = 200;
+const MAX_CHARS_MENSAJE = 420;
+// 5 globos cortos se leen como alguien escribiendo en el celular. Lo que no se
+// lee así es un bloque largo, y de eso se encarga MAX_CHARS_GLOBO.
+const MAX_GLOBOS = 5;
 
 function largoSinLinks(texto: string): number {
   return texto.replace(URL_RE, '').replace(/\s+/g, ' ').trim().length;
@@ -218,9 +228,14 @@ const VARIANTE_LANDING_APEGO = variante(APEGO_DETOX.landing);
 const VARIANTE_CHECKOUT_APEGO = variante(APEGO_DETOX.checkout);
 const VARIANTE_WA_JAVIER = /(?:https?:\/\/)?(?:www\.)?wa\.me\/57\s?300\s?168\s?1053(?:\?\S*)?/gi;
 
-/** El WhatsApp de Javier, con el mensaje precargado solo cuando aplica. */
+/**
+ * El WhatsApp de Javier con el mensaje ya escrito, distinto por escalón.
+ * Antes, en el escalón de la clase se mandaba el link pelado: ella lo abría,
+ * se quedaba mirando el cursor sin saber qué poner y se salía — justo el paso
+ * donde se cierra el pago por Nequi.
+ */
 function linkJavier(modo: ModoVenta): string {
-  return modo === 'apego' ? APEGO_DETOX.whatsappJavier : 'https://wa.me/573001681053';
+  return modo === 'apego' ? APEGO_DETOX.whatsappJavier : CLASE_JUEVES.whatsappJavier;
 }
 
 /**
@@ -387,11 +402,15 @@ export function auditarRespuesta(
 
   // 12) Se le fue la mano con el largo. Va de último: se mide el texto ya limpio.
   const largo = largoSinLinks(out);
-  const globos = out.split(/\n{2,}/).filter((g) => g.trim()).length;
-  if (largo > MAX_CHARS_MENSAJE || globos > MAX_GLOBOS) {
+  // Se cuenta igual que `partirEnGlobos`, por CUALQUIER salto de línea: si el
+  // blindaje midiera por bloques y el envío partiera por líneas, se aprobarían
+  // mensajes que luego salen partidos en más globos de los permitidos.
+  const globos = out.split(/\n+/).filter((g) => g.trim());
+  const globoMasLargo = Math.max(0, ...globos.map(largoSinLinks));
+  if (globoMasLargo > MAX_CHARS_GLOBO || largo > MAX_CHARS_MENSAJE || globos.length > MAX_GLOBOS) {
     hallazgos.push({
       tipo: 'demasiado_largo',
-      detalle: `${largo} caracteres en ${globos} globos`,
+      detalle: `${largo} caracteres en ${globos.length} globos (el más largo, ${globoMasLargo})`,
     });
   }
 
@@ -429,7 +448,7 @@ export function instruccionCorreccion(
       case 'psicoeducacion':
         return `- Escribiste "${h.detalle}": te pusiste a explicarle lo que le pasa por dentro, y eso NO lo haces por chat. Quita esa explicación. En su lugar: una frase humana y corta de que la escuchaste, y le abres la puerta.`;
       case 'demasiado_largo':
-        return `- Te saliste del largo de WhatsApp (${h.detalle}). Reescríbelo en 2 globos (3 solo si uno es el link), de una o dos frases cortas cada uno. Quita las enumeraciones y deja UNA sola idea: lo que ella preguntó.`;
+        return `- Te saliste del largo de WhatsApp (${h.detalle}). Pártelo en 3 globos (4 solo si uno es el link) separados por una línea en blanco, de una o dos frases cortas cada uno — ningún globo pasa de ~200 caracteres. Recorta el relleno, NO los datos: el día, la hora, el precio, los pasos del pago y el link se quedan.`;
       case 'contenido_de_otro_producto':
         return `- Mencionaste "${h.detalle}", que es del programa Apego Detox y NO viene con esta clase. Quítalo. Solo prometes lo que pasa en las ${CLASE_JUEVES.duracionHoras} horas de la clase y lo que se lleva de ahí.`;
       case 'grabacion_inexistente':

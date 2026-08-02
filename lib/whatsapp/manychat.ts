@@ -30,8 +30,15 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 const URL_RE = /https?:\/\/\S+/g;
 
-/** Tope de globos por respuesta. El del link nunca cae fuera. */
-const MAX_GLOBOS_ENVIO = 5;
+/**
+ * Tope de globos por respuesta. Ningún link cae fuera.
+ *
+ * Va POR ENCIMA del tope del blindaje (que pide reescribir a 5 bloques): al
+ * partir, cada URL se aísla en su propio globo, así que un mensaje aprobado de
+ * 5 bloques con dos links llega a 7. Si este tope fuera igual al del blindaje,
+ * el recorte se comería justo el globo del link — y sin link no hay venta.
+ */
+const MAX_GLOBOS_ENVIO = 7;
 
 const tieneUrl = (texto: string) => /https?:\/\//.test(texto);
 
@@ -145,7 +152,11 @@ function tiempoDeTecleo(texto: string): number {
  *   - un link SIEMPRE va en su propio globo (así se ve limpio en WhatsApp)
  */
 export function partirEnGlobos(texto: string, maxChars = 150): string[] {
-  const bloques = texto.split(/\n{2,}/).map((b) => b.trim()).filter(Boolean);
+  // Se parte por CUALQUIER salto de línea, no solo por la línea en blanco. El
+  // modelo mezcla los dos —a veces separa dos ideas con un `\n` suelto— y con
+  // el corte antiguo esas dos ideas salían pegadas en un globo de 260
+  // caracteres: justo el ladrillo que no queremos que ella reciba.
+  const bloques = texto.split(/\n+/).map((b) => b.trim()).filter(Boolean);
   const piezas: Array<{ url: boolean; valor: string }> = [];
 
   for (const bloque of bloques) {
@@ -206,12 +217,25 @@ export function partirEnGlobos(texto: string, maxChars = 150): string[] {
   const limpios = finales.filter(Boolean);
   if (limpios.length <= MAX_GLOBOS_ENVIO) return limpios;
 
-  // Recortar NUNCA puede tragarse el link: sin link no hay venta. Si el globo
-  // del link cae fuera del tope, se queda con el último puesto.
+  // Recortar NUNCA puede tragarse un link: sin link no hay venta.
+  //
+  // ⚠️ Antes esto solo miraba si quedaba ALGÚN link dentro del recorte. Un
+  // mensaje con dos —el WhatsApp de Javier y la página— pasaba el chequeo con
+  // el primero y perdía el segundo en silencio: la mujer que acababa de decir
+  // "me convenciste" se quedaba sin la página donde pagar. Ahora se rescatan
+  // todos los links que se hayan quedado fuera, empujando texto, nunca links.
   const recorte = limpios.slice(0, MAX_GLOBOS_ENVIO);
-  if (!recorte.some(tieneUrl)) {
-    const globoConLink = limpios.slice(MAX_GLOBOS_ENVIO).find(tieneUrl);
-    if (globoConLink) recorte[MAX_GLOBOS_ENVIO - 1] = globoConLink;
+  const perdidos = limpios.slice(MAX_GLOBOS_ENVIO).filter(tieneUrl);
+
+  for (const globo of perdidos) {
+    // Se pisa el último globo que NO lleve link; si todos llevan, se descarta
+    // (ya van todos los links que caben, y son más que suficientes).
+    for (let i = recorte.length - 1; i >= 0; i--) {
+      if (!tieneUrl(recorte[i])) {
+        recorte[i] = globo;
+        break;
+      }
+    }
   }
   return recorte;
 }

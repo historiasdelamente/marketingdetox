@@ -24,10 +24,28 @@ const OFFSET_COLOMBIA = '-05:00';
 // ---------------------------------------------------------------------------
 
 export const CLASE_JUEVES = {
-  /** ⚠️ PENDIENTE CONFIRMAR: "Volver a mí" es el libro; esto es lo que hay hoy. */
+  /**
+   * CONFIRMADO por Javier el 2026-08-02. Es el nombre que ella va a ver en la
+   * página al llegar (`desing_web/src/config/claseEnVivo.ts` → NOMBRE): si aquí
+   * dice una cosa y la página otra, ella cree que se equivocó de link y cierra
+   * sin pagar. Los dos se cambian juntos o no se cambia ninguno.
+   *
+   * OJO: "Volver a mí" NO es la clase, es el libro-regalo que viene con ella.
+   * La ruta pública sigue siendo /volver-a-mi porque ahí apuntan los anuncios.
+   */
   nombre: 'Recuperando mi ser',
 
-  /** Todos los jueves. 4 = jueves. La fecha NUNCA se escribe a mano. */
+  /**
+   * Todos los jueves. 4 = jueves. La fecha NUNCA se escribe a mano: la calcula
+   * `proximaClase()`, así que Paula siempre dice "este jueves" y acierta sola.
+   *
+   * ⚠️ EL RITUAL DE CADA JUEVES (dicho por Javier el 2026-08-02): la landing
+   * `desing_web/src/config/claseEnVivo.ts` SÍ lleva la fecha a mano, y él la
+   * corre al jueves siguiente cada semana mientras la clase se siga vendiendo.
+   * Si una semana se le pasa, Paula seguirá vendiendo "este jueves" contra una
+   * página que muestra la fecha vieja y el contador en cero — y ahí no compra
+   * nadie. Es el único punto del embudo que depende de que alguien se acuerde.
+   */
   diaSemana: 4,
   hora24: 20,
   horaTexto: '8:00 PM',
@@ -44,6 +62,21 @@ export const CLASE_JUEVES = {
   nequi: { numero: '3116329202', monto: '25.000 COP' },
 
   libro: { nombre: 'Volver a mí', detalle: 'cartilla de 16 páginas con ejercicios' },
+
+  /**
+   * WhatsApp de Javier con el mensaje ya escrito. Sin texto precargado, ella
+   * abre el chat, no sabe qué poner y se va: ese silencio es donde se cae la
+   * mitad de los pagos por Nequi.
+   *
+   * El texto es NEUTRO a propósito: `blindaje.repararLinks` normaliza TODOS los
+   * wa.me del escalón a este único link, y por él entran cosas muy distintas
+   * —el comprobante de Nequi, la que quiere hablar con él, la que pregunta por
+   * terapia individual, la que tuvo un problema de pago—. Un texto específico
+   * ("aquí va mi comprobante") sonaría absurdo en tres de esos cuatro casos.
+   * Lo concreto se lo dice Paula en el globo de al lado.
+   */
+  whatsappJavier:
+    'https://wa.me/573001681053?text=Hola%20Javier%2C%20te%20escribo%20desde%20el%20WhatsApp%20de%20Paula',
 
   /** ⚠️ PENDIENTE CONFIRMAR. `null` = Paula no afirma ni niega la grabación. */
   quedaGrabada: null as boolean | null,
@@ -282,7 +315,8 @@ export function bloqueContexto(
 
   if (escalon === 'clase') {
     const clase = proximaClase(ahora);
-    const { precios, nequi, horaTexto, duracionHoras, landing } = CLASE_JUEVES;
+    const { nombre, precios, nequi, horaTexto, duracionHoras, landing, libro, whatsappJavier } =
+      CLASE_JUEVES;
 
     // Colombia paga por Nequi. Es transferencia directa: sin comisión de
     // pasarela y sin tarjeta de por medio, que es justo lo que frena a muchas.
@@ -290,19 +324,32 @@ export function bloqueContexto(
     const esColombiana = detectarPais(telefono)?.iso === 'CO';
     // Ella tiene que teclear este número en Nequi: se le da agrupado, no pegado.
     const nequiLegible = nequi.numero.replace(/(\d{3})(\d{3})(\d{4})/, '$1 $2 $3');
+    // Los tres pasos van SIEMPRE juntos y en este orden. Dar el número sin decir
+    // qué hacer después es donde se caía el pago: ella transfiere, no manda el
+    // comprobante, nadie le da el acceso y se queda creyendo que la estafaron.
+    const pasosNequi = `**Nequi: ${nequi.monto} al ${nequiLegible}** (a nombre de Javier Vieira). Cuando transfiera, le manda el comprobante Y su correo a Javier por este link: ${whatsappJavier} — él le da el acceso. Los tres pasos se los das juntos: sin el comprobante y el correo, nadie le puede entregar nada.`;
+    // ⚠️ A la que NO es colombiana no se le puede nombrar Nequi por su cuenta:
+    // "si eres de Colombia mandas a Nequi, si no pagas con tarjeta" la obliga a
+    // escoger entre dos caminos y alarga el mensaje hasta que se corta el link.
+    // Una sola vía por mujer.
     const nequiLinea = esColombiana
-      ? `- 👉 ELLA ES DE COLOMBIA: la PRIMERA forma de pago que le ofreces es **Nequi** — ${nequi.monto} al ${nequiLegible}. Después le manda el comprobante y su correo a Javier por WhatsApp y le dan el acceso. Solo si prefiere pagar con tarjeta le mandas la página.`
-      : `- 🇨🇴 Si resulta que es de Colombia (te lo dice ella, aunque su número sea de otro país): la PRIMERA forma de pago que le ofreces es **Nequi** — ${nequi.monto} al ${nequiLegible}, y después le manda el comprobante y su correo a Javier por WhatsApp. Solo si prefiere tarjeta, la página.`;
+      ? `- 👉 ELLA ES DE COLOMBIA: la PRIMERA forma de pago que le ofreces es Nequi, antes que la página. ${pasosNequi}
+- Solo si te dice que prefiere pagar con tarjeta le mandas la página.`
+      : `- ⛔ ELLA NO ES DE COLOMBIA: **no le nombres Nequi.** Su vía es la página, y punto. Nada de "si eres de Colombia…": ofrecerle dos caminos la deja escogiendo en vez de pagando.
+- 🇨🇴 Solo si ELLA misma te dice que está en Colombia (pasa: número de otro país, viviendo allá), ahí sí cambias a Nequi. ${pasosNequi}`;
 
     return `# ⏰ RELOJ Y DATOS DUROS — CALCULADO POR EL SISTEMA, ES LA VERDAD
 Esto NO lo adivines ni lo calcules tú: ya viene resuelto. Léelo y úsalo tal cual.
 
 ${hoy}
-- 👉 LA CLASE ${cuando(clase)}, ${horaTexto} hora Colombia, ${duracionHoras} horas.
+- 👉 LA CLASE SE LLAMA **"${nombre}"** — así se llama también en la página, y así se lo dices. Es EN VIVO, con Javier Vieira.
+- 👉 ${cuando(clase)}, ${horaTexto} hora Colombia, ${duracionHoras} horas.
 - Es TODOS LOS JUEVES, a la misma hora. Nunca nombres otro día.
+- Se lleva: la clase en vivo con él, el libro "${libro.nombre}" (${libro.detalle}) y la guía de la clase.
 - Precio: ${precios.COP} / ${precios.USD} / ${precios.MXN}. Es PAGO ÚNICO, no una suscripción.
-- 👉 EL ÚNICO LINK QUE LE MANDAS ES LA PÁGINA: ${landing}
-  Ahí ella ve todo y aparta su lugar sola. **NUNCA le mandes un link de pago suelto**: el botón está en esa página, y pedirle la tarjeta antes de contarle a qué la invitas la espanta.
+- 👉 EL LINK QUE LE MANDAS ES LA PÁGINA: ${landing}
+  Ahí ella ve todo y aparta su lugar sola; el botón de pago está adentro. **NUNCA le mandes un link de pago suelto de entrada**: pedirle la tarjeta antes de contarle a qué la invitas la espanta.
+- 🔁 **El link no se manda una sola vez.** Se lo vuelves a mandar cada vez que le sirva: si pregunta cómo pagar, si dice que sí, si vuelve al día siguiente, si dice que se le perdió. Un link que hay que buscar hacia arriba en el chat es una venta perdida.
 ${nequiLinea}
 
 ## 🕗 A QUÉ HORA LE QUEDA LA CLASE — YA CALCULADO, NO LO DEDUZCAS

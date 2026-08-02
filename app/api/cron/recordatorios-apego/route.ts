@@ -1,5 +1,10 @@
 /**
- * Cron de RECORDATORIOS DE COMPRA de Apego Detox.
+ * Cron de RECORDATORIOS DE COMPRA de Paula.
+ *
+ * Vende SIEMPRE lo mismo que el chat: la clase del jueves si ella va en el
+ * escalón 1 (el caso normal), Apego Detox solo si el chat ya la subió al 2.
+ * La ruta conserva el nombre `recordatorios-apego` porque es la URL que ya
+ * está configurada en el cron de EasyPanel.
  *
  * Revisa conversaciones de Paula que quedaron en silencio y envía hasta 2
  * recordatorios por ManyChat para cerrar la venta:
@@ -20,7 +25,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { CLASE, bloqueContextoVivo, cuentaRegresiva, datosParaElla } from '@/lib/whatsapp/contexto-clase';
+import { TZ_COLOMBIA, detectarPais, fechaLarga, hora12 } from '@/lib/whatsapp/contexto-clase';
+import { CLASE_JUEVES, bloqueContexto, proximaClase } from '@/lib/whatsapp/programa';
 import { APEGO, bloqueContextoApego, proximoEncuentro } from '@/lib/whatsapp/apego-detox';
 
 export const dynamic = 'force-dynamic';
@@ -28,9 +34,23 @@ export const maxDuration = 60;
 
 const CRON_SECRET = process.env.CRON_SECRET;
 
-// Mientras haya clase en vivo, los recordatorios venden LA CLASE, no Apego
-// Detox: si el chat vende una cosa y el recordatorio otra, ella se pierde.
-const CAMPANA_CLASE = CLASE.activa;
+/**
+ * El recordatorio vende LO MISMO que el chat, y eso lo decide la ESCALERA.
+ *
+ * ⚠️ Esto estaba roto y era el agujero más caro del embudo: los recordatorios
+ * miraban `CLASE.activa` de `contexto-clase.ts`, un interruptor que quedó en
+ * `false` el 31 de julio y que apuntaba a una clase de una sola fecha ya
+ * dictada. Resultado: Paula conversaba vendiendo la clase del jueves y, cuatro
+ * horas después, el recordatorio le mandaba a la misma mujer el link de Apego
+ * Detox en Skool. Dos productos, dos precios y dos plataformas en el mismo
+ * chat — y ella no compraba ninguno.
+ *
+ * Ahora sale del escalón guardado de ELLA, igual que en `lib/whatsapp/paula.ts`.
+ * Por defecto, la clase: es el escalón de entrada de todo el mundo.
+ */
+function esEscalonClase(user: { escalon?: string | null }): boolean {
+  return user.escalon !== 'apego';
+}
 
 const CHECKOUT_URL = APEGO.checkout;
 const LANDING_URL = APEGO.landing;
@@ -69,6 +89,8 @@ type WaUserRow = {
   canal?: string | null;
   /** Para darle la hora de la clase en su zona y el precio en su moneda. */
   phone?: string | null;
+  /** 'clase' | 'apego' — el escalón que dejó el chat (ver lib/whatsapp/escalera.ts). */
+  escalon?: string | null;
 };
 
 async function supabaseQuery(endpoint: string, options: RequestInit = {}) {
@@ -178,41 +200,60 @@ function copyInvitacionGrupo(nombre: string | null): string {
   ], (nombre || '') + '3'));
 }
 
-// --- Copys de CAMPAÑA: la clase en vivo, en SU hora y SU moneda ---
+// --- Copys de la CLASE: en SU hora y SU moneda ---
 // El link siempre es la página de la clase (el pago se hace ahí, no en Hotmart).
 
-function copyClase(user: WaUserRow, toque: 1 | 2): string {
+/**
+ * La próxima clase con la hora, la fecha y el precio ya resueltos para ELLA.
+ * Sale de `programa.ts`, que calcula el próximo jueves solo — antes esto leía
+ * una fecha fija que se quedó vieja y prometía una clase que ya se había dado.
+ */
+function datosClaseParaElla(telefono: string | null | undefined, ahora: Date) {
+  const clase = proximaClase(ahora);
+  const pais = detectarPais(telefono);
+  const usd = CLASE_JUEVES.precios.USD;
+
+  return {
+    clase,
+    esColombiana: pais?.iso === 'CO',
+    precio: !pais ? usd : pais.precioExacto ? pais.precio : `unos ${pais.precio} (${usd})`,
+    horaClase: pais
+      ? `${hora12(clase.inicio, pais.tz)} (hora de ${pais.ciudad})`
+      : `${CLASE_JUEVES.horaTexto} hora Colombia`,
+    fechaClase: fechaLarga(clase.inicio, pais?.tz ?? TZ_COLOMBIA),
+  };
+}
+
+function copyClase(user: WaUserRow, toque: 1 | 2, ahora: Date): string {
   const n = saludo(user.name);
-  const { precio, horaClase, fechaClase } = datosParaElla(user.phone);
-  const cuenta = cuentaRegresiva(new Date());
-  const link = CLASE.landing;
+  const { clase, esColombiana, precio, horaClase, fechaClase } = datosClaseParaElla(user.phone, ahora);
+  const link = CLASE_JUEVES.landing;
   const seed = (user.name || '') + 'c' + toque;
 
-  // Si la clase ya pasó, prometer un "en vivo" que no va a ocurrir es mentirle.
-  if (cuenta.estado === 'pasada') {
-    if (!CLASE.quedaGrabada) {
-      return cap(`${n}la clase "${CLASE.nombre}" ya se dio 💛 Si quieres, te aviso apenas Javier abra la próxima.`);
-    }
-    return cap(pick([
-      `${n}la clase "${CLASE.nombre}" ya se dio, pero quedó grabada y todavía puedes verla completa: ${link}\n\nSon ${precio}, un solo pago, y te llevas también el libro y el área de miembros. ¿Te la dejo lista? 💛`,
-      `${n}se te pasó la clase en vivo, pero no te quedaste sin nada 💛 La grabación completa sigue disponible aquí: ${link}\n\n${precio}, pago único, con el libro y el área de miembros incluidos. ¿Entras?`,
-    ], seed));
-  }
-
-  const cuando = cuenta.estado === 'en_vivo'
+  const cuando = clase.enVivo
     ? 'está empezando ahora mismo'
-    : `es el ${fechaClase} a las ${horaClase} — ${cuenta.frase.toLowerCase()}`;
+    : `${clase.frase.toLowerCase()}: ${fechaClase} a las ${horaClase}`;
 
   if (toque === 1) {
     return cap(pick([
-      `${n}soy Paula 💛 La clase "${CLASE.nombre}" con Javier ${cuando}. Aseguras tu lugar aquí: ${link}\n\nSon ${precio}, un solo pago. Es en vivo y una sola vez, así que separa tu cupo hoy.`,
-      `${n}te escribo por la clase "${CLASE.nombre}" de Javier: ${cuando} 💛 Aquí aseguras el tuyo: ${link}\n\n${precio}, pago único, y te llevas el libro y el área de miembros. ¿Entras?`,
+      `${n}soy Paula 💛 La clase "${CLASE_JUEVES.nombre}" con Javier Vieira ${cuando}. Son ${CLASE_JUEVES.duracionHoras} horas en vivo, y se trabaja ahí mismo: no es una charla para escuchar.\n\nAquí aseguras tu lugar → ${link}\n\n${precio}, un solo pago. ¿Te espero?`,
+      `${n}te escribo por la clase "${CLASE_JUEVES.nombre}" de Javier Vieira: ${cuando} 💛 Te llevas la clase en vivo, el libro "${CLASE_JUEVES.libro.nombre}" y la guía.\n\n${link}\n\nSon ${precio}, pago único. ¿Entras?`,
+    ], seed));
+  }
+
+  // Toque 2 = el último de venta. A las colombianas se les da la vía que más
+  // cierra —Nequi, sin tarjeta de por medio— con sus tres pasos completos.
+  if (esColombiana) {
+    const nequi = CLASE_JUEVES.nequi.numero.replace(/(\d{3})(\d{3})(\d{4})/, '$1 $2 $3');
+    return cap(pick([
+      `${n}no quiero que se te pase: la clase ${cuando} 💛 Y si la tarjeta es lo que te frena, se puede por Nequi.\n\nMandas ${CLASE_JUEVES.nequi.monto} al ${nequi}, le pasas el comprobante y tu correo a Javier Vieira por WhatsApp y él te da el acceso → ${CLASE_JUEVES.whatsappJavier}\n\nO con tarjeta aquí: ${link} ¿Cuál te sirve?`,
+      `${n}te dejo las dos formas y decides tú ✨ La clase ${cuando}.\n\nPor Nequi: ${CLASE_JUEVES.nequi.monto} al ${nequi}, y después el comprobante y tu correo a Javier Vieira → ${CLASE_JUEVES.whatsappJavier}\n\nCon tarjeta, aquí: ${link} ¿Te veo el jueves?`,
     ], seed));
   }
 
   return cap(pick([
-    `${n}no quiero que se te pase: la clase ${cuando}. Son ${CLASE.duracionHoras} horas en vivo con Javier y sales con herramientas de verdad, no con teoría.\n\nAseguras tu lugar aquí: ${link} — ${precio}, un solo pago. ¿Te veo ahí? ✨`,
-    `${n}te dejo el enlace una vez más, sin presionarte 💛 La clase ${cuando}: ${link}\n\n${precio}, un solo pago. Es en vivo y no se repite, por eso te insisto. ¿Aseguro tu cupo?`,
+    `${n}no quiero que se te pase: la clase ${cuando}. Son ${CLASE_JUEVES.duracionHoras} horas en vivo con Javier Vieira y sales con herramientas de verdad, no con teoría.\n\nAseguras tu lugar aquí → ${link}\n\n${precio}, un solo pago. ¿Te veo ahí? ✨`,
+    `${n}te dejo el enlace una vez más, sin presionarte 💛 La clase ${cuando}.\n\n${link}\n\n${precio}, un solo pago. Es en vivo y no se repite, por eso te insisto. ¿Vienes?`,
   ], seed));
 }
 
@@ -225,12 +266,13 @@ async function generarRecordatorioLLM(
   messages: MemMessage[],
   toque: 1 | 2,
   linkYaEnviado: boolean,
+  esClase: boolean,
 ): Promise<string | null> {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) return null;
 
-  const linkRequerido = CAMPANA_CLASE
-    ? CLASE.landing
+  const linkRequerido = esClase
+    ? CLASE_JUEVES.landing
     : toque === 2 || linkYaEnviado ? CHECKOUT_URL : LANDING_URL;
 
   const historial = messages
@@ -239,22 +281,22 @@ async function generarRecordatorioLLM(
     .map((m) => `${m.message.type === 'human' ? 'ELLA' : 'PAULA'}: ${m.message.content}`)
     .join('\n');
 
-  const objetivo = CAMPANA_CLASE
+  const objetivo = esClase
     ? (toque === 1
-      ? `TOQUE 1 (lleva ~4h en silencio): retómala con calidez, recuérdale la clase con la fecha y la hora EXACTAS del bloque de arriba (las de SU país), entrega este link UNA vez: ${linkRequerido} y cierra con UNA pregunta de decisión.`
-      : `TOQUE 2 (lleva ~16h en silencio, último toque): cierre directo. La clase con su fecha, SU hora y cuánto falta, el precio EN SU MONEDA, el link UNA vez: ${linkRequerido}, y UNA pregunta de decisión.`)
+      ? `TOQUE 1 (lleva ~4h en silencio): retómala con calidez, recuérdale la clase con su NOMBRE, la fecha y la hora EXACTAS del bloque de arriba (las de SU país), dile en una línea qué se lleva, entrega este link: ${linkRequerido} y cierra con UNA pregunta de decisión.`
+      : `TOQUE 2 (lleva ~16h en silencio, último toque): cierre directo. La clase con su fecha, SU hora y cuánto falta, el precio EN SU MONEDA, el link: ${linkRequerido}, y UNA pregunta de decisión. Si el bloque de arriba dice que ella es de Colombia, ofrécele Nequi PRIMERO con sus tres pasos completos (monto, número, y que le mande el comprobante y su correo a Javier Vieira por WhatsApp).`)
     : (toque === 1
       ? `TOQUE 1 (lleva ~4h en silencio): retoma SU dolor exacto (usa sus palabras del historial, no frases genéricas), preséntale ${APEGO.nombre} como el proceso para ESO, entrega este link UNA vez: ${linkRequerido} y cierra con UNA pregunta de decisión.`
       : `TOQUE 2 (lleva ~16h en silencio, último toque): cierre directo. Su dolor en una frase, el link de pago UNA vez: ${linkRequerido}, la fecha del PRÓXIMO encuentro en vivo con Javier (está arriba, en el bloque del reloj), la garantía de ${APEGO.garantiaDias} días, y UNA pregunta de decisión que invite a entrar HOY.`);
 
-  const encargo = CAMPANA_CLASE
-    ? `${bloqueContextoVivo(new Date(), user.phone)}
+  const encargo = esClase
+    ? `${bloqueContexto(new Date(), user.phone, 'clase')}
 ---
 
-Eres Paula, del equipo de Javier Vieira, Psicólogo Especialista. Escribes UN mensaje de seguimiento de VENTA por WhatsApp/Instagram para una mujer que dejó de responder. Tu único objetivo es que asegure su lugar en la clase en vivo "${CLASE.nombre}" (${CLASE.duracionHoras} horas, una sola vez, PAGO ÚNICO; incluye herramientas, terapia en vivo, meditación, el libro de la clase y área de miembros).
-⛔ La clase NO queda grabada: es en vivo y no se repite. NUNCA prometas grabación, "la ves después" ni "no pierdes nada si no puedes conectarte".
+Eres Paula. Trabajas con Javier Vieira, Psicólogo Especialista de Historias de la Mente. Escribes UN mensaje de seguimiento de VENTA por WhatsApp/Instagram para una mujer que dejó de responder. Tu único objetivo es que asegure su lugar en la clase en vivo "${CLASE_JUEVES.nombre}" (${CLASE_JUEVES.duracionHoras} horas, una sola vez, PAGO ÚNICO; se lleva la clase en vivo, el libro "${CLASE_JUEVES.libro.nombre}" y la guía de la clase).
+⛔ NO prometas que queda grabada: no está confirmado. Nada de "la ves después" ni "no pierdes nada si no puedes conectarte".
 
-La fecha, la hora en el país de ELLA, el precio en SU moneda y cuánto falta están arriba, ya calculados: úsalos TAL CUAL, no los deduzcas ni los cambies. NUNCA menciones Apego Detox, ni "$37.97", ni módulos, ni suscripción mensual.`
+El nombre de la clase, la fecha, la hora en el país de ELLA, el precio y las formas de pago están arriba, ya calculados: úsalos TAL CUAL, no los deduzcas ni los cambies. NUNCA menciones Apego Detox, ni Skool, ni módulos, ni suscripción mensual.`
     : `${bloqueContextoApego(new Date(), user.phone)}
 ---
 
@@ -266,7 +308,7 @@ La fecha del próximo encuentro está arriba, ya calculada: úsala TAL CUAL. NUN
 
   // En Apego Detox decir "pago único" o "cupos" sería mentira (es suscripción).
   // En la clase son verdad, así que ahí no se prohíben.
-  const prohibido = CAMPANA_CLASE
+  const prohibido = esClase
     ? `"oferta", "descuento", "última oportunidad"`
     : `"oferta", "descuento", "cupos limitados", "última oportunidad", "pago único"`;
 
@@ -275,8 +317,8 @@ La fecha del próximo encuentro está arriba, ya calculada: úsala TAL CUAL. NUN
 ${objetivo}
 
 REGLAS DURAS:
-- Máximo 2 globos separados por UNA línea en blanco, ~250 caracteres por globo.
-- El link va UNA sola vez, completo y sin modificar.
+- Máximo 3 globos separados por UNA línea en blanco, ~250 caracteres por globo. El link va en su propio globo.
+- El link obligatorio va completo y sin modificar. En el cierre por Nequi puedes usar además el WhatsApp de Javier Vieira que está arriba.
 - Texto plano de WhatsApp: sin markdown, sin listas. Emojis solo 💛 y ✨ (máximo 1 por globo).
 - PROHIBIDO: ${prohibido}, reprocharle el silencio ("vi que no respondiste"), decir que es un mensaje automático, diagnosticar, prometer cura.
 - Tono: hermana mayor con criterio clínico. Cálida, directa, sutil y firme. Nunca de feria, nunca rogando.
@@ -316,7 +358,7 @@ Responde SOLO con el mensaje final (o NO_ENVIAR). Nada de explicaciones.`;
     texto = texto.replace(/\[\[[^\]]*\]\]/g, '').trim();
     if (!texto.includes(linkRequerido)) return null;
     if (texto.length > 900) return null;
-    const prohibidoRe = CAMPANA_CLASE
+    const prohibidoRe = esClase
       ? /oferta|descuento|última oportunidad|ultima oportunidad/i
       : /oferta|descuento|cupos|última oportunidad|ultima oportunidad|pago único|pago unico/i;
     if (prohibidoRe.test(texto)) return null;
@@ -389,8 +431,13 @@ async function handle(req: NextRequest) {
       const hoursSinceHuman = (now.getTime() - lastHumanTime.getTime()) / 3600000;
       if (hoursSinceHuman >= 23.5) continue;
 
-      // En campaña el link que cuenta es el de la página de la clase.
-      const marcaLink = CAMPANA_CLASE ? [CLASE.landing.replace(/^https?:\/\//, '')] : ['apegodetox', 'hotmart'];
+      // El escalón manda: el recordatorio vende lo mismo que el chat.
+      const esClase = esEscalonClase(user);
+
+      // En el escalón de la clase, el link que cuenta es el de su página.
+      const marcaLink = esClase
+        ? [CLASE_JUEVES.landing.replace(/^https?:\/\//, '')]
+        : ['apegodetox', 'skool.com'];
       const linkYaEnviado = stage === 'link_enviado' || messages.some((m) =>
         m.message && m.message.type === 'ai' &&
         marcaLink.some((marca) => (m.message.content || '').includes(marca))
@@ -429,11 +476,11 @@ async function handle(req: NextRequest) {
       } else {
         // Recordatorio inteligente: personalizado al dolor de ELLA vía LLM;
         // si el generador falla o devuelve algo inválido, copy fijo de venta.
-        msg = await generarRecordatorioLLM(user, messages, toque, linkYaEnviado);
+        msg = await generarRecordatorioLLM(user, messages, toque, linkYaEnviado, esClase);
         if (msg === 'NO_ENVIAR') continue; // el generador detectó crisis
         if (!msg) {
-          msg = CAMPANA_CLASE
-            ? copyClase(user, toque)
+          msg = esClase
+            ? copyClase(user, toque, now)
             : toque === 1
               ? copyRecordatorio1(user.name, linkYaEnviado)
               : copyRecordatorio2(user.name, now);

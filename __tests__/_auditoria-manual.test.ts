@@ -27,6 +27,8 @@ for (const linea of env.split('\n')) {
 
 const AHORA = new Date();
 const TELEFONO_MX = '+521234567890';
+/** Colombia es el mercado más grande y el único con Nequi: se audita aparte. */
+const TELEFONO_CO = '+573001112233';
 
 const USUARIA: WaUser = {
   id: 1,
@@ -39,8 +41,17 @@ const USUARIA: WaUser = {
   conversation_count: 0,
 };
 
-const CASOS: Array<{ etiqueta: string; historial: Array<{ role: string; content: string }>; mensaje: string }> = [
+const CASOS: Array<{
+  etiqueta: string;
+  historial: Array<{ role: string; content: string }>;
+  mensaje: string;
+  /** Por defecto México. Con el de Colombia se audita el cierre por Nequi. */
+  telefono?: string;
+  /** Para variar la apertura: la semilla es el manychat_id de ELLA. */
+  id?: string;
+}> = [
   { etiqueta: '1. saludo pelado', historial: [], mensaje: 'hola' },
+  { etiqueta: '1b. otro saludo pelado (debe abrir DISTINTO al 1)', historial: [], mensaje: 'hola', id: 'audit-otra' },
   { etiqueta: '2. pregunta el precio', historial: [], mensaje: 'hola, cuanto vale?' },
   {
     etiqueta: '3. le cuenta su dolor',
@@ -58,6 +69,20 @@ const CASOS: Array<{ etiqueta: string; historial: Array<{ role: string; content:
   { etiqueta: '8. objeción "ya intenté todo"', historial: [], mensaje: 'y si no me funciona? ya intente de todo, terapia, libros, todo' },
   { etiqueta: '9. quiere entrar', historial: [], mensaje: 'ok me convenciste, como pago?' },
   { etiqueta: '10. dice que ya pagó', historial: [], mensaje: 'ya pague! y ahora?' },
+  // --- Colombia: la vía que más cierra, y la que más se rompía ---
+  { etiqueta: '11. CO saluda', historial: [], mensaje: 'hola', telefono: TELEFONO_CO, id: 'audit-co' },
+  { etiqueta: '12. CO pregunta el precio', historial: [], mensaje: 'buenas, cuanto cuesta la clase?', telefono: TELEFONO_CO, id: 'audit-co' },
+  { etiqueta: '13. CO QUIERE ENTRAR (Nequi completo)', historial: [], mensaje: 'listo quiero entrar, como hago para pagar?', telefono: TELEFONO_CO, id: 'audit-co' },
+  {
+    etiqueta: '14. CO pide el link otra vez',
+    historial: [
+      { role: 'assistant', content: 'Este jueves a las 8 es la clase 💛\n\nhttps://historiasdelamente.com/volver-a-mi' },
+      { role: 'user', content: 'ah bueno luego miro' },
+    ],
+    mensaje: 'oye no encuentro el link que me mandaste',
+    telefono: TELEFONO_CO,
+    id: 'audit-co',
+  },
 ];
 
 describe.skip('auditoría manual contra el modelo', () => {
@@ -66,7 +91,11 @@ describe.skip('auditoría manual contra el modelo', () => {
 
     for (const caso of CASOS) {
       const handoff = motivoHandoff(caso.mensaje);
-      const prompt = buildSystemPrompt(USUARIA, 'tiktok_live', TELEFONO_MX, { ahora: AHORA, handoff });
+      const usuaria: WaUser = { ...USUARIA, manychat_id: caso.id ?? USUARIA.manychat_id };
+      const prompt = buildSystemPrompt(usuaria, 'tiktok_live', caso.telefono ?? TELEFONO_MX, {
+        ahora: AHORA,
+        handoff,
+      });
       const mensajes = [...caso.historial, { role: 'user', content: caso.mensaje }];
       let cruda = await callOpenRouter(prompt, mensajes);
       let auditoria = auditarRespuesta(cruda.replace(/\[\[[^\]]*\]\]/g, '').trim(), AHORA);

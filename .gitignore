@@ -42,6 +42,12 @@ yarn-error.log*
 /agents-source/cursos-src/
 /agents-source/scripts/__pycache__/
 
+# scratch / temp (puede contener tokens en dumps de n8n y status de envíos)
+/.tmp/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Informe de la auditoría manual de Paula (se regenera al correrla)
+auditoria-paula.txt

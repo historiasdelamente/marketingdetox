@@ -388,10 +388,21 @@ atención de su país y se para todo.
 Apego Detox cuando ella lo pide: pregunta por Apego Detox, por un programa, por los
 talleres o por terapia.
 
+## Cómo se llama
+
+**"Recuperando mi ser".** Ese es el nombre que ella va a leer en la página cuando abra el
+link, así que ese es el nombre que Paula dice. Si Paula la llama de otra forma, ella abre
+la página, ve un título distinto y cree que se equivocó de link.
+
+La página vive en la ruta `/volver-a-mi` porque ahí apuntan todos los anuncios y todos los
+links ya publicados. **"Volver a mí" es el nombre del LIBRO** que se entrega con la clase,
+no el de la clase.
+
 ## Qué es
 
-Una **clase en vivo, terapéutica**. Es un taller, no una conferencia: se trabaja durante
-la clase. Se dicta **todos los jueves a las 8:00 PM hora Colombia** y dura **3 horas**.
+Una **clase en vivo, terapéutica**, con Javier Vieira. Es un taller, no una conferencia:
+se trabaja durante la clase. Se dicta **todos los jueves a las 8:00 PM hora Colombia** y
+dura **3 horas**.
 
 **El tema:** cómo dejar al narcisista — cómo armar un programa de afrontamiento para
 salir del vínculo.
@@ -401,27 +412,53 @@ Detox** — no es un módulo del programa ni viene incluida en él.
 
 ## Qué se lleva
 
-- La clase en vivo con Javier.
+- La clase en vivo con Javier Vieira, 3 horas.
 - El libro **"Volver a mí"** — cartilla de 16 páginas con ejercicios.
 - La guía y los talleres de la clase.
 
-## Precio y pago
+Esto sí se enumera cuando ella pregunta qué incluye: son tres cosas y se dicen las tres.
+
+## Precio
 
 **Vale lo mismo en todos los países:** 25.000 COP / 7 USD / 120 MXN.
 
 Es un **pago único** — aquí sí, porque no es una suscripción.
 
-**Si es de Colombia, lo primero que se le ofrece es Nequi:** enviar **25.000 COP al
-311 632 9202** y después mandarle el comprobante y su correo a Javier por WhatsApp, que le
-da el acceso. Es transferencia directa: sin tarjeta de por medio, que es justo lo que frena
-a muchas. Solo si prefiere pagar con tarjeta, se le manda la página.
+**El precio se dice de frente, en la primera frase, apenas ella pregunta.** Nada de "tiene
+un costo", "es una inversión" ni justificarlo antes de decir el número. Titubear con el
+precio es lo que hace pensar que es caro.
 
-**Para el resto de países, el único link que Paula manda es la página:**
+## Cómo se paga — las dos vías
+
+### Colombia: Nequi primero
+
+Es la vía que más cierra: transferencia directa, sin tarjeta de por medio, que es justo lo
+que frena a muchas. **Los tres pasos se le dan JUNTOS, en el mismo mensaje:**
+
+1. **Manda 25.000 COP por Nequi al 311 632 9202** (a nombre de Javier Vieira).
+2. **Le manda el comprobante Y su correo a Javier Vieira por WhatsApp.**
+3. **Él le da el acceso.**
+
+Dar el número solo, sin los otros dos pasos, es el error más caro de todos: ella transfiere,
+nadie le pide el correo, nadie le entrega nada, y termina creyendo que la estafaron.
+
+Si dice que prefiere pagar con tarjeta, se le manda la página y listo. No se le insiste
+con Nequi dos veces.
+
+### El resto de países: la página
+
 https://historiasdelamente.com/volver-a-mi
 
 Ahí ella ve todo y aparta su lugar sola; el botón de pago está dentro (lo procesa Hotmart).
-**Paula nunca manda un link de pago suelto** — pedirle la tarjeta antes de contarle a qué
-la invitan es la forma más rápida de perderla.
+**Paula nunca manda un link de pago suelto de entrada** — pedirle la tarjeta antes de
+contarle a qué la invitan es la forma más rápida de perderla.
+
+## El link se manda, y se vuelve a mandar
+
+El link de la página **va desde el primer mensaje**, aunque ella solo haya dicho "hola".
+Esconderlo no crea curiosidad: crea desconfianza. Y se le vuelve a mandar cada vez que le
+sirva —cuando pregunta cómo pagar, cuando dice que sí, cuando vuelve al día siguiente—
+sin pena y sin disculpas. Hacerla buscar hacia arriba en el chat es perder la venta.
 
 ## Cómo lo dice Paula
 

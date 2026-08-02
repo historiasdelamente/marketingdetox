@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { APEGO_DETOX, bloqueContexto, precioApego, proximaClase, proximoEncuentro } from '../lib/whatsapp/programa';
+import { APEGO_DETOX, CLASE_JUEVES, bloqueContexto, precioApego, proximaClase, proximoEncuentro } from '../lib/whatsapp/programa';
 
 /** Un instante en hora Colombia, escrito como lo diría una persona. */
 const colombia = (iso: string) => new Date(`${iso}-05:00`);
@@ -92,13 +92,26 @@ describe('Colombia paga por Nequi antes que por tarjeta', () => {
     const b = bloqueContexto(ahora, '+573001112233', 'clase');
     expect(b).toContain('ELLA ES DE COLOMBIA');
     expect(b).toContain('25.000 COP al 311 632 9202');
-    expect(b).toContain('Solo si prefiere pagar con tarjeta');
+    expect(b).toContain('prefiere pagar con tarjeta');
   });
 
-  it('a una de otro país le deja la puerta por si resulta ser colombiana', () => {
-    // Muchas viven fuera con la línea de allá, o al revés.
+  it('los tres pasos de Nequi van juntos — el número solo no sirve', () => {
+    // Darle el número sin decirle que mande el comprobante y su correo la deja
+    // pagando al vacío: transfiere, nadie le entrega nada y cree que la estafaron.
+    const b = bloqueContexto(ahora, '+573001112233', 'clase');
+    expect(b).toContain('comprobante');
+    expect(b).toContain('correo');
+    expect(b).toContain(CLASE_JUEVES.whatsappJavier);
+  });
+
+  it('a una de otro país NO le ofrece Nequi, pero deja la puerta si ella lo dice', () => {
+    // Muchas viven fuera con la línea de allá, o al revés. Aun así, a la que no
+    // es colombiana se le da UNA sola vía: ofrecerle las dos la deja escogiendo
+    // en vez de pagando, y alarga el mensaje hasta que se corta el link.
     const b = bloqueContexto(ahora, '+521234567890', 'clase');
-    expect(b).toContain('Si resulta que es de Colombia');
+    expect(b).toContain('ELLA NO ES DE COLOMBIA');
+    expect(b).toContain('no le nombres Nequi');
+    expect(b).toContain('Solo si ELLA misma te dice que está en Colombia');
     expect(b).toContain('311 632 9202');
   });
 
