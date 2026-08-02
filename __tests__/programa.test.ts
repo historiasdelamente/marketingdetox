@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { APEGO_DETOX, precioApego, proximaClase, proximoEncuentro } from '../lib/whatsapp/programa';
+import { APEGO_DETOX, bloqueContexto, precioApego, proximaClase, proximoEncuentro } from '../lib/whatsapp/programa';
 
 /** Un instante en hora Colombia, escrito como lo diría una persona. */
 const colombia = (iso: string) => new Date(`${iso}-05:00`);
@@ -59,6 +59,29 @@ describe('los encuentros de Apego Detox son martes y jueves', () => {
       const { fecha } = proximoEncuentro(colombia(`2026-08-${dia}T15:00:00`));
       expect(fecha.startsWith('martes') || fecha.startsWith('jueves')).toBe(true);
     }
+  });
+});
+
+describe('la hora de la clase en cada país viene resuelta', () => {
+  // Si ella DICE de qué país es, el teléfono ya no manda: sin la tabla el
+  // modelo se pone a calcular la diferencia horaria, y la calcula mal.
+  const bloque = bloqueContexto(colombia('2026-08-02T10:00:00'), null, 'clase');
+
+  it('trae la hora de los países que más escriben', () => {
+    expect(bloque).toContain('Colombia 8:00 PM');
+    expect(bloque).toContain('México 7:00 PM');
+    expect(bloque).toContain('Argentina 10:00 PM');
+    expect(bloque).toContain('Chile 9:00 PM');
+  });
+
+  it('en España avisa que es de MADRUGADA del día siguiente', () => {
+    // 8 PM del jueves en Colombia son las 3 AM del viernes en Madrid. Sin el
+    // día, ella la anota para el jueves y se la pierde.
+    expect(bloque).toContain('España 3:00 AM (viernes)');
+  });
+
+  it('deja claro que lo que ella dice de su país manda sobre su número', () => {
+    expect(bloque).toContain('Si ELLA te dice de qué país es, eso manda');
   });
 });
 

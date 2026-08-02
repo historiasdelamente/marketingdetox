@@ -13,7 +13,7 @@
 // a Apego Detox cuando ELLA lo pide.
 // ============================================================================
 
-import { TZ_COLOMBIA, detectarPais, diasDeCalendario, fechaISO, fechaLarga, hora12 } from './contexto-clase';
+import { PAISES, TZ_COLOMBIA, detectarPais, diasDeCalendario, fechaISO, fechaLarga, hora12 } from './contexto-clase';
 import type { Escalon } from './escalera';
 
 /** Colombia no tiene horario de verano: -05:00 vale todo el año. */
@@ -206,6 +206,32 @@ export function precioApego(ahora: Date): PrecioVigente {
 // 5. EL BLOQUE QUE SE INYECTA AL PROMPT EN CADA MENSAJE
 // ---------------------------------------------------------------------------
 
+/**
+ * Los países desde los que más escriben. La hora ya resuelta en cada uno.
+ *
+ * POR QUÉ EXISTE: el país se deduce del indicativo del teléfono, pero muchas
+ * lo DICEN por texto ("soy de México") con un número de otro país, o escriben
+ * desde Instagram sin número. Sin esta tabla el modelo se pone a calcular la
+ * diferencia horaria — y la calcula mal. Aquí la lee.
+ */
+const PAISES_TABLA = ['MX', 'CO', 'US', 'PE', 'EC', 'CL', 'AR', 'ES', 'VE'];
+
+function tablaHorarios(inicio: Date): string {
+  const diaEnColombia = fechaISO(inicio, TZ_COLOMBIA);
+
+  return PAISES.filter((p) => PAISES_TABLA.includes(p.iso))
+    .map((p) => {
+      // En España la clase de las 8 PM del jueves cae a las 3 de la MADRUGADA
+      // del viernes. Sin el día, ella la anota para el jueves y se la pierde.
+      const otroDia = fechaISO(inicio, p.tz) !== diaEnColombia;
+      const dia = otroDia
+        ? ` (${new Intl.DateTimeFormat('es-CO', { timeZone: p.tz, weekday: 'long' }).format(inicio)})`
+        : '';
+      return `${p.nombre} ${hora12(inicio, p.tz)}${dia}`;
+    })
+    .join(' · ');
+}
+
 /** Su país y su hora, o la advertencia de que no lo sabemos. */
 function bloqueSuPais(telefono: string | null | undefined, cuando: Ocurrencia | null, ahora: Date): string {
   const pais = detectarPais(telefono);
@@ -268,6 +294,11 @@ ${hoy}
 - 👉 EL ÚNICO LINK QUE LE MANDAS ES LA PÁGINA: ${landing}
   Ahí ella ve todo y aparta su lugar sola. **NUNCA le mandes un link de pago suelto**: el botón está en esa página, y pedirle la tarjeta antes de contarle a qué la invitas la espanta.
 - Colombia también puede por Nequi: ${nequi.monto} al ${nequi.numero}, y luego le manda el comprobante a Javier.
+
+## 🕗 A QUÉ HORA LE QUEDA LA CLASE — YA CALCULADO, NO LO DEDUZCAS
+${tablaHorarios(clase.inicio)}
+- **Si ELLA te dice de qué país es, eso manda** sobre lo que diga su número de teléfono: muchas viven en otro país del que tienen la línea.
+- Si su país no está en esta lista, dile la hora de Colombia diciéndolo explícito ("8:00 PM hora Colombia") y pregúntale desde qué ciudad, sin inventarle una diferencia horaria.
 
 ${bloqueSuPais(telefono, clase, ahora)}
 `;
