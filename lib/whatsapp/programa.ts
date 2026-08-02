@@ -282,7 +282,17 @@ export function bloqueContexto(
 
   if (escalon === 'clase') {
     const clase = proximaClase(ahora);
-    const { precios, nequi, horaTexto, duracionHoras, checkout, landing } = CLASE_JUEVES;
+    const { precios, nequi, horaTexto, duracionHoras, landing } = CLASE_JUEVES;
+
+    // Colombia paga por Nequi. Es transferencia directa: sin comisión de
+    // pasarela y sin tarjeta de por medio, que es justo lo que frena a muchas.
+    // Si su número es colombiano ya lo sabemos; si lo dice ella, manda lo que dice.
+    const esColombiana = detectarPais(telefono)?.iso === 'CO';
+    // Ella tiene que teclear este número en Nequi: se le da agrupado, no pegado.
+    const nequiLegible = nequi.numero.replace(/(\d{3})(\d{3})(\d{4})/, '$1 $2 $3');
+    const nequiLinea = esColombiana
+      ? `- 👉 ELLA ES DE COLOMBIA: la PRIMERA forma de pago que le ofreces es **Nequi** — ${nequi.monto} al ${nequiLegible}. Después le manda el comprobante y su correo a Javier por WhatsApp y le dan el acceso. Solo si prefiere pagar con tarjeta le mandas la página.`
+      : `- 🇨🇴 Si resulta que es de Colombia (te lo dice ella, aunque su número sea de otro país): la PRIMERA forma de pago que le ofreces es **Nequi** — ${nequi.monto} al ${nequiLegible}, y después le manda el comprobante y su correo a Javier por WhatsApp. Solo si prefiere tarjeta, la página.`;
 
     return `# ⏰ RELOJ Y DATOS DUROS — CALCULADO POR EL SISTEMA, ES LA VERDAD
 Esto NO lo adivines ni lo calcules tú: ya viene resuelto. Léelo y úsalo tal cual.
@@ -293,7 +303,7 @@ ${hoy}
 - Precio: ${precios.COP} / ${precios.USD} / ${precios.MXN}. Es PAGO ÚNICO, no una suscripción.
 - 👉 EL ÚNICO LINK QUE LE MANDAS ES LA PÁGINA: ${landing}
   Ahí ella ve todo y aparta su lugar sola. **NUNCA le mandes un link de pago suelto**: el botón está en esa página, y pedirle la tarjeta antes de contarle a qué la invitas la espanta.
-- Colombia también puede por Nequi: ${nequi.monto} al ${nequi.numero}, y luego le manda el comprobante a Javier.
+${nequiLinea}
 
 ## 🕗 A QUÉ HORA LE QUEDA LA CLASE — YA CALCULADO, NO LO DEDUZCAS
 ${tablaHorarios(clase.inicio)}

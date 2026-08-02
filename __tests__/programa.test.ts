@@ -85,6 +85,29 @@ describe('la hora de la clase en cada país viene resuelta', () => {
   });
 });
 
+describe('Colombia paga por Nequi antes que por tarjeta', () => {
+  const ahora = colombia('2026-08-02T10:00:00');
+
+  it('a una colombiana le ofrece Nequi primero', () => {
+    const b = bloqueContexto(ahora, '+573001112233', 'clase');
+    expect(b).toContain('ELLA ES DE COLOMBIA');
+    expect(b).toContain('25.000 COP al 311 632 9202');
+    expect(b).toContain('Solo si prefiere pagar con tarjeta');
+  });
+
+  it('a una de otro país le deja la puerta por si resulta ser colombiana', () => {
+    // Muchas viven fuera con la línea de allá, o al revés.
+    const b = bloqueContexto(ahora, '+521234567890', 'clase');
+    expect(b).toContain('Si resulta que es de Colombia');
+    expect(b).toContain('311 632 9202');
+  });
+
+  it('el número de Nequi va legible, no pegado', () => {
+    // Ella lo tiene que teclear en la app.
+    expect(bloqueContexto(ahora, '+573001112233', 'clase')).not.toContain('3116329202');
+  });
+});
+
 describe('el precio se calcula, no se escribe', () => {
   it('en lanzamiento son 20 con 40 tachado', () => {
     const p = precioApego(colombia('2026-08-01T09:00:00'));

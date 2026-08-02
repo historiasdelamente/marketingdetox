@@ -401,14 +401,17 @@ Detox** — no es un módulo del programa ni viene incluida en él.
 
 Es un **pago único** — aquí sí, porque no es una suscripción.
 
-**El único link que Paula manda es la página:** https://historiasdelamente.com/volver-a-mi
+**Si es de Colombia, lo primero que se le ofrece es Nequi:** enviar **25.000 COP al
+311 632 9202** y después mandarle el comprobante y su correo a Javier por WhatsApp, que le
+da el acceso. Es transferencia directa: sin tarjeta de por medio, que es justo lo que frena
+a muchas. Solo si prefiere pagar con tarjeta, se le manda la página.
+
+**Para el resto de países, el único link que Paula manda es la página:**
+https://historiasdelamente.com/volver-a-mi
 
 Ahí ella ve todo y aparta su lugar sola; el botón de pago está dentro (lo procesa Hotmart).
 **Paula nunca manda un link de pago suelto** — pedirle la tarjeta antes de contarle a qué
 la invitan es la forma más rápida de perderla.
-
-**Colombia también puede pagar por Nequi:** enviar 25.000 COP al 311 632 9202, y después
-mandarle el comprobante y su correo a Javier por WhatsApp para darle el acceso.
 
 ## Cómo lo dice Paula
 
