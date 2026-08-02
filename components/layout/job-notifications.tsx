@@ -3,59 +3,41 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useActiveJobs, type ActiveJob } from "@/lib/jobs/use-active-jobs";
+import { useActiveJobs } from "@/lib/jobs/use-active-jobs";
 import { AGENT_CONFIGS } from "@/lib/chat/agent-configs";
-
-type Notification = {
-  id: string;
-  agentType: string;
-  title: string;
-  status: "completed" | "failed";
-  timestamp: number;
-};
 
 export function JobNotifications() {
   const pathname = usePathname();
   const { jobs } = useActiveJobs();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [seenJobIds, setSeenJobIds] = useState<Set<string>>(new Set());
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
 
-  // Watch for job completions that happen on other pages
+  // Las notificaciones se derivan de los jobs en cada render: un job que ya
+  // terminó, que no has descartado y cuya página no estás viendo. Sin estado
+  // duplicado y sin efecto que se retroalimente.
+  const notifications = jobs
+    .filter((job) => job.status !== "running")
+    .filter((job) => !dismissed.has(job.jobId))
+    .filter((job) => pathname !== `/${job.agentType}`)
+    .map((job) => ({
+      id: job.jobId,
+      agentType: job.agentType,
+      title: AGENT_CONFIGS[job.agentType]?.title || job.agentType,
+      status: job.status as "completed" | "failed",
+    }));
+
+  // Auto-dismiss after 8 seconds. La dependencia es el id (string estable), no
+  // el array: si no, el efecto se reiniciaría en cada render y nunca vencería.
+  const oldest = notifications[0]?.id;
   useEffect(() => {
-    for (const job of jobs) {
-      if (job.status === "running") continue;
-      if (seenJobIds.has(job.jobId)) continue;
-
-      // Only notify if we're NOT on the agent's page
-      const agentPath = `/${job.agentType}`;
-      if (pathname === agentPath) continue;
-
-      const config = AGENT_CONFIGS[job.agentType];
-      setNotifications((prev) => [
-        ...prev,
-        {
-          id: job.jobId,
-          agentType: job.agentType,
-          title: config?.title || job.agentType,
-          status: job.status as "completed" | "failed",
-          timestamp: Date.now(),
-        },
-      ]);
-      setSeenJobIds((prev) => new Set(prev).add(job.jobId));
-    }
-  }, [jobs, pathname, seenJobIds]);
-
-  // Auto-dismiss after 8 seconds
-  useEffect(() => {
-    if (notifications.length === 0) return;
+    if (!oldest) return;
     const timer = setTimeout(() => {
-      setNotifications((prev) => prev.slice(1));
+      setDismissed((prev) => new Set(prev).add(oldest));
     }, 8000);
     return () => clearTimeout(timer);
-  }, [notifications]);
+  }, [oldest]);
 
   const dismiss = (id: string) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
+    setDismissed((prev) => new Set(prev).add(id));
   };
 
   if (notifications.length === 0) return null;

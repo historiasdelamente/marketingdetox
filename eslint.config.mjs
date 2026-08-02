@@ -18,6 +18,11 @@ const eslintConfig = defineConfig([
     // archivos que se ejecutan con node, no con Next.
     "output/**",
     "data/**",
+    // Directorio de trabajo de Claude Code, no del proyecto. Dentro viven
+    // worktrees que son COPIAS completas del repo: sin esto, eslint reporta
+    // dos veces cada archivo — una la versión buena y otra la vieja de la
+    // copia — y el resultado local deja de parecerse al de la CI.
+    ".claude/**",
   ]),
 ]);
 

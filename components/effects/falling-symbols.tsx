@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 
 const THOUGHTS = [
   "\u2727", "\u2726", "\u2022", "\u25CB", "\u25CF", "\u2023",
@@ -40,12 +40,20 @@ function createParticle(): Particle {
   };
 }
 
-export function FallingSymbols() {
-  const [particles, setParticles] = useState<Particle[]>([]);
+// Los símbolos salen de Math.random(), así que solo pueden existir en el
+// navegador: si el servidor los pintara, el HTML no coincidiría al hidratar.
+// Este trío devuelve false en el servidor y true una vez hidratados.
+const subscribe = () => () => {};
+const getSnapshot = () => true;
+const getServerSnapshot = () => false;
 
-  useEffect(() => {
-    setParticles(Array.from({ length: 14 }, () => createParticle()));
-  }, []);
+export function FallingSymbols() {
+  const hydrated = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+
+  const particles = useMemo(
+    () => (hydrated ? Array.from({ length: 14 }, () => createParticle()) : []),
+    [hydrated],
+  );
 
   return (
     <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 1 }}>
