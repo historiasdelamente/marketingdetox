@@ -1,0 +1,94 @@
+import { describe, expect, it } from 'vitest';
+
+import { APEGO_DETOX, precioApego, proximaClase, proximoEncuentro } from '../lib/whatsapp/programa';
+
+/** Un instante en hora Colombia, escrito como lo diría una persona. */
+const colombia = (iso: string) => new Date(`${iso}-05:00`);
+
+describe('la clase del jueves rueda sola', () => {
+  it('el miércoles anuncia la de mañana', () => {
+    const c = proximaClase(colombia('2026-08-05T10:00:00'));
+    expect(c.fecha).toBe('jueves 6 de agosto');
+    expect(c.frase).toBe('es MAÑANA');
+    expect(c.enVivo).toBe(false);
+  });
+
+  it('el jueves en la mañana sigue siendo HOY — es el día que más vende', () => {
+    const c = proximaClase(colombia('2026-08-06T10:00:00'));
+    expect(c.fecha).toBe('jueves 6 de agosto');
+    expect(c.frase).toBe('es HOY');
+  });
+
+  it('mientras se dicta, dice que está en vivo', () => {
+    const c = proximaClase(colombia('2026-08-06T21:00:00'));
+    expect(c.enVivo).toBe(true);
+    expect(c.frase).toBe('está EN VIVO ahora mismo');
+  });
+
+  it('al terminar salta al jueves siguiente, no antes', () => {
+    const c = proximaClase(colombia('2026-08-06T23:30:00'));
+    expect(c.fecha).toBe('jueves 13 de agosto');
+    expect(c.enVivo).toBe(false);
+  });
+
+  it('el viernes ya habla de la de la otra semana', () => {
+    expect(proximaClase(colombia('2026-08-07T09:00:00')).fecha).toBe('jueves 13 de agosto');
+  });
+
+  it('nunca nombra un día que no sea jueves', () => {
+    for (let d = 1; d <= 28; d++) {
+      const dia = String(d).padStart(2, '0');
+      const c = proximaClase(colombia(`2026-08-${dia}T15:00:00`));
+      expect(c.fecha.startsWith('jueves')).toBe(true);
+    }
+  });
+});
+
+describe('los encuentros de Apego Detox son martes y jueves', () => {
+  it('el sábado apunta al martes', () => {
+    expect(proximoEncuentro(colombia('2026-08-01T12:00:00')).fecha).toBe('martes 4 de agosto');
+  });
+
+  it('el martes tarde ya apunta al jueves', () => {
+    expect(proximoEncuentro(colombia('2026-08-04T23:00:00')).fecha).toBe('jueves 6 de agosto');
+  });
+
+  it('nunca cae en un día que no sea martes o jueves', () => {
+    for (let d = 1; d <= 28; d++) {
+      const dia = String(d).padStart(2, '0');
+      const { fecha } = proximoEncuentro(colombia(`2026-08-${dia}T15:00:00`));
+      expect(fecha.startsWith('martes') || fecha.startsWith('jueves')).toBe(true);
+    }
+  });
+});
+
+describe('el precio se calcula, no se escribe', () => {
+  it('en lanzamiento son 20 con 40 tachado', () => {
+    const p = precioApego(colombia('2026-08-01T09:00:00'));
+    expect(p.enLanzamiento).toBe(true);
+    expect(p.monto).toBe(20);
+    expect(p.antes).toBe(40);
+    expect(p.frase).toBe('$20 USD al mes');
+    expect(p.diasRestantes).toBe(14);
+  });
+
+  it('el 15 de agosto todavía alcanza el precio de lanzamiento', () => {
+    const p = precioApego(colombia('2026-08-15T22:00:00'));
+    expect(p.enLanzamiento).toBe(true);
+    expect(p.monto).toBe(20);
+    expect(p.diasRestantes).toBe(0);
+  });
+
+  it('el 16 ya son 40 y desaparece el tachado', () => {
+    const p = precioApego(colombia('2026-08-16T00:30:00'));
+    expect(p.enLanzamiento).toBe(false);
+    expect(p.monto).toBe(40);
+    expect(p.antes).toBe(null);
+    expect(p.frase).toBe('$40 USD al mes');
+  });
+
+  it('el precio nunca es un número que no sea 20 o 40', () => {
+    const { precioPromo, precioNormal } = APEGO_DETOX.lanzamiento;
+    expect([precioPromo, precioNormal]).toEqual([20, 40]);
+  });
+});

@@ -76,30 +76,32 @@ describe("blindaje anti-invento — campaña de clase en vivo", () => {
     ).toContain("contenido_de_otro_producto");
   });
 
-  it("bloquea el precio de otro producto y la urgencia falsa", () => {
+  it("la clase es pago único: una mensualidad aquí es de otro producto", () => {
     expect(
       auditarClase("Son $37.97 al mes", LUNES_27).hallazgos.map((h) => h.tipo),
-    ).toContain("precio_prohibido");
+    ).toContain("mensualidad_en_clase");
     expect(
       auditarClase("¡Corre, queda el último cupo!", LUNES_27).hallazgos.map((h) => h.tipo),
     ).toContain("urgencia_falsa");
   });
 
-  it("cuando la clase ya pasó, no deja prometerla como futura", () => {
+  it("la clase ya no caduca: es todos los jueves y la fecha rueda sola", () => {
+    // Antes esto era un error ('clase_caducada') porque la clase era una sola y
+    // ya se había dictado. Ahora siempre hay un jueves por delante.
     const { hallazgos } = auditarClase("Es este jueves, no te lo pierdas", VIERNES_31);
-    expect(hallazgos.map((h) => h.tipo)).toContain("clase_caducada");
+    expect(hallazgos).toHaveLength(0);
 
-    // Pero sí puede nombrar la fecha real para decirle que ya se dictó.
-    const ok = auditarClase(
-      "La clase fue el jueves 30 de julio 💛 Te aviso apenas Javier abra la próxima.",
-      VIERNES_31,
-    );
-    expect(ok.hallazgos).toHaveLength(0);
+    // El viernes 31, el próximo jueves es el 6 de agosto: cualquier otra fecha
+    // que el modelo escriba se marca como inventada.
+    expect(
+      auditarClase("La clase es el 30 de julio", VIERNES_31).hallazgos.map((h) => h.tipo),
+    ).toContain("fecha_inventada");
   });
 
   it("la instrucción de corrección le dice al modelo la fecha correcta", () => {
+    // El lunes 27, el próximo jueves es el 30 de julio.
     const { hallazgos } = auditarClase("La clase es el martes 30 de julio", LUNES_27);
-    expect(instruccionCorreccion(hallazgos, "clase")).toContain("jueves 30 de julio");
+    expect(instruccionCorreccion(hallazgos, "clase", LUNES_27)).toContain("jueves 30 de julio");
   });
 
   it("no deja prometer una grabación que no existe", () => {

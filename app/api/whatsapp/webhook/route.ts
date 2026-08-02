@@ -2,9 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { processPaulaMessage } from '@/lib/whatsapp/paula';
 import { encolarMensaje, estadoBuffer } from '@/lib/whatsapp/buffer';
 import { SIN_OIDO, transcribirAudio, transcripcionDisponible } from '@/lib/whatsapp/audio';
-import { CLASE, cuentaRegresiva } from '@/lib/whatsapp/contexto-clase';
-import { APEGO, proximoEncuentro } from '@/lib/whatsapp/apego-detox';
-import { MODO_VENTA } from '@/lib/whatsapp/blindaje';
+import {
+  APEGO_DETOX,
+  CLASE_JUEVES,
+  precioApego,
+  proximaClase,
+  proximoEncuentro,
+} from '@/lib/whatsapp/programa';
 
 /**
  * POST /api/whatsapp/webhook
@@ -124,22 +128,33 @@ export async function POST(request: NextRequest) {
 // GET for health check / verification
 export async function GET() {
   const ahora = new Date();
-  const cuenta = cuentaRegresiva(ahora);
+  const clase = proximaClase(ahora);
   const encuentro = proximoEncuentro(ahora);
+  const precio = precioApego(ahora);
 
   return NextResponse.json({
     status: 'ok',
     agent: 'Paula - Historias de la Mente',
     modo: modoHumano() ? 'humano (buffer + globos)' : 'clasico (respuesta sincrona)',
-    // Qué está vendiendo ahora mismo. Se cambia con CLASE.activa.
-    vendiendo: MODO_VENTA === 'clase' ? `clase "${CLASE.nombre}"` : APEGO.nombre,
+    // El orden de venta: siempre la clase primero; a Apego Detox se sube cuando
+    // ella lo pide (ver lib/whatsapp/escalera.ts).
+    vendiendo: `escalera: clase del jueves → ${APEGO_DETOX.nombre}`,
     modelo: process.env.PAULA_MODEL || 'openai/gpt-4.1 (por defecto)',
     oido: transcripcionDisponible() ? 'audios activos' : 'audios sin transcriptor',
-    clase: { nombre: CLASE.nombre, activa: CLASE.activa, estado: cuenta.estado, cuenta: cuenta.frase },
+    clase: {
+      nombre: CLASE_JUEVES.nombre,
+      proxima: `${clase.frase} (${clase.fecha}, ${CLASE_JUEVES.horaTexto} Colombia)`,
+      en_vivo_ahora: clase.enVivo,
+      pago: 'Hotmart',
+    },
     apego_detox: {
-      precio: APEGO.precioFrase,
-      proximo_encuentro: `${encuentro.frase} (${encuentro.fecha}, ${APEGO.encuentros.horaTexto} Colombia)`,
+      precio: precio.frase,
+      lanzamiento: precio.enLanzamiento
+        ? `vivo, quedan ${precio.diasRestantes} días (después $${precio.antes})`
+        : 'terminado',
+      proximo_encuentro: `${encuentro.frase} (${encuentro.fecha}, ${APEGO_DETOX.encuentros.horaTexto} Colombia)`,
       en_vivo_ahora: encuentro.enVivo,
+      pago: 'Skool',
     },
     buffer: estadoBuffer(),
     timestamp: ahora.toISOString(),
