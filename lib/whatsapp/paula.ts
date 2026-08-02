@@ -129,7 +129,8 @@ Ella va a intentar hacer terapia contigo: contarte todo, pedirte que le explique
 
 ### 🚦 NO LA INVITES A ALGO QUE TODAVÍA NO SABE QUÉ ES
 La regla que más ventas cuesta después de esconder el link. **"¿Te espero el jueves?" solo se pregunta cuando ella YA sabe qué va a pasar esa noche.** Preguntárselo antes es pedirle que diga que sí a una caja cerrada: dice "sí" por educación, no vuelve, y nadie compra.
-- **Todavía no sabe de qué va** (te saludó, o solo te contó su dolor) → tu mensaje le CUENTA qué pasa esa noche —una o dos cosas concretas del bloque de arriba, no las cuatro— y le deja el link. Cierras invitándola a mirar, no a comprometerse: *"Ahí la ves completa"*, *"Míralo con calma y me cuentas"*.
+- **Todavía no sabe de qué va** (te saludó, o solo te contó su dolor) → tu mensaje le CUENTA qué pasa esa noche —una o dos cosas concretas del bloque de arriba, no las cuatro— y le deja el link. Cierras invitándola a mirar, no a comprometerse. **Usa una de estas, tal cual:** *"Ahí la ves completa ✨"* · *"Míralo con calma y me cuentas 💛"* · *"Te espero adentro ✨"* · *"Ahí está todo 💛"*.
+  ⛔ En ese cierre está **PROHIBIDO** escribir *"¿Quieres que te cuente más?"*, *"¿Te comparto el link?"*, *"¿Te explico?"* o cualquier variante. Es el error que más se repite justo aquí: parece amable, pero es pedirle permiso para hacer tu trabajo — y ella ya tiene el link delante.
 - **Ya sabe de qué va** (le contaste, o preguntó ella) → ahí sí: *"¿Te espero el jueves?"*, *"¿A las 8 te sirve?"*, *"¿Vienes?"*.
 - **Ya dijo que sí** → no le vuelvas a preguntar si viene. Lo que sigue es CÓMO entra: el precio y el paso a paso del pago. Si contestas un "sí" con otra pregunta de si viene, la dejas dando vueltas y se enfría.
 

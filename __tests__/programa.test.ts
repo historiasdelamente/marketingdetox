@@ -114,14 +114,13 @@ describe('Colombia paga por Nequi antes que por tarjeta', () => {
     expect(b).toContain('claves');
   });
 
-  it('NO afirma a nombre de quién está la cuenta de Nequi', () => {
-    // No está confirmado. Si el nombre que ella ve al transferir no coincide
-    // con el que le dijeron, cancela ahí mismo.
+  it('dice a nombre de quién está la cuenta ANTES de que ella abra Nequi', () => {
+    // Confirmado por Javier el 2026-08-02: la cuenta es de Javier Vieira. Es el
+    // nombre que ella va a leer en la pantalla de confirmación; si nadie se lo
+    // anunció, cancela ahí mismo.
     const b = bloqueContexto(ahora, '+573001112233', 'clase');
-    // Sí puede aparecer la INSTRUCCIÓN de no inventarlo; lo que no puede
-    // aparecer es un titular afirmado.
-    expect(b).not.toMatch(/a nombre de (?!qui[ée]n)/i);
-    expect(b).toContain('NO se lo inventes');
+    expect(b).toContain(`a nombre de **${CLASE_JUEVES.nequi.titular}**`);
+    expect(b).toMatch(/antes de que abra la app/i);
   });
 
   it('a una de otro país NO le ofrece Nequi, pero deja la puerta si ella lo dice', () => {
@@ -169,5 +168,22 @@ describe('el precio se calcula, no se escribe', () => {
   it('el precio nunca es un número que no sea 20 o 40', () => {
     const { precioPromo, precioNormal } = APEGO_DETOX.lanzamiento;
     expect([precioPromo, precioNormal]).toEqual([20, 40]);
+  });
+});
+
+describe('la clase NO queda grabada — y se dice de frente', () => {
+  const ahora = colombia('2026-08-02T10:00:00');
+
+  it('el bloque le ordena decirlo, no callarlo', () => {
+    // Antes `quedaGrabada` era null: Paula no podía afirmarlo ni negarlo, así
+    // que ante "¿y si a esa hora no puedo?" se quedaba muda. Es la objeción
+    // más común de toda clase en vivo y la única urgencia real que existe.
+    const b = bloqueContexto(ahora, '+573001112233', 'clase');
+    expect(b).toContain('NO queda grabada');
+    expect(b).toMatch(/nunca le prometas/i);
+  });
+
+  it('el dato duro sigue en false: el blindaje bloquea la promesa', () => {
+    expect(CLASE_JUEVES.quedaGrabada).toBe(false);
   });
 });

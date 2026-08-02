@@ -25,6 +25,7 @@
 // ============================================================================
 
 import type { Escalon } from './escalera';
+import { partirEnGlobos } from './manychat';
 import { APEGO_DETOX, CLASE_JUEVES, precioApego, proximaClase } from './programa';
 
 /** En qué está vendiendo Paula en este turno. */
@@ -73,9 +74,12 @@ export type Hallazgo = {
 // números: el que separa a uno de otro es el del BLOQUE, no el del total.
 const MAX_CHARS_GLOBO = 230;
 const MAX_CHARS_MENSAJE = 450;
-// 5 globos cortos se leen como alguien escribiendo en el celular. Lo que no se
-// lee así es un bloque largo, y de eso se encarga MAX_CHARS_GLOBO.
-const MAX_GLOBOS = 5;
+// Globos YA CONTADOS COMO LLEGAN (el link va aislado en el suyo). Un mensaje
+// bueno son 4-6: recoger lo que dijo, contarle de qué va, el link y el cierre.
+// Se queda por debajo de MAX_GLOBOS_ENVIO (7) para que el blindaje pida
+// reescribir ANTES de que el envío tenga que recortar. Lo que no se lee como
+// una persona es el bloque largo, y de eso se encarga MAX_CHARS_GLOBO.
+const MAX_GLOBOS = 6;
 
 function largoSinLinks(texto: string): number {
   return texto.replace(URL_RE, '').replace(/\s+/g, ' ').trim().length;
@@ -407,15 +411,25 @@ export function auditarRespuesta(
 
   // 12) Se le fue la mano con el largo. Va de último: se mide el texto ya limpio.
   const largo = largoSinLinks(out);
-  // Se cuenta igual que `partirEnGlobos`, por CUALQUIER salto de línea: si el
-  // blindaje midiera por bloques y el envío partiera por líneas, se aprobarían
-  // mensajes que luego salen partidos en más globos de los permitidos.
-  const globos = out.split(/\n+/).filter((g) => g.trim());
-  const globoMasLargo = Math.max(0, ...globos.map(largoSinLinks));
-  if (globoMasLargo > MAX_CHARS_GLOBO || largo > MAX_CHARS_MENSAJE || globos.length > MAX_GLOBOS) {
+
+  // Dos medidas distintas, a propósito:
+  //
+  // · EL LARGO se mide sobre los BLOQUES QUE ESCRIBIÓ EL MODELO. Un folleto es
+  //   un párrafo de 340-385 caracteres de corrido, y eso solo se ve aquí: al
+  //   enviarse, `partirEnGlobos` lo trocea por frases y ya no se distingue de
+  //   un mensaje bien escrito.
+  // · EL NÚMERO se cuenta sobre los globos QUE ELLA VA A RECIBIR, con la misma
+  //   función del envío. El modelo escribe 6 líneas y el envío cose las cortas
+  //   en 4; contar las 6 marcaba como largos mensajes que llegan perfectos y
+  //   gastaba el reintento en encogerlos.
+  const bloques = out.split(/\n+/).filter((g) => g.trim());
+  const bloqueMasLargo = Math.max(0, ...bloques.map(largoSinLinks));
+  const globosReales = partirEnGlobos(out).length;
+
+  if (bloqueMasLargo > MAX_CHARS_GLOBO || largo > MAX_CHARS_MENSAJE || globosReales > MAX_GLOBOS) {
     hallazgos.push({
       tipo: 'demasiado_largo',
-      detalle: `${largo} caracteres en ${globos.length} globos (el más largo, ${globoMasLargo})`,
+      detalle: `${largo} caracteres en ${globosReales} globos (el bloque más largo, ${bloqueMasLargo})`,
     });
   }
 

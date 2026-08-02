@@ -59,8 +59,13 @@ export const CLASE_JUEVES = {
 
   /** Mismo peso en cada país. */
   precios: { COP: '25.000 COP', USD: '7 USD', MXN: '120 MXN' },
-  /** Solo Colombia. */
-  nequi: { numero: '3116329202', monto: '25.000 COP' },
+  /**
+   * Solo Colombia. El `titular` lo confirmó Javier el 2026-08-02 y NO es un
+   * adorno: es lo que ella va a leer en la pantalla de confirmación de Nequi
+   * antes de darle enviar. Si ahí sale un nombre que nadie le anunció, cancela.
+   * Si algún día la cuenta cambia de dueño, esto se cambia el mismo día.
+   */
+  nequi: { numero: '3116329202', monto: '25.000 COP', titular: 'Javier Vieira' },
 
   libro: { nombre: 'Volver a mí', detalle: 'cartilla de 16 páginas con ejercicios' },
 
@@ -103,8 +108,20 @@ export const CLASE_JUEVES = {
   whatsappJavier:
     'https://wa.me/573001681053?text=Hola%20Javier%2C%20te%20escribo%20desde%20el%20WhatsApp%20de%20Paula',
 
-  /** ⚠️ PENDIENTE CONFIRMAR. `null` = Paula no afirma ni niega la grabación. */
-  quedaGrabada: null as boolean | null,
+  /**
+   * NO queda grabada. Confirmado por Javier el 2026-08-02 (ya lo había dicho el
+   * 2026-07-27). Es en vivo, una sola vez.
+   *
+   * `false` en vez de `null` cambia una cosa importante: con `null` Paula no
+   * podía ni afirmarlo ni negarlo, así que ante "¿y si a esa hora no puedo?"
+   * se quedaba muda. Ahora se lo dice de frente — que es lo honesto y además
+   * lo que crea la urgencia real: si no entra esa noche, no la ve.
+   *
+   * ⚠️ La landing PROMETE la grabación y el área de miembros ("La grabación de
+   * la conferencia — para volver a verla cuando quieras"). Eso hay que quitarlo
+   * de la página: le está prometiendo a la compradora algo que no va a recibir.
+   */
+  quedaGrabada: false as boolean | null,
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -308,7 +325,8 @@ No llegó su número (pasa en Instagram), así que NO sabes dónde está.
 
   return `## 📱 ELLA TE ESCRIBE DESDE: ${pais.nombre}
 - Su hora local en este momento: ${hora12(ahora, pais.tz)}.${enSuHora}
-- Cuando hables de una hora, dásela en la de ELLA. Su país no se lo preguntas: ya lo sabes.`;
+- Cuando hables de una hora, dásela en la de ELLA. Su país no se lo preguntas: ya lo sabes.
+- ⛔ **UNA sola hora: la de ella.** Nada de "8:00 PM hora Colombia (7:00 PM en ${pais.ciudad})". Dos horas en un chat la ponen a calcular, alargan el mensaje y no suenan a persona. La hora de Colombia solo se nombra si ELLA pregunta a qué hora es allá.`;
 }
 
 /**
@@ -349,17 +367,15 @@ export function bloqueContexto(
     const esColombiana = detectarPais(telefono)?.iso === 'CO';
     // Ella tiene que teclear este número en Nequi: se le da agrupado, no pegado.
     const nequiLegible = nequi.numero.replace(/(\d{3})(\d{3})(\d{4})/, '$1 $2 $3');
+    const titularNequi = nequi.titular;
     // Los tres pasos van SIEMPRE juntos y en este orden. Dar el número sin decir
     // qué hacer después es donde se caía el pago: ella transfiere, no manda el
     // comprobante, nadie le da el acceso y se queda creyendo que la estafaron.
-    // ⚠️ NO se afirma a nombre de quién está la cuenta: no está confirmado, y
-    // si el nombre que ella ve al transferir no coincide con el que le dijiste,
-    // cancela ahí mismo. Lo que sí se puede afirmar da más confianza: que el
-    // mismo paso a paso está escrito en la página oficial, que después habla
-    // con Javier Vieira en persona, y que nadie le va a pedir datos de tarjeta.
-    const pasosNequi = `**PASO 1:** manda ${nequi.monto} por Nequi al **${nequiLegible}**. **PASO 2:** le manda el comprobante Y su correo a Javier Vieira por este link: ${whatsappJavier} — él le da el acceso. Los dos pasos se los das JUNTOS: sin el comprobante y el correo, nadie le puede entregar nada.
-- 🛡️ **LO QUE LE DA CONFIANZA PARA TRANSFERIR** (dilo si dudas, si te pregunta si es seguro, o si es la primera vez que te escribe): estos mismos dos pasos están escritos en la página oficial, ${landing} — que los vea ahí, no tiene que creerte a ti. Después del pago habla directo con Javier Vieira por WhatsApp, no con un formulario. Y nadie le va a pedir NUNCA claves, datos de su tarjeta ni acceso a su cuenta: solo el comprobante y el correo donde quiere el acceso.
-- ⛔ Si te pregunta a nombre de quién está la cuenta de Nequi, NO se lo inventes: le dices que eso se lo confirma Javier Vieira y le pasas su WhatsApp.`;
+    // El titular va SIEMPRE, y va ANTES de que ella abra Nequi (confirmado por
+    // Javier el 2026-08-02). Si ve un nombre que no esperaba en la pantalla de
+    // confirmación, cancela ahí mismo — y ese susto no se recupera.
+    const pasosNequi = `**PASO 1:** manda ${nequi.monto} por Nequi al **${nequiLegible}**, a nombre de **${titularNequi}** — díselo antes de que abra la app, para que no le sorprenda el nombre al confirmar. **PASO 2:** le manda el comprobante Y su correo a Javier Vieira por este link: ${whatsappJavier} — él le da el acceso. Los dos pasos se los das JUNTOS: sin el comprobante y el correo, nadie le puede entregar nada.
+- 🛡️ **LO QUE LE DA CONFIANZA PARA TRANSFERIR** (dilo si duda, si te pregunta si es seguro, o si es la primera vez que te escribe): la cuenta está a nombre de ${titularNequi}, el mismo psicólogo de la clase. Estos dos pasos están escritos en la página oficial, ${landing} — que los vea ahí, no tiene que creerte a ti. Después del pago habla directo con él por WhatsApp, no con un formulario. Y nadie le va a pedir NUNCA claves, datos de su tarjeta ni acceso a su cuenta: solo el comprobante y el correo donde quiere el acceso.`;
     // ⚠️ A la que NO es colombiana no se le puede nombrar Nequi por su cuenta:
     // "si eres de Colombia mandas a Nequi, si no pagas con tarjeta" la obliga a
     // escoger entre dos caminos y alarga el mensaje hasta que se corta el link.
@@ -378,6 +394,7 @@ ${hoy}
 - 👉 ${cuando(clase)}, ${horaTexto} hora Colombia, ${duracionHoras} horas.
 - Es TODOS LOS JUEVES, a la misma hora. Nunca nombres otro día.
 - Se lleva: la clase en vivo con él y el libro "${libro.nombre}" (${libro.detalle}).
+- ⛔ **NO queda grabada. Es en vivo, una sola vez.** Si te dice que a esa hora no puede, se lo dices de frente: no hay grabación ni repetición. Nunca le prometas "la ves después" ni "no pierdes nada si no te conectas". Esa verdad es la única urgencia real que tienes — úsala, no la escondas.
 - Precio: ${precios.COP} / ${precios.USD} / ${precios.MXN}. Es PAGO ÚNICO, no una suscripción.
 
 ## 🎯 DE QUÉ VA LA CLASE — CUÉNTASELO ANTES DE INVITARLA

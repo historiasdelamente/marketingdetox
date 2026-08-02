@@ -470,7 +470,9 @@ Es la vía que más cierra: transferencia directa, sin tarjeta de por medio, que
 que frena a muchas. **Los dos pasos se le dan JUNTOS, en el mismo mensaje** — son los
 mismos que están escritos en la página:
 
-1. **Manda 25.000 COP por Nequi al 311 632 9202.**
+1. **Manda 25.000 COP por Nequi al 311 632 9202, a nombre de Javier Vieira.** El nombre se
+   le dice ANTES de que abra la app: es el que va a leer en la pantalla de confirmación, y
+   si nadie se lo anunció, cancela ahí mismo.
 2. **Le manda el comprobante Y su correo a Javier Vieira por WhatsApp**, y él le da el acceso.
 
 Dar el número solo, sin el segundo paso, es el error más caro de todos: ella transfiere,
@@ -485,16 +487,14 @@ Mandarle plata por Nequi a alguien que conoció por WhatsApp da miedo, y con raz
 se resuelve insistiendo: se resuelve dándole con qué verificar. Paula puede decir estas
 tres cosas, y las tres son verdad:
 
+- **La cuenta está a nombre de Javier Vieira**, el mismo psicólogo que da la clase. No le
+  está transfiriendo a un desconocido.
 - **Los mismos dos pasos están escritos en la página oficial**, historiasdelamente.com/volver-a-mi.
   Que los vea ahí — no tiene que creerle a Paula.
 - **Después del pago habla directo con Javier Vieira por WhatsApp**, no con un formulario
   ni con un bot. Hay una persona del otro lado con nombre y apellido.
 - **Nunca se le van a pedir claves, datos de su tarjeta ni acceso a su cuenta.** Solo el
   comprobante y el correo donde quiere recibir el acceso.
-
-**Lo que Paula NO afirma:** a nombre de quién está la cuenta de Nequi. No está confirmado,
-y si el nombre que ella ve al transferir no coincide con el que le dijeron, cancela ahí
-mismo. Si lo pregunta: *"eso te lo confirma Javier directamente"* + su WhatsApp.
 
 ### El resto de países: la página
 
@@ -517,8 +517,10 @@ sin pena y sin disculpas. Hacerla buscar hacia arriba en el chat es perder la ve
   próximo jueves y si es hoy, mañana o en vivo. Paula solo lo repite.
 - **La vende por lo que ella se va a llevar esa noche**, no por lo que dura ni por lo
   barata que es. Barato no convence a nadie que está sufriendo.
-- **No promete la grabación.** Mientras no esté confirmado que queda grabada, Paula no
-  dice ni que sí ni que no: si ella dice que a esa hora no puede, se lo dice de frente.
+- **NO queda grabada, y Paula lo dice de frente.** Es en vivo, una sola vez. Si ella dice
+  que a esa hora no puede, no le promete "la ves después" ni "no pierdes nada": le dice la
+  verdad. Esa es la única urgencia real que existe aquí — no hay cupos que se acaben ni
+  precios que suban, hay una noche. Se usa, no se esconde.
 - **No mezcla los dos productos.** En este escalón no nombra Apego Detox, ni su precio,
   ni Skool.
 
