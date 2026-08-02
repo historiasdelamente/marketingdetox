@@ -1,7 +1,8 @@
 // ============================================================================
 // PROGRAMA — LOS DOS PRODUCTOS Y TODO LO QUE SE CALCULA
 //
-// Reemplaza a `apego-detox.ts` + `contexto-clase.ts` como fuente de datos duros.
+// Reemplaza a `apego-detox.ts` + `contexto-clase.ts` como fuente de datos duros
+// (de ese último ya solo queda `paises.ts`: la tabla de países y el formato).
 // Aquí vive SOLO lo que el modelo no puede deducir: precios, links, y las fechas
 // que cambian solas. Lo que Paula *dice* vive en content/PAULA-CONOCIMIENTO.md.
 //
@@ -13,7 +14,7 @@
 // a Apego Detox cuando ELLA lo pide.
 // ============================================================================
 
-import { PAISES, TZ_COLOMBIA, detectarPais, diasDeCalendario, fechaISO, fechaLarga, hora12 } from './contexto-clase';
+import { PAISES, TZ_COLOMBIA, detectarPais, diasDeCalendario, fechaISO, fechaLarga, hora12 } from './paises';
 import type { Escalon } from './escalera';
 
 /** Colombia no tiene horario de verano: -05:00 vale todo el año. */

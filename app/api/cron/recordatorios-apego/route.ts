@@ -25,7 +25,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { TZ_COLOMBIA, detectarPais, fechaLarga, hora12 } from '@/lib/whatsapp/contexto-clase';
+import { TZ_COLOMBIA, detectarPais, fechaLarga, hora12 } from '@/lib/whatsapp/paises';
 import { CLASE_JUEVES, bloqueContexto, proximaClase } from '@/lib/whatsapp/programa';
 import { APEGO, bloqueContextoApego, proximoEncuentro } from '@/lib/whatsapp/apego-detox';
 
@@ -38,7 +38,7 @@ const CRON_SECRET = process.env.CRON_SECRET;
  * El recordatorio vende LO MISMO que el chat, y eso lo decide la ESCALERA.
  *
  * ⚠️ Esto estaba roto y era el agujero más caro del embudo: los recordatorios
- * miraban `CLASE.activa` de `contexto-clase.ts`, un interruptor que quedó en
+ * miraban un `CLASE.activa` que vivía aparte, un interruptor que quedó en
  * `false` el 31 de julio y que apuntaba a una clase de una sola fecha ya
  * dictada. Resultado: Paula conversaba vendiendo la clase del jueves y, cuatro
  * horas después, el recordatorio le mandaba a la misma mujer el link de Apego

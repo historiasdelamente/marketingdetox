@@ -101,38 +101,39 @@ Después, escríbele por WhatsApp tres mensajitos seguidos. Debe contestar **una
 
 ## 6. Lo que Paula sabe de la clase (y por qué ya no se inventa fechas)
 
-Todos los datos duros viven en **un solo archivo**: [`lib/whatsapp/contexto-clase.ts`](../lib/whatsapp/contexto-clase.ts). Nombre, instante de inicio, landing, Nequi, soporte, y la tabla de países con su zona horaria y su moneda.
+Todos los datos duros viven en **un solo archivo**: [`lib/whatsapp/programa.ts`](../lib/whatsapp/programa.ts). Nombre, hora, precios, landing, Nequi y el WhatsApp de Javier — de los dos productos. La fecha no está ahí porque **no se escribe a mano**: la clase es todos los jueves y `proximaClase()` calcula la próxima sola.
 
-Ese archivo le entrega a Paula, en cada mensaje, el reloj **ya resuelto**: qué día es hoy, cuánto falta (*"faltan 3 días"*), a qué hora le queda la clase **a ella** y cuánto le cuesta **en su moneda**. El modelo no calcula nada — solo lee y repite.
+Al lado, [`lib/whatsapp/paises.ts`](../lib/whatsapp/paises.ts) guarda lo único que no cambia con la campaña: la tabla de países (indicativo telefónico → zona horaria → moneda) y el formato de fechas y horas.
+
+De ahí sale, en cada mensaje, el reloj **ya resuelto**: qué día es hoy, cuándo es la próxima clase (*"es MAÑANA"*), a qué hora le queda **a ella** y cuánto le cuesta **en su moneda**. El modelo no calcula nada — solo lee y repite.
 
 ### El blindaje anti-invento
 
-En [`lib/whatsapp/blindaje.ts`](../lib/whatsapp/blindaje.ts), montado encima de ese mismo archivo (ni una fecha escrita a mano). Antes de que ella lea nada, se revisa:
+En [`lib/whatsapp/blindaje.ts`](../lib/whatsapp/blindaje.ts), montado encima de esos mismos datos (ni una fecha escrita a mano). Antes de que ella lea nada, se revisa:
 
 | Se detecta | Qué pasa |
 |---|---|
 | Un link que no existe | Se borra |
 | "martes 30 de julio" | Se corrige solo a "jueves" |
-| Una fecha que no es la de la clase | Se le pide al modelo que reescriba |
-| Prometer la clase como futura cuando ya pasó | Se le pide que reescriba (puede vender la grabación, no la fecha) |
+| Una fecha que no es la del próximo jueves | Se le pide al modelo que reescriba |
 | "$37.97 al mes" (otro producto) | Se le pide que reescriba |
 | "último cupo" (escasez falsa) | Se le pide que reescriba |
 | Ponerse a hacer terapia ("no es amor, es tu sistema nervioso...") | Se le pide que reescriba |
 | Prometer módulos o el protocolo de 8 pasos (eso es Apego Detox, no la clase) | Se le pide que reescriba |
-| **Prometer la grabación** — la clase NO se graba | Se le pide que reescriba. Decir que *no* existe sí se permite |
+| **Prometer la grabación** — no está confirmada | Se le pide que reescriba. Decir que *no* existe sí se permite |
 
 Si en el segundo intento sigue mal, sale la versión saneada. Prefiere quedarse corta antes que prometerle a una mujer algo que no existe.
 
-### Para la próxima edición de la clase
+### Para cambiar la clase
 
-Se tocan **dos archivos** y nada más:
+La fecha ya no se toca: es **todos los jueves** y rueda sola. Si cambia el nombre o el precio se tocan **dos archivos**, y los dos tienen que decir lo mismo (si la página dice una cosa y Paula otra, ella cree que se equivocó de link y cierra sin pagar):
 
 1. `desing_web/src/config/claseEnVivo.ts` (la página)
-2. `marketingdetox/lib/whatsapp/contexto-clase.ts` (Paula) — `CLASE.nombre`, `CLASE.inicioISO` y `CLASE.landing`
+2. `marketingdetox/lib/whatsapp/programa.ts` (Paula) — `CLASE_JUEVES.nombre`, `precios` y `landing`
 
-Para apagar la campaña y volver a vender Apego Detox: `CLASE.activa = false` (así está hoy — ver 6.c).
+**No hay interruptor para apagar la clase.** Lo hubo —un `CLASE.activa` que vivía en un archivo aparte— y fue justo lo que dejó a Paula vendiendo la clase en el chat y otro producto en los recordatorios cuatro horas después. Se eliminó: el orden de venta lo decide la escalera (ver 6.c).
 
-**`CLASE.quedaGrabada`** (hoy en `false`): la clase es en vivo, una sola vez, y no se entrega grabación. Con ese flag en `false`, Paula no puede prometerla (lo bloquea el blindaje) y, cuando la clase pasa, deja de venderse — no hay nada que entregar. Si una edición futura sí se graba, se pone `true` y todo vuelve solo.
+**`CLASE_JUEVES.quedaGrabada`** (hoy `null` = sin confirmar): mientras no sea `true` explícito, Paula no puede prometer la grabación — lo bloquea el blindaje. Decir que *no* queda grabada sí se permite.
 
 ---
 
@@ -191,14 +192,14 @@ Las pausas de tecleo también se recalibraron: la fórmula estaba pensada para p
 
 ## 6.c Los DOS modos de venta (y por qué importan)
 
-Paula vende una cosa a la vez. El interruptor es **`CLASE.activa`** en `contexto-clase.ts`:
+Paula vende una cosa a la vez, pero eso ya no es un interruptor global: lo decide **la escalera** ([`lib/whatsapp/escalera.ts`](../lib/whatsapp/escalera.ts)), conversación por conversación. Todo el mundo entra por el escalón 1, y solo se sube al 2 cuando ELLA lo pide (pregunta por Apego Detox, por un programa, por talleres o por terapia). Una vez arriba, no se baja.
 
-| | `CLASE.activa = true` | `CLASE.activa = false` ← **hoy** |
+| | Escalón 1 — `'clase'` ← por defecto | Escalón 2 — `'apego'` |
 |---|---|---|
-| Vende | La clase en vivo de turno | **Apego Detox** |
+| Vende | La clase en vivo del jueves | **Apego Detox** |
 | Bloque de reglas | `CAMPANA_OVERRIDE` (`paula.ts`) | `APEGO_OVERRIDE` (`paula.ts`) |
-| Reloj inyectado | `bloqueContextoVivo()` — fecha de la clase | `bloqueContextoApego()` — próximo encuentro con Javier |
-| Precio | Pago único, en su moneda | `$37.97 USD al mes`, suscripción |
+| Reloj inyectado | `bloqueContexto(…, 'clase')` — el próximo jueves | `bloqueContexto(…, 'apego')` — próximo encuentro con Javier |
+| Precio | Pago único, en su moneda | El vigente hoy según `precioApego()`, suscripción |
 | Blindaje | modo `'clase'` | modo `'apego'` |
 
 **El detalle que rompe todo si se pasa por alto:** las reglas de los dos modos son **opuestas**. En campaña, decir "$37.97 al mes" o "Apego Detox" es un error (otro producto). Vendiendo Apego Detox, esos son la verdad y decir "pago único" es la mentira. Por eso `blindaje.ts` recibe el modo: con las reglas cruzadas marcaría **cada** mensaje como fallo y gastaría un reintento por turno.

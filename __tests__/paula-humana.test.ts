@@ -3,12 +3,14 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { auditarRespuesta, instruccionCorreccion, motivoHandoff } from "@/lib/whatsapp/blindaje";
 import { normalizarNegritas, partirEnGlobos } from "@/lib/whatsapp/manychat";
 
-// La clase configurada en contexto-clase.ts: jueves 30 jul 2026, 8 PM Colombia.
+// La clase es TODOS los jueves, 8 PM Colombia, y la fecha la calcula
+// `proximaClase()` de programa.ts. Desde el lunes 27 el jueves es el 30 de
+// julio; desde el viernes 31, el 6 de agosto.
 const LUNES_27 = new Date("2026-07-27T15:00:00Z"); // 10:00 AM Colombia
-const VIERNES_31 = new Date("2026-07-31T15:00:00Z"); // la clase ya pasó
+const VIERNES_31 = new Date("2026-07-31T15:00:00Z"); // la del 30 ya se dictó
 
-// La campaña de la clase está APAGADA en producción (CLASE.activa = false), así
-// que el modo por defecto es 'apego'. Estas pruebas piden 'clase' explícito.
+// El blindaje audita con reglas OPUESTAS según lo que se esté vendiendo, y su
+// modo por defecto es 'apego'. Estas pruebas piden 'clase' explícito.
 const auditarClase = (texto: string, ahora: Date) => auditarRespuesta(texto, ahora, "clase");
 
 describe("blindaje anti-invento — campaña de clase en vivo", () => {
