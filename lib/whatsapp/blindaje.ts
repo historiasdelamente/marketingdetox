@@ -240,6 +240,21 @@ function numeroAEnlace(texto: string, modo: ModoVenta): string {
   );
 }
 
+/**
+ * "Javier" a secas → "Javier Vieira".
+ *
+ * Ella no lo conoce: sin el apellido suena a un amigo de Paula, no al psicólogo
+ * que va a dar la clase. Es una reparación silenciosa (no gasta reintento)
+ * porque el modelo lo olvida a la tercera frase por mucho que se lo pidas.
+ * Se deja intacto lo que va dentro de los links (el wa.me lleva "Javier" en el
+ * mensaje precargado).
+ */
+const JAVIER_SIN_APELLIDO = /\bJavier\b(?!\s+Vieira)/g;
+
+function apellidarAJavier(texto: string): string {
+  return fueraDeLinks(texto, (plano) => plano.replace(JAVIER_SIN_APELLIDO, 'Javier Vieira'));
+}
+
 function repararLinks(texto: string, modo: ModoVenta): string {
   let out = texto;
   // Puntuación pegada al final: "…/apegodetox." rompe el clic en WhatsApp.
@@ -258,6 +273,7 @@ function repararLinks(texto: string, modo: ModoVenta): string {
 
   out = out.replace(VARIANTE_WA_JAVIER, linkJavier(modo));
   out = numeroAEnlace(out, modo);
+  out = apellidarAJavier(out);
   return out;
 }
 

@@ -45,6 +45,16 @@ describe('blindaje — escalón de Apego Detox', () => {
     expect(instruccionCorreccion(hallazgos, 'apego', VIERNES_31)).toContain(APEGO_DETOX.checkout);
   });
 
+  it('le pone el apellido a Javier — ella no lo conoce', () => {
+    // Sin apellido suena a un amigo de Paula, no al psicólogo de la clase.
+    expect(auditar('Eso lo trabaja Javier contigo 💛').texto).toContain('Javier Vieira');
+    // No lo duplica si ya venía bien.
+    expect(auditar('Eso lo trabaja Javier Vieira contigo 💛').texto).not.toContain('Vieira Vieira');
+    // Y no toca lo que va dentro del link (el wa.me lleva "Javier" precargado).
+    const { texto } = auditar(`Escríbele: ${APEGO_DETOX.whatsappJavier}`);
+    expect(texto).toContain(APEGO_DETOX.whatsappJavier);
+  });
+
   it('convierte el número suelto de Javier en un link clicable', () => {
     for (const caso of ['Escríbele al +57 300 1681053', 'Su WhatsApp es 3001681053']) {
       const { texto } = auditar(caso);
