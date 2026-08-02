@@ -65,6 +65,30 @@ export const CLASE_JUEVES = {
   libro: { nombre: 'Volver a mí', detalle: 'cartilla de 16 páginas con ejercicios' },
 
   /**
+   * QUÉ PASA ESA NOCHE. Copiado de la landing (sección "Lo que vas a encontrar
+   * en la clase"), porque tiene que ser lo mismo que ella lee al abrir el link.
+   *
+   * ⚠️ ESTO ES LO QUE MÁS FALTABA. Paula decía "hay una clase donde se trabaja
+   * cómo dejar al narcisista" y remataba con "¿te espero?" — invitándola a algo
+   * de lo que no le había contado nada. Nadie dice que sí a eso.
+   */
+  contenido: [
+    'entrenamiento para salir del apego emocional que la borró',
+    'meditación y relajación guiada',
+    'testimonios reales de otras mujeres',
+    'ayuda terapéutica en vivo con Javier Vieira',
+  ],
+
+  /**
+   * EL ÁNGULO. También es el de la landing, y no es "cómo dejar al narcisista":
+   * es que ella se fue borrando de a poquitos dentro de la relación y la clase
+   * va a buscar a la mujer que era. Si Paula vende un ángulo y la página otro,
+   * ella llega, lee algo que no le suena a lo que le contaron, y se va.
+   */
+  angulo:
+    'No desapareció de golpe: se fue borrando de a poquitos. Dejó de ver a la amiga, cambió de ropa, dejó de opinar en la mesa. Cada renuncia fue chiquita y ninguna le pareció grave, hasta que un día abrió el clóset y no reconoció nada. Esa mujer no se murió: está esperando. La clase son tres horas para ir a buscarla.',
+
+  /**
    * WhatsApp de Javier con el mensaje ya escrito. Sin texto precargado, ella
    * abre el chat, no sabe qué poner y se va: ese silencio es donde se cae la
    * mitad de los pagos por Nequi.
@@ -316,7 +340,7 @@ export function bloqueContexto(
 
   if (escalon === 'clase') {
     const clase = proximaClase(ahora);
-    const { nombre, precios, nequi, horaTexto, duracionHoras, landing, libro, whatsappJavier } =
+    const { nombre, precios, nequi, horaTexto, duracionHoras, landing, libro, whatsappJavier, contenido, angulo } =
       CLASE_JUEVES;
 
     // Colombia paga por Nequi. Es transferencia directa: sin comisión de
@@ -328,7 +352,14 @@ export function bloqueContexto(
     // Los tres pasos van SIEMPRE juntos y en este orden. Dar el número sin decir
     // qué hacer después es donde se caía el pago: ella transfiere, no manda el
     // comprobante, nadie le da el acceso y se queda creyendo que la estafaron.
-    const pasosNequi = `**Nequi: ${nequi.monto} al ${nequiLegible}** (a nombre de Javier Vieira). Cuando transfiera, le manda el comprobante Y su correo a Javier por este link: ${whatsappJavier} — él le da el acceso. Los tres pasos se los das juntos: sin el comprobante y el correo, nadie le puede entregar nada.`;
+    // ⚠️ NO se afirma a nombre de quién está la cuenta: no está confirmado, y
+    // si el nombre que ella ve al transferir no coincide con el que le dijiste,
+    // cancela ahí mismo. Lo que sí se puede afirmar da más confianza: que el
+    // mismo paso a paso está escrito en la página oficial, que después habla
+    // con Javier Vieira en persona, y que nadie le va a pedir datos de tarjeta.
+    const pasosNequi = `**PASO 1:** manda ${nequi.monto} por Nequi al **${nequiLegible}**. **PASO 2:** le manda el comprobante Y su correo a Javier Vieira por este link: ${whatsappJavier} — él le da el acceso. Los dos pasos se los das JUNTOS: sin el comprobante y el correo, nadie le puede entregar nada.
+- 🛡️ **LO QUE LE DA CONFIANZA PARA TRANSFERIR** (dilo si dudas, si te pregunta si es seguro, o si es la primera vez que te escribe): estos mismos dos pasos están escritos en la página oficial, ${landing} — que los vea ahí, no tiene que creerte a ti. Después del pago habla directo con Javier Vieira por WhatsApp, no con un formulario. Y nadie le va a pedir NUNCA claves, datos de su tarjeta ni acceso a su cuenta: solo el comprobante y el correo donde quiere el acceso.
+- ⛔ Si te pregunta a nombre de quién está la cuenta de Nequi, NO se lo inventes: le dices que eso se lo confirma Javier Vieira y le pasas su WhatsApp.`;
     // ⚠️ A la que NO es colombiana no se le puede nombrar Nequi por su cuenta:
     // "si eres de Colombia mandas a Nequi, si no pagas con tarjeta" la obliga a
     // escoger entre dos caminos y alarga el mensaje hasta que se corta el link.
@@ -346,8 +377,16 @@ ${hoy}
 - 👉 LA CLASE SE LLAMA **"${nombre}"** — así se llama también en la página, y así se lo dices. Es EN VIVO, con Javier Vieira.
 - 👉 ${cuando(clase)}, ${horaTexto} hora Colombia, ${duracionHoras} horas.
 - Es TODOS LOS JUEVES, a la misma hora. Nunca nombres otro día.
-- Se lleva: la clase en vivo con él, el libro "${libro.nombre}" (${libro.detalle}) y la guía de la clase.
+- Se lleva: la clase en vivo con él y el libro "${libro.nombre}" (${libro.detalle}).
 - Precio: ${precios.COP} / ${precios.USD} / ${precios.MXN}. Es PAGO ÚNICO, no una suscripción.
+
+## 🎯 DE QUÉ VA LA CLASE — CUÉNTASELO ANTES DE INVITARLA
+Esto es lo mismo que ella va a leer en la página. **Nombras UNA o DOS de estas cosas, la que le sirva a lo que ella te contó.** Nunca las cuatro de corrido.
+${contenido.map((c) => `- ${c}`).join('\n')}
+
+**El ángulo de la clase, para que sepas de qué hablas:** ${angulo}
+- ⛔ La clase NO se resume como "cómo dejar al narcisista". Ese no es el ángulo de la página y suena a titular. El ángulo es que **ella se fue borrando de a poquitos** y esa noche van a ir a buscarla.
+- Cuando le cuentes de qué va, hazlo con SUS palabras si te contó algo: si dijo que ya no sale con nadie, le hablas de la amiga que dejó de ver; si dijo que no opina, le hablas de la voz.
 - 👉 EL LINK QUE LE MANDAS ES LA PÁGINA: ${landing}
   Ahí ella ve todo y aparta su lugar sola; el botón de pago está adentro. **NUNCA le mandes un link de pago suelto de entrada**: pedirle la tarjeta antes de contarle a qué la invitas la espanta.
 - 🔁 **El link no se manda una sola vez.** Se lo vuelves a mandar cada vez que le sirva: si pregunta cómo pagar, si dice que sí, si vuelve al día siguiente, si dice que se le perdió. Un link que hay que buscar hacia arriba en el chat es una venta perdida.

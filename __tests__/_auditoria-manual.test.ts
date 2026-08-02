@@ -54,6 +54,21 @@ const CASOS: Array<{
   { etiqueta: '1b. otro saludo pelado (debe abrir DISTINTO al 1)', historial: [], mensaje: 'hola', id: 'audit-otra' },
   { etiqueta: '2. pregunta el precio', historial: [], mensaje: 'hola, cuanto vale?' },
   {
+    // El caso del pantallazo del 2026-08-02: Paula la invitó sin contarle nada,
+    // ella dijo "Si" por educación y Paula le volvió a preguntar si venía.
+    // Ese "sí" es el momento de cerrar: precio y cómo entra, no otra pregunta.
+    etiqueta: '2b. ELLA DICE "SI" (no volver a preguntarle si viene)',
+    historial: [
+      {
+        role: 'assistant',
+        content:
+          'Hola 💛 Soy Paula, trabajo con Javier Vieira, Psicólogo Especialista.\n\nEste jueves a las 8 hace una clase en vivo de 3 horas.\n\nhttps://historiasdelamente.com/volver-a-mi',
+      },
+    ],
+    mensaje: 'Si',
+    id: 'audit-si',
+  },
+  {
     etiqueta: '3. le cuenta su dolor',
     historial: [],
     mensaje: 'llevo 3 meses sin dormir bien\nme dejo por otra\ny no puedo dejar de revisar su instagram',

@@ -66,8 +66,13 @@ export type Hallazgo = {
 // Ahora el que manda es MAX_CHARS_GLOBO: tres frases cortas seguidas se leen
 // como una persona escribiendo; el mismo texto en un solo bloque, no. Así cabe
 // la información y el párrafo-folleto sigue prohibido.
-const MAX_CHARS_GLOBO = 200;
-const MAX_CHARS_MENSAJE = 420;
+// Calibrado con salidas reales del modelo (`_auditoria-manual.test.ts`), no a
+// ojo: los mensajes buenos —los que cuentan de qué va la clase y dejan el
+// link— traen un bloque largo de ~225 y suman 300-430 en total. Los folletos
+// que hay que seguir cazando son un ÚNICO bloque de 340-385. De ahí los dos
+// números: el que separa a uno de otro es el del BLOQUE, no el del total.
+const MAX_CHARS_GLOBO = 230;
+const MAX_CHARS_MENSAJE = 450;
 // 5 globos cortos se leen como alguien escribiendo en el celular. Lo que no se
 // lee así es un bloque largo, y de eso se encarga MAX_CHARS_GLOBO.
 const MAX_GLOBOS = 5;

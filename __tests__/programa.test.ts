@@ -91,17 +91,37 @@ describe('Colombia paga por Nequi antes que por tarjeta', () => {
   it('a una colombiana le ofrece Nequi primero', () => {
     const b = bloqueContexto(ahora, '+573001112233', 'clase');
     expect(b).toContain('ELLA ES DE COLOMBIA');
-    expect(b).toContain('25.000 COP al 311 632 9202');
+    expect(b).toContain('25.000 COP');
+    expect(b).toContain('311 632 9202');
     expect(b).toContain('prefiere pagar con tarjeta');
   });
 
-  it('los tres pasos de Nequi van juntos — el número solo no sirve', () => {
+  it('los dos pasos de Nequi van juntos — el número solo no sirve', () => {
     // Darle el número sin decirle que mande el comprobante y su correo la deja
     // pagando al vacío: transfiere, nadie le entrega nada y cree que la estafaron.
     const b = bloqueContexto(ahora, '+573001112233', 'clase');
     expect(b).toContain('comprobante');
     expect(b).toContain('correo');
     expect(b).toContain(CLASE_JUEVES.whatsappJavier);
+  });
+
+  it('le da con qué verificar antes de transferir', () => {
+    // Mandarle plata por Nequi a alguien que conoció por WhatsApp da miedo. No
+    // se resuelve insistiendo, se resuelve dándole con qué comprobar.
+    const b = bloqueContexto(ahora, '+573001112233', 'clase');
+    expect(b).toContain('CONFIANZA PARA TRANSFERIR');
+    expect(b).toContain('página oficial');
+    expect(b).toContain('claves');
+  });
+
+  it('NO afirma a nombre de quién está la cuenta de Nequi', () => {
+    // No está confirmado. Si el nombre que ella ve al transferir no coincide
+    // con el que le dijeron, cancela ahí mismo.
+    const b = bloqueContexto(ahora, '+573001112233', 'clase');
+    // Sí puede aparecer la INSTRUCCIÓN de no inventarlo; lo que no puede
+    // aparecer es un titular afirmado.
+    expect(b).not.toMatch(/a nombre de (?!qui[ée]n)/i);
+    expect(b).toContain('NO se lo inventes');
   });
 
   it('a una de otro país NO le ofrece Nequi, pero deja la puerta si ella lo dice', () => {

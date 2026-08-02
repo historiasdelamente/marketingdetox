@@ -236,6 +236,20 @@ describe("globos de WhatsApp", () => {
     expect(globos.some((g) => g.includes("https://historiasdelamente.com/volver-a-mi"))).toBe(true);
   });
 
+  it("el precio NUNCA se parte en dos globos por el punto de los miles", () => {
+    // Salió en producción: "Vale 25." / "000 COP". Ella lee un precio que no
+    // existe justo en el mensaje que tenía que cerrar la venta.
+    const largo =
+      "La clase es este jueves con Javier Vieira y dura tres horas completas en vivo. " +
+      "Vale 25.000 COP pago único, y también te llevas el libro con ejercicios. " +
+      "Es un espacio para trabajar, no para escuchar.";
+
+    const globos = partirEnGlobos(largo);
+    expect(globos.length).toBeGreaterThan(1); // se partió, pero bien
+    expect(globos.some((g) => g.includes("25.000 COP"))).toBe(true);
+    globos.forEach((g) => expect(g).not.toMatch(/\b25\.$|^000\b/));
+  });
+
   it("con DOS links, el recorte no se traga el segundo", () => {
     // El caso real: Paula cierra por Nequi (WhatsApp de Javier) y además le
     // deja la página para pagar con tarjeta. Antes bastaba con que sobreviviera

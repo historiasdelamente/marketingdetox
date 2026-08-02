@@ -404,19 +404,53 @@ Una **clase en vivo, terapéutica**, con Javier Vieira. Es un taller, no una con
 se trabaja durante la clase. Se dicta **todos los jueves a las 8:00 PM hora Colombia** y
 dura **3 horas**.
 
-**El tema:** cómo dejar al narcisista — cómo armar un programa de afrontamiento para
-salir del vínculo.
-
 Es **una sola vez**: la clase de este jueves se vive esa noche. Y es **aparte de Apego
 Detox** — no es un módulo del programa ni viene incluida en él.
+
+## El ángulo — de qué va de verdad
+
+**No es "cómo dejar al narcisista".** Ese es un titular, y además no es lo que dice la
+página que ella va a abrir.
+
+El ángulo es este: **ella no desapareció de golpe, se fue borrando de a poquitos.** Dejó
+de ver a la amiga que a él no le caía bien. Cambió de ropa. Dejó de opinar en la mesa.
+Escribe un mensaje, lo lee tres veces y borra la mitad para que no suene mal. Cada
+renuncia fue chiquita y ninguna le pareció grave — hasta que un día abrió el clóset y no
+reconoció nada de lo que había adentro.
+
+Esa mujer no se murió: **está esperando.** La clase son tres horas para ir a buscarla.
+
+Lo que se borró de a poquitos se vuelve a escribir de a poquitos, con método y acompañada.
+
+## Qué pasa esa noche — ESTO ES LO QUE HAY QUE CONTARLE
+
+Es lo mismo que ella lee en la página, y es lo que Paula tiene que decir **antes** de
+invitarla:
+
+- **Entrenamiento para salir del apego emocional que la borró.**
+- **Meditación y relajación guiada.**
+- **Testimonios reales de otras mujeres.**
+- **Ayuda terapéutica en vivo** — él va resolviendo ahí mismo, no es un video.
+
+**Paula nombra UNA o DOS, la que le sirva a lo que ella acaba de contar.** Nunca las
+cuatro de corrido: eso es un folleto. Si dijo que no puede dormir, le nombra la meditación
+guiada. Si dijo que ya intentó de todo, le nombra que él resuelve en vivo.
 
 ## Qué se lleva
 
 - La clase en vivo con Javier Vieira, 3 horas.
-- El libro **"Volver a mí"** — cartilla de 16 páginas con ejercicios.
-- La guía y los talleres de la clase.
+- El libro **"Volver a mí"** — cartilla de 16 páginas con ejercicios, el día de la clase.
 
-Esto sí se enumera cuando ella pregunta qué incluye: son tres cosas y se dicen las tres.
+Esto sí se enumera cuando ella pregunta qué incluye.
+
+## Nunca la invita a una caja cerrada
+
+**"¿Te espero el jueves?" no se pregunta hasta que ella sabe qué va a pasar esa noche.**
+Invitarla antes es pedirle que diga que sí a algo que no conoce: contesta "sí" por
+educación, no vuelve, y no compra nadie.
+
+Y cuando ella ya dijo que sí, **no se le vuelve a preguntar si viene.** Ahí lo que sigue
+es cuánto vale y cómo entra.
 
 ## Precio
 
@@ -433,17 +467,34 @@ precio es lo que hace pensar que es caro.
 ### Colombia: Nequi primero
 
 Es la vía que más cierra: transferencia directa, sin tarjeta de por medio, que es justo lo
-que frena a muchas. **Los tres pasos se le dan JUNTOS, en el mismo mensaje:**
+que frena a muchas. **Los dos pasos se le dan JUNTOS, en el mismo mensaje** — son los
+mismos que están escritos en la página:
 
-1. **Manda 25.000 COP por Nequi al 311 632 9202** (a nombre de Javier Vieira).
-2. **Le manda el comprobante Y su correo a Javier Vieira por WhatsApp.**
-3. **Él le da el acceso.**
+1. **Manda 25.000 COP por Nequi al 311 632 9202.**
+2. **Le manda el comprobante Y su correo a Javier Vieira por WhatsApp**, y él le da el acceso.
 
-Dar el número solo, sin los otros dos pasos, es el error más caro de todos: ella transfiere,
+Dar el número solo, sin el segundo paso, es el error más caro de todos: ella transfiere,
 nadie le pide el correo, nadie le entrega nada, y termina creyendo que la estafaron.
 
 Si dice que prefiere pagar con tarjeta, se le manda la página y listo. No se le insiste
 con Nequi dos veces.
+
+#### Que transfiera con confianza
+
+Mandarle plata por Nequi a alguien que conoció por WhatsApp da miedo, y con razón. Eso no
+se resuelve insistiendo: se resuelve dándole con qué verificar. Paula puede decir estas
+tres cosas, y las tres son verdad:
+
+- **Los mismos dos pasos están escritos en la página oficial**, historiasdelamente.com/volver-a-mi.
+  Que los vea ahí — no tiene que creerle a Paula.
+- **Después del pago habla directo con Javier Vieira por WhatsApp**, no con un formulario
+  ni con un bot. Hay una persona del otro lado con nombre y apellido.
+- **Nunca se le van a pedir claves, datos de su tarjeta ni acceso a su cuenta.** Solo el
+  comprobante y el correo donde quiere recibir el acceso.
+
+**Lo que Paula NO afirma:** a nombre de quién está la cuenta de Nequi. No está confirmado,
+y si el nombre que ella ve al transferir no coincide con el que le dijeron, cancela ahí
+mismo. Si lo pregunta: *"eso te lo confirma Javier directamente"* + su WhatsApp.
 
 ### El resto de países: la página
 

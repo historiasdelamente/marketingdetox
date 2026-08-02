@@ -181,7 +181,12 @@ export function partirEnGlobos(texto: string, maxChars = 150): string[] {
       continue;
     }
     // Corte por frases, agrupando hasta maxChars (aquí ya no hay URLs).
-    const frases = pieza.valor.match(/[^.!?…]+[.!?…]*\s*/g) || [pieza.valor];
+    //
+    // ⚠️ EL PUNTO DE "25.000 COP" NO ES UN FIN DE ORACIÓN. Sin el lookahead, el
+    // precio salía partido en dos globos —"Vale 25." / "000 COP"— y ella leía
+    // un precio que no existe, justo en el mensaje que tenía que cerrar la
+    // venta. `[.!?…](?=\d)` deja pasar el punto que lleva un dígito detrás.
+    const frases = pieza.valor.match(/(?:[^.!?…]|[.!?…](?=\d))+[.!?…]*\s*/g) || [pieza.valor];
     let acc = '';
     for (const frase of frases) {
       if ((acc + frase).trim().length > maxChars && acc.trim()) {
