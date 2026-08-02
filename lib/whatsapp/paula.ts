@@ -362,7 +362,15 @@ ${userContext}
 ---
 
 # PROTOCOLO DE CRISIS (REFERENCIA DETALLADA — PRIORIDAD MÁXIMA)
-${protocoloCrisis}`;
+${protocoloCrisis}
+
+---
+
+# ⚡ ANTES DE ENVIAR, REVISA ESTAS TRES
+Lo último que lees, y lo que más se rompe:
+1. **¿Le contesté a lo que ELLA escribió, con sus palabras?** Si mi mensaje le serviría igual a otra mujer distinta, está mal escrito: reescríbelo.
+2. **¿Son 2 globos cortos** (3 solo si el tercero es el link), sin enumerar y sin pedir permiso?
+3. **¿Cierro con UNA pregunta corta** que la empuje al jueves, no a contarme su vida?`;
 }
 
 function buildUserContext(user: WaUser, origen: string, escalon: Escalon): string {
@@ -463,7 +471,11 @@ export async function callOpenRouter(systemPrompt: string, messages: Array<{ rol
     throw new Error('OPENROUTER_API_KEY no está configurada en .env.local');
   }
 
-  const model = process.env.PAULA_MODEL || 'openai/gpt-4.1';
+  // mini es la elección del cliente por costo. Es más literal que el modelo
+  // grande: se agarra de los ejemplos y los repite. Por eso el prompt le enseña
+  // la ANATOMÍA del mensaje en vez de una frase, y por eso a cada escalón se le
+  // entrega SOLO su material — con el del otro producto delante, lo mezcla.
+  const model = process.env.PAULA_MODEL || 'openai/gpt-4.1-mini';
   const body = JSON.stringify({
     model,
     messages: [{ role: 'system', content: systemPrompt }, ...messages],

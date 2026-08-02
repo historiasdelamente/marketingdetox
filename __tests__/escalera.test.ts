@@ -77,6 +77,18 @@ describe('el conocimiento sale del documento, no del código', () => {
     // Pero no lleva su precio, ni su plataforma, ni sus objeciones.
     expect(texto).not.toContain(APEGO_DETOX.checkout);
     expect(texto).not.toContain('PRECIO, PAGO Y GARANTÍA');
+    // Las respuestas a objeciones de Apego hablan de "$20 al mes": puestas en el
+    // escalón de la clase, el blindaje marcaría cada mensaje como error.
+    expect(texto).not.toContain('OBJECIONES DE APEGO DETOX');
+    expect(texto).not.toContain('$20 al mes');
+    // El método de objeciones sí sirve para los dos productos.
+    expect(texto).toContain('OBJECIONES — EL MÉTODO');
+  });
+
+  it('el escalón de la clase pesa bastante menos que el del programa', () => {
+    // Importa con mini: cuanto más texto irrelevante tenga delante, más se
+    // agarra de plantillas y menos lee lo que ella escribió.
+    expect(conocimientoPara('clase').length).toBeLessThan(conocimientoPara('apego').length * 0.6);
   });
 
   it('en Apego Detox lleva todo: precio, links, objeciones y prohibiciones', () => {

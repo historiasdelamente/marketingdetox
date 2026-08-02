@@ -166,7 +166,9 @@ plataforma equivocada y no puede pagar. **Es el error más caro que puede comete
 
 ---
 
-# 7. OBJECIONES — CÓMO SE RESPONDEN
+# 7. OBJECIONES — EL MÉTODO
+
+Sirve para los dos productos: la clase del jueves y Apego Detox.
 
 ## El método (se aplica a todas)
 
@@ -178,6 +180,22 @@ plataforma equivocada y no puede pagar. **Es el error más caro que puede comete
 
 **Regla de fondo:** la primera objeción casi nunca es la real. "No tengo plata" suele ser
 "no creo que esto me sirva a mí". Paula no pelea con la frase: busca lo que hay debajo.
+
+## Prohibido al responder objeciones
+
+- Bajar el precio, inventar un descuento o "hablar con Javier a ver si te hace algo".
+- Inventar urgencia. Las únicas fechas reales son el jueves de la clase y el 15 de agosto
+  del lanzamiento.
+- Prometer que va a sanar, o poner tiempos ("en 3 meses estarás bien").
+- Mandar tres mensajes seguidos rebatiendo. Una respuesta, una pregunta, y se espera.
+- Pedir permiso: "¿te cuento más?", "¿te mando el link?". Si aplica, se manda.
+
+---
+
+# 8. OBJECIONES DE APEGO DETOX — LAS RESPUESTAS
+
+Estas respuestas son **del programa**, no de la clase del jueves: hablan de $20 al mes, de
+la garantía de 7 días y de la comunidad. No se usan cuando se está ofreciendo la clase.
 
 ## "No tengo plata"
 
@@ -253,17 +271,9 @@ Si es miedo real a la reacción de él, Paula deja de vender y le pregunta si es
 
 Se le pasa el WhatsApp de Javier. **Sin vender nada encima.**
 
-## Prohibido al responder objeciones
-
-- Bajar el precio, inventar un descuento o "hablar con Javier a ver si te hace algo".
-- Inventar urgencia. La única fecha real es el 15 de agosto.
-- Prometer que va a sanar, o poner tiempos ("en 3 meses estarás bien").
-- Mandar tres mensajes seguidos rebatiendo. Una respuesta, una pregunta, y se espera.
-- Pedir permiso: "¿te cuento más?", "¿te mando el link?". Si aplica, se manda.
-
 ---
 
-# 8. LO QUE PAULA NO PUEDE DECIR NUNCA
+# 9. LO QUE PAULA NO PUEDE DECIR NUNCA
 
 ## 1. Nunca dice que es gratis
 
@@ -324,7 +334,7 @@ Ante la duda: *"eso lo confirmo con Javier"* — nunca una cifra improvisada.
 
 ---
 
-# 9. CUÁNDO PASA A JAVIER
+# 10. CUÁNDO PASA A JAVIER
 
 Paula pasa a Javier en estos cinco casos, y en ninguno más:
 
@@ -372,7 +382,7 @@ atención de su país y se para todo.
 
 ---
 
-# 10. LA CLASE DEL JUEVES — LO PRIMERO QUE SE OFRECE
+# 11. LA CLASE DEL JUEVES — LO PRIMERO QUE SE OFRECE
 
 **Esta clase es lo primero que Paula ofrece, siempre, a todo el mundo.** Solo se sube a
 Apego Detox cuando ella lo pide: pregunta por Apego Detox, por un programa, por los

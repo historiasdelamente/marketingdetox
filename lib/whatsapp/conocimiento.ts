@@ -56,12 +56,20 @@ export function bloques(texto = cargarConocimiento()): Array<{ n: number; titulo
   return out;
 }
 
-/** Bloques que valen en los dos escalones: objeciones, prohibiciones, handoff. */
-const UNIVERSALES = [7, 8, 9];
-/** Bloques de Apego Detox: qué es, para quién, qué logra, qué incluye, precio, links. */
-const DE_APEGO = [1, 2, 3, 4, 5, 6];
-/** El bloque de la clase del jueves. */
-const DE_CLASE = [10];
+/**
+ * Qué bloques recibe cada escalón, y EN QUÉ ORDEN los va a leer.
+ *
+ * En la clase entra el bloque 1 (qué es Apego Detox) solo para reconocerlo si
+ * ella pregunta — sin su precio, sin sus links y sin sus objeciones. El bloque 8
+ * es veneno ahí: sus respuestas hablan de "$20 al mes" y el blindaje marcaría
+ * `mensualidad_en_clase` en cada mensaje.
+ *
+ * Los universales (7 el método, 9 las prohibiciones, 10 el handoff) van en los dos.
+ */
+const ORDEN: Record<Escalon, number[]> = {
+  clase: [11, 1, 7, 9, 10],
+  apego: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+};
 
 /**
  * Lo que Paula puede leer en ESTE turno.
@@ -73,10 +81,7 @@ const DE_CLASE = [10];
  */
 export function conocimientoPara(escalon: Escalon, texto = cargarConocimiento()): string {
   const todos = bloques(texto);
-  const permitidos =
-    escalon === 'apego'
-      ? [...DE_APEGO, ...UNIVERSALES, ...DE_CLASE]
-      : [...DE_CLASE, 1, ...UNIVERSALES];
+  const permitidos = ORDEN[escalon];
 
   return todos
     .filter((b) => permitidos.includes(b.n))

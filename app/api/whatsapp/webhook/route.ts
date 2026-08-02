@@ -139,7 +139,7 @@ export async function GET() {
     // El orden de venta: siempre la clase primero; a Apego Detox se sube cuando
     // ella lo pide (ver lib/whatsapp/escalera.ts).
     vendiendo: `escalera: clase del jueves → ${APEGO_DETOX.nombre}`,
-    modelo: process.env.PAULA_MODEL || 'openai/gpt-4.1 (por defecto)',
+    modelo: process.env.PAULA_MODEL || 'openai/gpt-4.1-mini (por defecto)',
     oido: transcripcionDisponible() ? 'audios activos' : 'audios sin transcriptor',
     clase: {
       nombre: CLASE_JUEVES.nombre,
