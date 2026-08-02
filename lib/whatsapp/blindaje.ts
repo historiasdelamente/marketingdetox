@@ -73,7 +73,12 @@ export type Hallazgo = {
 // que hay que seguir cazando son un ÚNICO bloque de 340-385. De ahí los dos
 // números: el que separa a uno de otro es el del BLOQUE, no el del total.
 const MAX_CHARS_GLOBO = 230;
-const MAX_CHARS_MENSAJE = 450;
+// El total sube para que quepa la LISTA DE VIÑETAS del primer mensaje: cuatro
+// dolores de ~60 caracteres más la frase que los abre son ~280 de golpe, y esa
+// lista es justo lo que hace que ella se reconozca y se quede. El folleto no se
+// cuela por aquí: lo sigue frenando MAX_CHARS_GLOBO, porque un folleto es un
+// párrafo de corrido y una lista son líneas cortas.
+const MAX_CHARS_MENSAJE = 600;
 // Globos YA CONTADOS COMO LLEGAN (el link va aislado en el suyo). Un mensaje
 // bueno son 4-6: recoger lo que dijo, contarle de qué va, el link y el cierre.
 // Se queda por debajo de MAX_GLOBOS_ENVIO (7) para que el blindaje pida
@@ -177,7 +182,12 @@ const URGENCIA_FALSA = /[úu]ltimo\s+cupo|queda\s+1\s+cupo|solo\s+queda\s+un\s+c
 const PROMESA_GRATIS = /(?:te\s+(?:lo\s+)?(?:regalo|env[íi]o\s+gratis)|(?:clase|libro|curso|acceso|prueba|mes|taller)\s+gratis|gratis\s+(?:el|la|los|las)\s+(?:libro|clase|curso|taller)|sin\s+costo\s+(?:el|la)\s+(?:libro|clase|curso|taller))/i;
 
 // Pedir permiso para lo obvio la cansa y delata al bot.
-const PIDE_PERMISO = /(?:quieres|te\s+gustar[íi]a|deseas)\s+que\s+te\s+(?:cuente|comparta|mande|env[íi]e|pase|explique|diga|deje)|¿\s*te\s+(?:cuento|comparto|mando|env[íi]o|paso|dejo)\b/i;
+// Ojo con la última alternativa: un "¿Quieres?" o "¿Te parece?" suelto al final
+// es la misma pedida de permiso disfrazada de cortesía, y se le escapaba porque
+// no nombra lo que va a mandar. Se exige el signo de apertura y el cierre
+// pegado para no marcar preguntas legítimas ("¿quieres entrar el jueves?").
+const PIDE_PERMISO =
+  /(?:quieres|te\s+gustar[íi]a|deseas)\s+que\s+te\s+(?:cuente|comparta|mande|env[íi]e|pase|explique|diga|deje)|¿\s*te\s+(?:cuento|comparto|mando|env[íi]o|paso|dejo)\b|¿\s*(?:quieres|te\s+parece|te\s+sirve|lo\s+quieres)\s*\?/i;
 
 // Paula acompaña y vende; NO psicoeduca. Explicarle el mecanismo por chat la
 // deja satisfecha con la explicación y sin entrar al proceso — y además suena
@@ -279,6 +289,47 @@ function apellidarAJavier(texto: string): string {
   return fueraDeLinks(texto, (plano) => plano.replace(JAVIER_SIN_APELLIDO, 'Javier Vieira'));
 }
 
+/**
+ * "en vivo con él" → "en vivo con Javier Vieira".
+ *
+ * En este chat "él" YA TIENE DUEÑO: es el hombre de ella. Las viñetas acaban de
+ * decir "te despiertas pensando en él" y "revisas su última conexión", y dos
+ * renglones después llega "la clase es en vivo con él". El pronombre cambia de
+ * dueño sin avisar, justo en el globo que tiene que quedar cristalino.
+ *
+ * Se repara en silencio (no gasta reintento) porque el modelo lo hace por
+ * economía de lenguaje por mucho que se lo prohíbas.
+ */
+// ⚠️ SOLO en contextos que hablan de la CLASE. Un `\b(con|de)\s+él\b` a secas
+// es demasiado bruto y ya rompió una viñeta en una auditoría real: convirtió
+// "Ya no sabes qué te gusta a ti sin consultarlo con él" en "…con Javier
+// Vieira", que es exactamente el revés del error que esto viene a arreglar.
+// Aquí "él" solo se toca cuando va pegado a "en vivo", a "clase" o a la
+// duración — que es donde el modelo lo usa para nombrar a Javier.
+const EL_ES_JAVIER: RegExp[] = [
+  /\ben\s+vivo\s+con\s+(él)\b/gi,
+  /\bclase\s+(?:en\s+vivo\s+)?(?:es\s+)?con\s+(él)\b/gi,
+  /\bcon\s+(él)(?=,?\s+(?:tres|3)\s+horas)/gi,
+];
+
+/** Las viñetas son de ELLA: ahí "él" nunca es Javier. */
+const LINEA_VINETA = /^\s*[•·\-–*]\s+\S/;
+
+function desambiguarEl(texto: string): string {
+  return fueraDeLinks(texto, (plano) =>
+    plano
+      .split('\n')
+      .map((linea) => {
+        if (LINEA_VINETA.test(linea)) return linea;
+        return EL_ES_JAVIER.reduce(
+          (acc, re) => acc.replace(re, (m, pron) => m.replace(pron, 'Javier Vieira')),
+          linea,
+        );
+      })
+      .join('\n'),
+  );
+}
+
 function repararLinks(texto: string, modo: ModoVenta): string {
   let out = texto;
   // Puntuación pegada al final: "…/apegodetox." rompe el clic en WhatsApp.
@@ -297,6 +348,7 @@ function repararLinks(texto: string, modo: ModoVenta): string {
 
   out = out.replace(VARIANTE_WA_JAVIER, linkJavier(modo));
   out = numeroAEnlace(out, modo);
+  out = desambiguarEl(out);
   out = apellidarAJavier(out);
   return out;
 }
@@ -525,7 +577,70 @@ const RECIBO_RE = /\b(comprobante|recibo|pantallazo|captura\s+del?\s+pago|soport
 // 5) No tiene cómo pagar por el medio normal. La salida la resuelve Javier.
 const SIN_TARJETA_RE = /\bno\s+(tengo|manejo|cuento\s+con|poseo)\s+(una\s+)?tarjeta|sin\s+tarjeta\s+(de\s+)?(cr[ée]dito|d[ée]bito)|no\s+tengo\s+(cr[ée]dito|c[óo]mo\s+pagar)|(?:puedo|hay\s+forma\s+de)\s+pagar\s+(de\s+)?otra\s+(forma|manera)|otro\s+m[ée]todo\s+de\s+pago/i;
 
+// 0) RIESGO. Va antes que todo y no es un handoff a Javier: es parar la venta.
+//
+// ⚠️ ESTO NO EXISTÍA. Los cinco motivos de abajo son todos comerciales, y los
+// 16 tipos de Hallazgo revisan links, precios y largo — ninguno revisaba si
+// ella acababa de decir que le pegan o que se quiere morir. Toda la seguridad
+// dependía de que el modelo se acordara del protocolo de crisis, que está
+// enterrado al final del prompt; y DESPUÉS de ese protocolo venían las líneas
+// de venta, así que lo último que leía antes de escribir era "¿está el link?".
+// Una mujer que escribe "me pegó" y recibe un link de pago no es un riesgo
+// teórico: es lo que ese orden produce.
+// OJO: sin `\b` al final de las alternativas con tilde. En JS "ó" no es un
+// carácter de palabra, así que `\b` después de "golpeó" no casa nunca — es el
+// mismo tropiezo que ya está documentado arriba con "pagué". Una mujer que
+// escribe "anoche me golpeó" tiene que disparar esto sí o sí.
+const RIESGO_RE =
+  /me\s+peg(a|ó|o)|me\s+golpe(a|ó|o)|me\s+amenaz|me\s+va\s+a\s+matar|tengo\s+miedo\s+de\s+(lo\s+que\s+)?(me\s+)?(haga|hacerme)|me\s+quiero\s+morir|quiero\s+morirme|no\s+quiero\s+vivir|quitarme\s+la\s+vida|hacerme\s+da[ñn]o|quiero\s+desaparecer|matarme|suicid/i;
+
+/** ¿Ella dijo algo que obliga a parar la venta en este mismo turno? */
+export function hayRiesgo(mensaje: string): boolean {
+  return RIESGO_RE.test(mensaje || '');
+}
+
+/** Habla de plata. El 155 o el 123 de una línea de ayuda no caen aquí: no
+ *  llevan separador de miles ni moneda al lado. */
+const HABLA_DE_PLATA =
+  /\d{1,3}[.,]\d{3}|\b\d+\s*(?:usd|cop|mxn|d[óo]lares|pesos)|pago\s+[úu]nico|\bvale\b|\bcuesta\b|\bprecio\b/i;
+
+/**
+ * Deja el mensaje sin NADA de venta. Se aplica cuando `motivoHandoff` devolvió
+ * 'crisis', y es la garantía por código de lo que el prompt ya pide: el modelo
+ * puede olvidarlo, esto no.
+ *
+ * Borra los links de producto, cualquier línea que hable de plata y las
+ * viñetas. NO toca el WhatsApp de Javier Vieira ni los números de las líneas de
+ * ayuda: eso es justamente lo único que ella necesita en ese momento.
+ *
+ * Se filtra por LÍNEA y no por trozo a propósito: borrar el precio a media
+ * frase deja "Son , pago único", que se lee peor que no haber borrado nada.
+ */
+export function quitarVentaEnCrisis(texto: string): string {
+  const sinEsquema = (url: string) => url.replace(/^https?:\/\//, '').replace(/\?.*$/, '');
+  const productos = [
+    CLASE_JUEVES.landing,
+    CLASE_JUEVES.checkout,
+    APEGO_DETOX.landing,
+    APEGO_DETOX.checkout,
+  ].map(sinEsquema);
+
+  return (texto || '')
+    .split('\n')
+    .filter((linea) => {
+      if (/^\s*[•·\-–*]\s+\S/.test(linea)) return false;
+      if (productos.some((p) => linea.includes(p))) return false;
+      if (HABLA_DE_PLATA.test(linea)) return false;
+      return true;
+    })
+    .join('\n')
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 export type MotivoHandoff =
+  | 'crisis'
   | 'pide_humano'
   | 'problema_pago'
   | 'compra_cerrada'
@@ -534,6 +649,8 @@ export type MotivoHandoff =
   | null;
 
 export function motivoHandoff(mensaje: string): MotivoHandoff {
+  // El riesgo manda sobre todo lo demás, incluido "ya pagué".
+  if (hayRiesgo(mensaje)) return 'crisis';
   // El orden importa. El fallo de pago va ANTES que la compra cerrada: "ya
   // pagué y no me llegó el acceso" empieza igual que un cierre feliz, pero es
   // lo contrario — felicitarla ahí sería quedar como sordos.
@@ -554,6 +671,19 @@ export function instruccionHandoff(
   const landing = modo === 'clase' ? CLASE_JUEVES.landing : APEGO_DETOX.landing;
 
   switch (motivo) {
+    case 'crisis':
+      return `# 🛑 ELLA DIJO ALGO GRAVE — SE ACABÓ LA VENTA EN ESTE TURNO
+Acaba de nombrar violencia física, amenazas o que se quiere morir. **Nada de lo que dice el resto del prompt aplica aquí.**
+
+PROHIBIDO en este mensaje, sin excepción: el link de la clase, el precio, la lista de viñetas, la fecha, invitarla a nada, preguntarle si viene.
+
+Lo único que haces:
+1. UNA frase que le diga que la leíste y que eso que está viviendo es serio. Sin dramatizar y sin "todo va a estar bien".
+2. La línea de ayuda de SU país, tal como está en el PROTOCOLO DE CRISIS de abajo, con el número completo.
+3. Si hay peligro ahora mismo, el número de emergencias de su país.
+
+No la interrogues, no le des consejos, no le digas qué hacer con su relación y no le enseñes técnicas. Entregas la línea y ahí termina el mensaje.`;
+
     case 'pide_humano':
       return `# 🙋 ELLA PIDIÓ HABLAR CON JAVIER (O CON UNA PERSONA) — PRIORIDAD ALTA
 No lo niegues, no te defiendas y no discutas si eres o no un bot. En 1-2 frases cortas: le dices que le pasas el WhatsApp directo de Javier y le mandas este link COMPLETO, solo, en su propio globo:

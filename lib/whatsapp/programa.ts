@@ -57,6 +57,30 @@ export const CLASE_JUEVES = {
   /** La clase SÍ se cobra por Hotmart. Apego Detox NO. */
   checkout: 'https://pay.hotmart.com/H106712135H',
 
+  /**
+   * LA PRIVACIDAD. Es el primer miedo de la que todavía vive con él, y no
+   * estaba dicho en ninguna parte.
+   *
+   * De un panel de mujeres que leyó los mensajes reales: la que lleva 9 años
+   * adentro escribe a las once de la noche encerrada en el baño para que él no
+   * vea. Textual: "mi primer miedo no es si sirve, mi primer miedo es que se
+   * den cuenta". Con esa duda sin responder, los 25.000 ni los piensa.
+   *
+   * Solo va aquí lo que es cierto por cómo funciona una clase por video. Lo que
+   * NO está confirmado no se pone: ver `pendientes` abajo.
+   */
+  privacidad: {
+    camaraApagada: true,
+    microfonoApagado: true,
+    tieneQueHablar: false,
+    /** ⚠️ PENDIENTE CONFIRMAR con Javier — Paula NO puede afirmarlos todavía. */
+    pendientes: [
+      'si las demás alcanzan a ver su nombre en la lista de participantes',
+      'si le reponen el lugar en la clase del jueves siguiente cuando le toca salirse a medias',
+      'con qué nombre le aparece el cobro en el extracto de Nequi o de la tarjeta',
+    ],
+  },
+
   /** Mismo peso en cada país. */
   precios: { COP: '25.000 COP', USD: '7 USD', MXN: '120 MXN' },
   /**
@@ -374,8 +398,15 @@ export function bloqueContexto(
     // El titular va SIEMPRE, y va ANTES de que ella abra Nequi (confirmado por
     // Javier el 2026-08-02). Si ve un nombre que no esperaba en la pantalla de
     // confirmación, cancela ahí mismo — y ese susto no se recupera.
-    const pasosNequi = `**PASO 1:** manda ${nequi.monto} por Nequi al **${nequiLegible}**, a nombre de **${titularNequi}** — díselo antes de que abra la app, para que no le sorprenda el nombre al confirmar. **PASO 2:** le manda el comprobante Y su correo a Javier Vieira por este link: ${whatsappJavier} — él le da el acceso. Los dos pasos se los das JUNTOS: sin el comprobante y el correo, nadie le puede entregar nada.
-- 🛡️ **LO QUE LE DA CONFIANZA PARA TRANSFERIR** (dilo si duda, si te pregunta si es seguro, o si es la primera vez que te escribe): la cuenta está a nombre de ${titularNequi}, el mismo psicólogo de la clase. Estos dos pasos están escritos en la página oficial, ${landing} — que los vea ahí, no tiene que creerte a ti. Después del pago habla directo con él por WhatsApp, no con un formulario. Y nadie le va a pedir NUNCA claves, datos de su tarjeta ni acceso a su cuenta: solo el comprobante y el correo donde quiere el acceso.`;
+    // ⚠️ DOS NÚMEROS DISTINTOS = OLOR A ESTAFA. El Nequi y el WhatsApp de
+    // Javier no son el mismo número, y a una mujer de Bucaramanga eso le suena
+    // exactamente a lo que sale en las noticias. Si no se lo explicas tú, lo
+    // explica su desconfianza. Textual de un panel de mujeres reales: "dos
+    // números distintos para una misma plata, yo ahí cierro".
+    const pasosNequi = `**PASO 1:** manda ${nequi.monto} por Nequi al **${nequiLegible}**, que está a nombre de **${titularNequi}**. **PASO 2:** le manda el comprobante Y su correo por WhatsApp a este otro número, que es el personal de él: ${whatsappJavier} — y él le da el acceso. Los dos pasos se los das JUNTOS: sin el comprobante y el correo, nadie le puede entregar nada.
+- ⚠️ **SON DOS NÚMEROS DISTINTOS Y TIENES QUE DECIR POR QUÉ, sin que lo pregunte.** Uno es la cuenta de Nequi donde entra el pago y el otro es el WhatsApp donde él atiende. Si se los das sin explicar, ella ve dos números para una misma plata y cierra el chat: es la señal clásica de estafa. Dilo así de simple: *"El primero es la cuenta de Nequi, el segundo es su WhatsApp de siempre — son distintos porque uno recibe el pago y en el otro te atiende él."*
+- ⛔ **Nunca digas "para que no te sorprenda el nombre".** Avisar de una sorpresa es admitir que hay algo raro. El nombre se dice y ya, con naturalidad.
+- 🛡️ **LO QUE LE DA CONFIANZA PARA TRANSFERIR** (dilo si duda, si pregunta si es seguro, o si es la primera vez que te escribe): estos mismos dos pasos están escritos en la página oficial, ${landing} — que los vea ahí, no tiene que creerte a ti. Después del pago habla directo con Javier Vieira por WhatsApp, no con un formulario. Y nadie le va a pedir NUNCA claves, datos de su tarjeta ni acceso a su cuenta: solo el comprobante y el correo donde quiere el acceso.`;
     // ⚠️ A la que NO es colombiana no se le puede nombrar Nequi por su cuenta:
     // "si eres de Colombia mandas a Nequi, si no pagas con tarjeta" la obliga a
     // escoger entre dos caminos y alarga el mensaje hasta que se corta el link.
@@ -396,6 +427,13 @@ ${hoy}
 - Se lleva: la clase en vivo con él y el libro "${libro.nombre}" (${libro.detalle}).
 - ⛔ **NO queda grabada. Es en vivo, una sola vez.** Si te dice que a esa hora no puede, se lo dices de frente: no hay grabación ni repetición. Nunca le prometas "la ves después" ni "no pierdes nada si no te conectas". Esa verdad es la única urgencia real que tienes — úsala, no la escondas.
 - Precio: ${precios.COP} / ${precios.USD} / ${precios.MXN}. Es PAGO ÚNICO, no una suscripción.
+
+## 🔒 NADIE LA VA A VER NI A OÍR — DÍSELO ANTES DE QUE LO PREGUNTE
+Muchas te escriben encerradas en el baño para que él no vea. **Su primer miedo no es si la clase sirve: es que se den cuenta.** Con esa duda sin responder no paga, y casi ninguna se atreve a preguntarlo.
+- Puede entrar con la **cámara apagada** y el **micrófono apagado**. Nadie le ve la cara.
+- **No tiene que hablar ni contar nada** delante de nadie. Puede solo escuchar, con audífonos.
+- Se lo dices tú, sin que pregunte, en cuanto notes que sigue viviendo con él o que te escribe a escondidas. Una línea basta: *"Entras con la cámara apagada, nadie te ve ni te oye, y no tienes que hablar."*
+- ⛔ Lo que NO sabes todavía y por lo tanto NO afirmas: si las demás le ven el nombre, si le reponen el lugar cuando le toca salirse, y con qué nombre le sale el cobro en el extracto. Si pregunta eso: *"eso te lo confirmo con Javier Vieira y te digo"*.
 
 ## 🎯 DE QUÉ VA LA CLASE — CUÉNTASELO ANTES DE INVITARLA
 Esto es lo mismo que ella va a leer en la página. **Nombras UNA o DOS de estas cosas, la que le sirva a lo que ella te contó.** Nunca las cuatro de corrido.

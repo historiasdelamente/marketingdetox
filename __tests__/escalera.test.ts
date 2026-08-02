@@ -85,10 +85,21 @@ describe('el conocimiento sale del documento, no del código', () => {
     expect(texto).toContain('OBJECIONES — EL MÉTODO');
   });
 
-  it('el escalón de la clase pesa bastante menos que el del programa', () => {
-    // Importa con mini: cuanto más texto irrelevante tenga delante, más se
-    // agarra de plantillas y menos lee lo que ella escribió.
-    expect(conocimientoPara('clase').length).toBeLessThan(conocimientoPara('apego').length * 0.6);
+  it('el escalón de la clase carga lo suyo y nada del otro producto', () => {
+    // Importa con mini: cuanto más texto AJENO tenga delante, más se agarra de
+    // plantillas y menos lee lo que ella escribió.
+    //
+    // Antes esto se medía por tamaño (clase < 60% de apego), y era un proxy
+    // equivocado: cuando la sección de la clase creció con la lista de dolores
+    // —que es SU material, el que hace que ella se reconozca— el test se puso
+    // rojo por crecer en la dirección correcta. Lo que hay que exigir no es que
+    // pese poco, es que no traiga encima el material comercial del programa.
+    const texto = conocimientoPara('clase');
+    expect(texto).not.toContain('PRECIO, PAGO Y GARANTÍA');
+    expect(texto).not.toContain('OBJECIONES DE APEGO DETOX');
+    expect(texto).not.toContain(APEGO_DETOX.checkout);
+    // Y sigue siendo más liviano que el paquete completo del programa.
+    expect(texto.length).toBeLessThan(conocimientoPara('apego').length);
   });
 
   it('en Apego Detox lleva todo: precio, links, objeciones y prohibiciones', () => {

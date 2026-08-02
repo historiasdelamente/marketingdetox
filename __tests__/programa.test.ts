@@ -114,13 +114,33 @@ describe('Colombia paga por Nequi antes que por tarjeta', () => {
     expect(b).toContain('claves');
   });
 
-  it('dice a nombre de quién está la cuenta ANTES de que ella abra Nequi', () => {
-    // Confirmado por Javier el 2026-08-02: la cuenta es de Javier Vieira. Es el
-    // nombre que ella va a leer en la pantalla de confirmación; si nadie se lo
-    // anunció, cancela ahí mismo.
+  it('dice a nombre de quién está la cuenta, sin anunciar sorpresas', () => {
+    // Confirmado por Javier el 2026-08-02: la cuenta es de Javier Vieira.
+    // Un panel de mujeres reales rechazó la redacción anterior ("te aviso para
+    // que no te sorprenda el nombre"): avisar de una sorpresa admite que hay
+    // algo raro. El nombre se dice con naturalidad y ya.
     const b = bloqueContexto(ahora, '+573001112233', 'clase');
     expect(b).toContain(`a nombre de **${CLASE_JUEVES.nequi.titular}**`);
-    expect(b).toMatch(/antes de que abra la app/i);
+    // La palabra "sorprenda" solo puede aparecer en la PROHIBICIÓN de usarla,
+    // nunca como instrucción de decírselo a ella.
+    expect(b).toMatch(/Nunca digas "para que no te sorprenda/);
+    expect(b).not.toMatch(/para que no le sorprenda el nombre/i);
+  });
+
+  it('explica por qué el Nequi y el WhatsApp son dos números distintos', () => {
+    // "Dos números distintos para una misma plata" es la señal clásica de
+    // estafa: si no se lo explicas tú, se lo explica su desconfianza.
+    const b = bloqueContexto(ahora, '+573001112233', 'clase');
+    expect(b).toMatch(/DOS NÚMEROS DISTINTOS/i);
+    expect(b).toMatch(/uno recibe el pago/i);
+  });
+
+  it('le dice que nadie la va a ver ni a oír', () => {
+    // Es el primer miedo de la que todavía vive con él, y casi ninguna se
+    // atreve a preguntarlo.
+    const b = bloqueContexto(ahora, '+573001112233', 'clase');
+    expect(b).toMatch(/cámara apagada/i);
+    expect(b).toMatch(/no tiene que hablar/i);
   });
 
   it('a una de otro país NO le ofrece Nequi, pero deja la puerta si ella lo dice', () => {

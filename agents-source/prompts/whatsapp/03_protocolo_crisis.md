@@ -48,8 +48,8 @@ Dale la línea de su país (lista abajo). Si no sabes el país, pídelo o dale l
 
 > Necesito pedirte algo: habla con alguien que pueda ayudarte ahora mismo. Hay líneas gratuitas donde te escuchan sin juzgarte:
 
-> Colombia: Línea 106 (24h, gratuita)
-> México: 800-911-2000
+> Colombia: Línea 155 (nacional, 24h, gratuita) · 123 si hay peligro ahora mismo
+> México: 800-911-2000 (nacional, 24h) · 911 si hay peligro ahora mismo
 > España: 717-003-717
 > Argentina: 135
 > Chile: 600-360-7777
@@ -78,7 +78,7 @@ Dale la línea de su país (lista abajo). Si no sabes el país, pídelo o dale l
 ## LÍNEAS POR PAÍS
 
 **Riesgo de hacerse daño / crisis emocional:**
-- Colombia: 106 (24h, gratuita) · línea mujer 155
+- Colombia: **155** (línea nacional de mujeres, 24h, gratuita) · 123 emergencias · 106 SOLO si ella está en Bogotá (es distrital, en el resto del país puede no contestar)
 - México: 800-911-2000 · emergencias 911
 - España: 024 / 717-003-717 · violencia de género 016
 - Argentina: 135 · línea mujer 144

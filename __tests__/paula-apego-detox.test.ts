@@ -291,10 +291,31 @@ describe('el prompt que se arma en cada turno', () => {
 
   it('lleva las reglas de estilo y el conocimiento del documento', () => {
     const p = prompt('apego');
-    expect(p).toContain('LEE LO QUE ELLA ESCRIBIÓ');
-    expect(p).toContain('NO HACES TERAPIA');
+    // El prompt se reescribió de cero el 2026-08-02: ya no es un reglamento de
+    // prohibiciones, arranca por QUIÉN ES ELLA. Lo que se exige aquí es que
+    // sigan estando las cuatro piezas que sostienen todo lo demás.
+    expect(p).toContain('A QUIÉN LE ESTÁS ESCRIBIENDO');
+    expect(p).toContain('LO QUE NO HACES NUNCA');
     expect(p).toContain('LO QUE PAULA NO PUEDE DECIR NUNCA');
     expect(p).toContain('CUÁNDO PASA A JAVIER');
+  });
+
+  it('el primer mensaje lleva la lista de dolores en viñetas', () => {
+    // Es lo que ella lee para saber si esto es para ella. Sin la lista, el
+    // primer mensaje es "hay una clase el jueves" y no se queda nadie.
+    const p = prompt('clase');
+    expect(p).toContain('EL PRIMER MENSAJE');
+    expect(p).toMatch(/^• .+$/m);
+  });
+
+  it('a dos mujeres distintas les toca una lista de dolores distinta', () => {
+    // Con una lista fija, mini se la copia igual a todas y se nota el bot.
+    const vinetas = (id: string) =>
+      buildSystemPrompt({ ...usuaria, manychat_id: id }, '', '', { ahora: VIERNES_31 })
+        .split('\n')
+        .filter((l) => l.startsWith('• '))
+        .join('|');
+    expect(vinetas('mujer-a')).not.toBe(vinetas('mujer-b'));
   });
 
   it('a quien todavía no ha entrado NO le da la fecha del próximo encuentro', () => {

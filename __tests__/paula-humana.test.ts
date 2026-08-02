@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-import { auditarRespuesta, instruccionCorreccion, motivoHandoff } from "@/lib/whatsapp/blindaje";
+import { auditarRespuesta, instruccionCorreccion, motivoHandoff, quitarVentaEnCrisis } from "@/lib/whatsapp/blindaje";
 import { normalizarNegritas, partirEnGlobos } from "@/lib/whatsapp/manychat";
+
 
 // La clase es TODOS los jueves, 8 PM Colombia, y la fecha la calcula
 // `proximaClase()` de programa.ts. Desde el lunes 27 el jueves es el 30 de
@@ -376,5 +377,162 @@ describe("buffer de 10 segundos", () => {
 
     expect(procesarMock).toHaveBeenCalledTimes(2);
     expect(procesarMock.mock.calls[1][1]).toBe("ah y una cosa más");
+  });
+});
+
+describe("la lista de dolores llega como UNA sola lista", () => {
+  it("las viñetas no se rompen en un mensaje por línea", () => {
+    // Es lo que hace que ella se reconozca y se quede. Si sale como cinco
+    // mensajes de WhatsApp seguidos deja de ser una lista y es una ráfaga.
+    const texto = [
+      "Hola 💛 Soy Paula, trabajo con Javier Vieira.",
+      "Esta clase es para ti si te pasa algo de esto:",
+      "• Quieres dejarlo, y a los tres días ya le estás contestando",
+      "• No duermes bien, y cuando duermes te despiertas pensando en él",
+      "• Tienes una angustia en el pecho que no se te quita con nada",
+      "Es este jueves a las 8. Son 25.000, pago único.",
+      "https://historiasdelamente.com/volver-a-mi",
+    ].join("\n");
+
+    const globos = partirEnGlobos(texto);
+    const conVinetas = globos.filter((g) => g.includes("•"));
+
+    expect(conVinetas).toHaveLength(1);
+    // La frase que abre la lista viaja pegada a ella, no suelta.
+    expect(conVinetas[0]).toContain("Esta clase es para ti si");
+    expect(conVinetas[0].split("\n").filter((l) => l.startsWith("•"))).toHaveLength(3);
+    // Y el link sigue teniendo su propio globo.
+    expect(globos).toContain("https://historiasdelamente.com/volver-a-mi");
+  });
+
+  it("una viñeta nunca se pega al globo del link", () => {
+    const texto = "https://historiasdelamente.com/volver-a-mi\n• Quieres dejarlo de verdad";
+    const globos = partirEnGlobos(texto);
+    expect(globos).toContain("https://historiasdelamente.com/volver-a-mi");
+    expect(globos.some((g) => g.startsWith("•"))).toBe(true);
+  });
+
+  it("el primer mensaje con lista completa pasa el blindaje", () => {
+    const mensaje = [
+      "Hola 💛 Soy Paula, trabajo con Javier Vieira, Psicólogo Especialista.",
+      "",
+      "Esta clase es para ti si te pasa algo de esto:",
+      "• Quieres dejarlo, y a los tres días ya le estás contestando",
+      "• No duermes bien, y cuando duermes te despiertas pensando en él",
+      "• Revisas su última conexión, sus estados, con quién habla",
+      "• Tienes una angustia en el pecho que no se te quita con nada",
+      "",
+      "Es este jueves a las 8, en vivo con él. Son 25.000, pago único.",
+      "",
+      "https://historiasdelamente.com/volver-a-mi",
+      "",
+      "Ahí la ves completa ✨",
+    ].join("\n");
+
+    expect(auditarClase(mensaje, LUNES_27).hallazgos).toHaveLength(0);
+  });
+});
+
+describe("pedir permiso disfrazado de cortesía", () => {
+  it("caza el '¿Quieres?' suelto al final", () => {
+    // Salió en una auditoría real: "…te mando el link de la página. ¿Quieres?".
+    // Es la misma pedida de permiso, sin nombrar lo que va a mandar, así que
+    // se le escapaba al patrón viejo.
+    expect(
+      auditarClase("Si prefieres tarjeta te mando el link. ¿Quieres?", LUNES_27).hallazgos.map((h) => h.tipo),
+    ).toContain("pide_permiso");
+    expect(
+      auditarClase("Te lo dejo aquí. ¿Te parece?", LUNES_27).hallazgos.map((h) => h.tipo),
+    ).toContain("pide_permiso");
+  });
+
+  it("pero deja pasar las preguntas de cierre, que sí empujan", () => {
+    for (const ok of [
+      "¿Quieres entrar el jueves?",
+      "¿Te espero el jueves?",
+      "¿Pagas por Nequi o con tarjeta?",
+    ]) {
+      expect(auditarClase(ok, LUNES_27).hallazgos.map((h) => h.tipo)).not.toContain("pide_permiso");
+    }
+  });
+});
+
+describe("crisis — la venta se para por código, no por buena voluntad", () => {
+  it("detecta violencia e ideación antes que cualquier motivo comercial", () => {
+    expect(motivoHandoff("me pega cuando toma")).toBe("crisis");
+    expect(motivoHandoff("le tengo miedo, me amenaza")).toBe("crisis");
+    expect(motivoHandoff("ya no quiero vivir")).toBe("crisis");
+    // Gana incluso a un cierre feliz en el mismo mensaje.
+    expect(motivoHandoff("ya pagué pero anoche me golpeó")).toBe("crisis");
+  });
+
+  it("no confunde el dolor normal con una crisis", () => {
+    for (const normal of [
+      "me duele mucho todo esto",
+      "estoy cansada de llorar",
+      "y si no me funciona?",
+      "quiero dejarlo pero no puedo",
+    ]) {
+      expect(motivoHandoff(normal)).not.toBe("crisis");
+    }
+  });
+
+  it("en crisis no sale ni un link de venta, ni un precio, ni una viñeta", () => {
+    const conVenta = [
+      "Lo que me cuentas es serio 💛",
+      "• No duermes bien, y cuando duermes te despiertas pensando en él",
+      "Son 25.000, pago único.",
+      "https://historiasdelamente.com/volver-a-mi",
+      "En Colombia llama al 155, es gratis y atienden 24 horas.",
+      "Si estás en peligro ahora, marca 123.",
+    ].join("\n");
+
+    const limpio = quitarVentaEnCrisis(conVenta);
+
+    expect(limpio).not.toContain("historiasdelamente.com/volver-a-mi");
+    expect(limpio).not.toContain("25.000");
+    expect(limpio).not.toContain("•");
+    // Y lo que sí necesita se queda intacto.
+    expect(limpio).toContain("155");
+    expect(limpio).toContain("123");
+    expect(limpio).toContain("Lo que me cuentas es serio");
+  });
+});
+
+describe("'él' es el hombre de ella, nunca Javier", () => {
+  it("convierte 'en vivo con él' en 'con Javier Vieira'", () => {
+    const { texto } = auditarClase("Es este jueves a las 8, en vivo con él, tres horas.", LUNES_27);
+    expect(texto).toContain("con Javier Vieira");
+    expect(texto).not.toMatch(/con él/i);
+  });
+
+  it("no toca el 'él' que sí es el hombre de ella", () => {
+    const { texto } = auditarClase("Te despiertas pensando en él y le revisas los estados.", LUNES_27);
+    expect(texto).toContain("pensando en él");
+  });
+
+  it("NUNCA toca el 'él' de una viñeta — ahí él siempre es el marido", () => {
+    // Salió en una auditoría real con la versión bruta de esta reparación:
+    // "• Ya no sabes qué te gusta a ti sin consultarlo con él" se convirtió en
+    // "…con Javier Vieira", que es el revés exacto del error que se arregla.
+    const lista = [
+      "Esta clase es para ti si te pasa algo de esto:",
+      "• Ya no sabes qué te gusta a ti sin consultarlo con él",
+      "• Pides perdón por cosas que no hiciste, con tal de que no se enoje",
+    ].join("\n");
+
+    const { texto } = auditarClase(lista, LUNES_27);
+    expect(texto).toContain("consultarlo con él");
+    expect(texto).not.toContain("consultarlo con Javier");
+  });
+
+  it("sí desambigua cuando el 'él' es quien da la clase", () => {
+    for (const caso of [
+      "Es este jueves a las 8, en vivo con él, tres horas.",
+      "La clase es con él, este jueves.",
+    ]) {
+      const { texto } = auditarClase(caso, LUNES_27);
+      expect(texto).toContain("Javier Vieira");
+    }
   });
 });

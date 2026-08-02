@@ -42,6 +42,34 @@ const MAX_GLOBOS_ENVIO = 7;
 
 const tieneUrl = (texto: string) => /https?:\/\//.test(texto);
 
+/** Una línea de lista: "• Quieres dejarlo…", "- No duermes…". */
+const ES_VINETA = /^\s*[•·\-–*]\s+\S/;
+
+/**
+ * Vuelve a pegar las listas de viñetas que el corte por líneas separó.
+ *
+ * La lista de dolores del primer mensaje ("Esta clase es para ti si te pasa
+ * algo de esto:" + 3 o 4 viñetas) es lo que hace que ella se reconozca y se
+ * quede. Si sale como cinco mensajes de WhatsApp seguidos, deja de ser una
+ * lista que se lee de un golpe y se convierte en una ráfaga de bot.
+ *
+ * Cada viñeta se pega a lo que tiene encima, así que la frase que abre la
+ * lista viaja con ella. No se pega a un globo que sea un link: eso partiría
+ * el enlace de su propio globo.
+ */
+function agruparVinetas(globos: string[]): string[] {
+  const out: string[] = [];
+  for (const globo of globos) {
+    const previo = out[out.length - 1];
+    if (ES_VINETA.test(globo) && previo !== undefined && !tieneUrl(previo)) {
+      out[out.length - 1] = `${previo}\n${globo}`;
+      continue;
+    }
+    out.push(globo);
+  }
+  return out;
+}
+
 /**
  * Aplica `fn` solo al texto, dejando las URLs intactas.
  * El marcador es deliberadamente improbable: con uno "normal" (por ejemplo
@@ -219,7 +247,8 @@ export function partirEnGlobos(texto: string, maxChars = 150): string[] {
 
   // Tope de seguridad: el largo real lo controla el blindaje (que pide
   // reescribir, sin perder texto). Esto solo evita una ráfaga absurda.
-  const limpios = finales.filter(Boolean);
+  // Las viñetas se reagrupan ANTES de contar: la lista es un globo, no cinco.
+  const limpios = agruparVinetas(finales).filter(Boolean);
   if (limpios.length <= MAX_GLOBOS_ENVIO) return limpios;
 
   // Recortar NUNCA puede tragarse un link: sin link no hay venta.
