@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 import { auditarRespuesta, instruccionCorreccion, motivoHandoff, quitarVentaEnCrisis } from "@/lib/whatsapp/blindaje";
+import { aplicarFormato } from "@/lib/whatsapp/formato";
 import { normalizarNegritas, partirEnGlobos } from "@/lib/whatsapp/manychat";
 
 
@@ -380,56 +381,203 @@ describe("buffer de 10 segundos", () => {
   });
 });
 
-describe("la lista de dolores llega como UNA sola lista", () => {
-  it("las viñetas no se rompen en un mensaje por línea", () => {
-    // Es lo que hace que ella se reconozca y se quede. Si sale como cinco
-    // mensajes de WhatsApp seguidos deja de ser una lista y es una ráfaga.
+// ═══════════════════════════════════════════════════════════════════════════
+// LAS LISTAS NO EXISTEN — 2026-08-03
+//
+// Hasta esta fecha estos mismos tests comprobaban lo CONTRARIO: que la lista de
+// viñetas llegara entera y en un solo globo. Javier la mandó eliminar porque en
+// el chat real hace justo lo que no se veía en la prueba — *"le estás haciendo
+// como si fuera un flyer a las personas"*. Una mujer que acaba de contar que
+// lleva nueve años con alguien no recibe una lista: recibe una frase.
+//
+// Lo que se prueba aquí es la GARANTÍA POR CÓDIGO. Se ha pedido por prompt
+// muchas veces y el modelo siempre volvió a la lista; ahora `formato.ts` la
+// borra después de que él escribe, así que ya no depende de que obedezca.
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe("ninguna lista llega al chat", () => {
+  it("de una lista de cuatro dolores queda UNA frase, sin el bullet", () => {
     const texto = [
-      "Hola 💛 Soy Paula, trabajo con Javier Vieira.",
       "Esta clase es para ti si te pasa algo de esto:",
       "• Quieres dejarlo, y a los tres días ya le estás contestando",
       "• No duermes bien, y cuando duermes te despiertas pensando en él",
       "• Tienes una angustia en el pecho que no se te quita con nada",
+    ].join("\n");
+
+    const salida = aplicarFormato(texto);
+
+    expect(salida).not.toContain("•");
+    // La primera se cose a la frase que abría la lista, en minúscula.
+    expect(salida).toContain("Esta clase es para ti si te pasa algo de esto: quieres dejarlo");
+    // Las otras dos se van: pegarlas todas sería el mismo folleto en prosa.
+    expect(salida).not.toContain("No duermes bien");
+    expect(salida).not.toContain("angustia en el pecho");
+  });
+
+  it("una viñeta suelta se vuelve frase, sin perder el resto del mensaje", () => {
+    const texto = [
+      "Uf, nueve años.",
+      "- Pides perdón por cosas que no hiciste",
+      "https://historiasdelamente.com/volver-a-mi",
+    ].join("\n");
+
+    const salida = aplicarFormato(texto);
+    expect(salida).toContain("Pides perdón por cosas que no hiciste.");
+    expect(salida).not.toMatch(/^\s*-\s/m);
+    expect(salida).toContain("https://historiasdelamente.com/volver-a-mi");
+  });
+
+  it("también mata las listas numeradas", () => {
+    const salida = aplicarFormato("Son dos pasos:\n1. Mandas el pago\n2. Mandas el comprobante");
+    expect(salida).not.toMatch(/^\s*\d+[.)]\s/m);
+    expect(salida).toContain("Son dos pasos: mandas el pago.");
+  });
+
+  it("el blindaje marca la lista para que el modelo la reescriba", () => {
+    // El código la arregla igual, pero se gasta el reintento en que la escriba
+    // él: una frase escogida por el modelo siempre queda mejor que la que
+    // salva el código a la fuerza.
+    const conLista = "Esto es para ti si:\n• No duermes\n• Lloras sin saber por qué";
+    expect(auditarClase(conLista, LUNES_27).hallazgos.map((h) => h.tipo)).toContain("vinetas");
+  });
+
+  it("un mensaje en prosa no dispara nada", () => {
+    const enProsa = [
+      "Uf, nueve años pidiendo perdón por cosas que ni hiciste.",
+      "",
+      "Es de eso justamente la clase del jueves a las 8. Son 25.000, pago único.",
+      "",
+      "https://historiasdelamente.com/volver-a-mi",
+    ].join("\n");
+
+    expect(auditarClase(enProsa, LUNES_27).hallazgos).toHaveLength(0);
+  });
+});
+
+describe("máximo tres globos, y el link es uno de los tres", () => {
+  it("baja de cuatro globos a tres FUSIONANDO, sin perder una frase", () => {
+    // ⚠️ Antes esto recortaba por el final, y la auditoría contra el modelo
+    // real enseñó lo que costaba: el cierre por Nequi salía sin la frase que
+    // explica por qué son DOS números distintos — justo la que evita que ella
+    // lea "estafa" y cierre el chat. Lo último que escribe el modelo no es
+    // siempre el relleno, así que ya no se tira nada: se junta.
+    const cuatro = [
+      "Uf, nueve años.",
       "Es este jueves a las 8. Son 25.000, pago único.",
       "https://historiasdelamente.com/volver-a-mi",
-    ].join("\n");
-
-    const globos = partirEnGlobos(texto);
-    const conVinetas = globos.filter((g) => g.includes("•"));
-
-    expect(conVinetas).toHaveLength(1);
-    // La frase que abre la lista viaja pegada a ella, no suelta.
-    expect(conVinetas[0]).toContain("Esta clase es para ti si");
-    expect(conVinetas[0].split("\n").filter((l) => l.startsWith("•"))).toHaveLength(3);
-    // Y el link sigue teniendo su propio globo.
-    expect(globos).toContain("https://historiasdelamente.com/volver-a-mi");
-  });
-
-  it("una viñeta nunca se pega al globo del link", () => {
-    const texto = "https://historiasdelamente.com/volver-a-mi\n• Quieres dejarlo de verdad";
-    const globos = partirEnGlobos(texto);
-    expect(globos).toContain("https://historiasdelamente.com/volver-a-mi");
-    expect(globos.some((g) => g.startsWith("•"))).toBe(true);
-  });
-
-  it("el primer mensaje con lista completa pasa el blindaje", () => {
-    const mensaje = [
-      "Hola 💛 Soy Paula, trabajo con Javier Vieira, Psicólogo Especialista.",
-      "",
-      "Esta clase es para ti si te pasa algo de esto:",
-      "• Quieres dejarlo, y a los tres días ya le estás contestando",
-      "• No duermes bien, y cuando duermes te despiertas pensando en él",
-      "• Revisas su última conexión, sus estados, con quién habla",
-      "• Tienes una angustia en el pecho que no se te quita con nada",
-      "",
-      "Es este jueves a las 8, en vivo con él. Son 25.000, pago único.",
-      "",
-      "https://historiasdelamente.com/volver-a-mi",
-      "",
       "Ahí la ves completa ✨",
-    ].join("\n");
+    ].join("\n\n");
 
-    expect(auditarClase(mensaje, LUNES_27).hallazgos).toHaveLength(0);
+    const globos = partirEnGlobos(aplicarFormato(cuatro));
+    expect(globos).toHaveLength(3);
+    expect(globos).toContain("https://historiasdelamente.com/volver-a-mi");
+    // Las dos frases de texto viajan juntas en un globo, y no se pierde ninguna.
+    const todo = globos.join(" ");
+    expect(todo).toContain("Uf, nueve años.");
+    expect(todo).toContain("Son 25.000, pago único.");
+    expect(todo).toContain("Ahí la ves completa");
+  });
+
+  it("un link en mitad de la frase no deja una preposición colgando", () => {
+    // Salió en la auditoría real contra el modelo: *"le envías el comprobante y
+    // tu correo por WhatsApp a para que te dé acceso"*. Al aislar la URL, el
+    // "a" que la anunciaba se quedó pegado a lo que venía después.
+    const globos = partirEnGlobos(
+      "Luego le envías el comprobante y tu correo a https://wa.me/573001681053 para que te dé acceso.",
+    );
+
+    expect(globos).toEqual([
+      "Luego le envías el comprobante y tu correo para que te dé acceso.",
+      "https://wa.me/573001681053",
+    ]);
+  });
+
+  it("pero el link al final de la frase se queda donde estaba", () => {
+    const globos = partirEnGlobos("Aquí aseguras tu lugar:\n\nhttps://historiasdelamente.com/volver-a-mi");
+    expect(globos.at(-1)).toContain("historiasdelamente.com/volver-a-mi");
+    expect(globos.join(" ")).toContain("Aquí aseguras tu lugar");
+  });
+
+  it("con varios links, el texto se junta y cada link conserva su globo", () => {
+    // El caso del cierre por Nequi: número de cuenta + WhatsApp de Javier +
+    // la página. Ninguna de las tres cosas se puede caer.
+    const nequi = [
+      "Son 25.000, pago único.",
+      "Manda el pago por Nequi al 311 632 9202, a nombre de Javier Vieira.",
+      "https://wa.me/573001681053",
+      "Ese segundo número es su WhatsApp: uno recibe el pago y en el otro te atiende él.",
+      "https://historiasdelamente.com/volver-a-mi",
+    ].join("\n\n");
+
+    const globos = partirEnGlobos(aplicarFormato(nequi));
+    expect(globos).toHaveLength(3);
+
+    const todo = globos.join(" ");
+    expect(todo).toContain("311 632 9202");
+    expect(todo).toContain("uno recibe el pago y en el otro te atiende él");
+    expect(globos.some((g) => g.includes("wa.me/573001681053"))).toBe(true);
+    expect(globos.some((g) => g.includes("volver-a-mi"))).toBe(true);
+  });
+
+  it("recortar NUNCA se come el link, aunque venga de último", () => {
+    const conLinkAlFinal = [
+      "Uf, nueve años.",
+      "Eso exacto es lo que se trabaja el jueves.",
+      "Es a las 8 de la noche y dura tres horas.",
+      "Son 25.000, pago único.",
+      "https://historiasdelamente.com/volver-a-mi",
+    ].join("\n\n");
+
+    const globos = partirEnGlobos(aplicarFormato(conLinkAlFinal));
+    expect(globos.length).toBeLessThanOrEqual(3);
+    expect(globos).toContain("https://historiasdelamente.com/volver-a-mi");
+  });
+
+  it("los dos links de la vía Nequi sobreviven al recorte", () => {
+    // Ella necesita los dos: el WhatsApp de Javier para el comprobante y la
+    // página por si prefiere tarjeta. Perder uno de los dos es perder el pago.
+    const conDos = [
+      "Le mandas 25.000 por Nequi al 311 632 9202, a nombre de Javier Vieira.",
+      "Después el comprobante y tu correo aquí:",
+      "https://wa.me/573001681053",
+      "Y si prefieres tarjeta, es por acá:",
+      "https://historiasdelamente.com/volver-a-mi",
+    ].join("\n\n");
+
+    const globos = partirEnGlobos(aplicarFormato(conDos));
+    expect(globos.length).toBeLessThanOrEqual(3);
+    expect(globos.some((g) => g.includes("wa.me/573001681053"))).toBe(true);
+    expect(globos.some((g) => g.includes("volver-a-mi"))).toBe(true);
+  });
+
+  it("marca las dos vías de pago juntas — es lo que apelmaza el cierre", () => {
+    // Con dos links, a ella le quedan DOS globos ocupados por links y UNO para
+    // todo el texto: las tres frases se le juntan en un ladrillo. Y encima la
+    // pone a escoger camino justo cuando iba a pagar.
+    const dosVias = [
+      "Manda 25.000 por Nequi al 311 632 9202, a nombre de Javier Vieira.",
+      "https://wa.me/573001681053",
+      "Y si prefieres tarjeta:",
+      "https://historiasdelamente.com/volver-a-mi",
+    ].join("\n\n");
+
+    expect(auditarClase(dosVias, LUNES_27).hallazgos.map((h) => h.tipo)).toContain("dos_vias_de_pago");
+
+    // Una sola vía no dispara nada.
+    const unaVia = "Manda 25.000 por Nequi al 311 632 9202.\n\nhttps://wa.me/573001681053";
+    expect(auditarClase(unaVia, LUNES_27).hallazgos.map((h) => h.tipo)).not.toContain("dos_vias_de_pago");
+  });
+
+  it("el blindaje marca los mensajes de más de tres globos", () => {
+    const cinco = [
+      "Hola, soy Paula.",
+      "Trabajo con Javier Vieira.",
+      "La clase es el jueves.",
+      "Son 25.000.",
+      "Te espero 💛",
+    ].join("\n\n");
+
+    expect(auditarClase(cinco, LUNES_27).hallazgos.map((h) => h.tipo)).toContain("demasiado_largo");
   });
 });
 

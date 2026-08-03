@@ -7,7 +7,7 @@ import {
   motivoHandoff,
 } from '@/lib/whatsapp/blindaje';
 import { APEGO_DETOX, CLASE_JUEVES, precioApego, proximoEncuentro } from '@/lib/whatsapp/programa';
-import { buildSystemPrompt } from '@/lib/whatsapp/paula';
+import { DOLORES_DENTRO, DOLORES_FUERA, buildSystemPrompt, preguntaEntradaPara } from '@/lib/whatsapp/paula';
 
 // Viernes 31 de julio de 2026, 10:00 AM Colombia. El lanzamiento de Apego Detox
 // está vivo (termina el 15 de agosto), así que el precio del día es $20.
@@ -294,16 +294,17 @@ describe('el prompt que se arma en cada turno', () => {
     // El prompt se reescribió de cero el 2026-08-02: ya no es un reglamento de
     // prohibiciones, arranca por QUIÉN ES ELLA. Lo que se exige aquí es que
     // sigan estando las cuatro piezas que sostienen todo lo demás.
-    expect(p).toContain('A QUIÉN LE ESTÁS ESCRIBIENDO');
+    expect(p).toContain('QUIÉN TE ESCRIBE');
+    expect(p).toContain('CÓMO ESCRIBES');
     expect(p).toContain('LO QUE NO HACES NUNCA');
     expect(p).toContain('LO QUE PAULA NO PUEDE DECIR NUNCA');
     expect(p).toContain('CUÁNDO PASA A JAVIER');
   });
 
   // El primer turno recibe un prompt DISTINTO. No es una regla más dentro del
-  // mismo texto: pedírselo no bastaba, mini mandaba las viñetas igual porque
-  // las tenía renderizadas ahí mismo. La única forma de que no las mande es
-  // que no las vea.
+  // mismo texto: pedírselo no bastaba, mini soltaba el precio igual porque lo
+  // tenía renderizado ahí mismo. La única forma de que no lo mande es que no
+  // lo vea.
   const entrada = () =>
     buildSystemPrompt(usuaria, '', '+573001112233', {
       ahora: VIERNES_31,
@@ -311,40 +312,142 @@ describe('el prompt que se arma en cada turno', () => {
       esPrimerTurno: true,
     });
 
-  it('en el PRIMER turno solo va la entrada: sin viñetas, sin precio, sin link', () => {
+  it('en el PRIMER turno solo va la entrada: sin dolores, sin precio, sin link', () => {
     const p = entrada();
-    expect(p).toContain('ESTE ES TU PRIMER MENSAJE');
-    expect(p).toContain('¿Te pasa que sientes alivio cuando él no está, y después te sientes mal por sentirlo?');
-    // Las viñetas NO pueden estar: lo que el modelo ve, lo usa.
-    expect(p).not.toMatch(/^• .+$/m);
+    expect(p).toContain('ES TU PRIMER MENSAJE');
+    // La pregunta rota por mujer, así que se compara con la que le toca a ELLA
+    // y no con una frase escrita a mano: si no, cambiar el banco rompe la prueba
+    // por un motivo que no es el que importa.
+    expect(p).toContain(preguntaEntradaPara(usuaria.manychat_id));
     expect(p).not.toContain('YA TE CONTESTÓ');
     // El link sí sigue en el bloque del reloj (es la fuente de verdad y el
     // blindaje lo repara), pero la entrada lo tiene prohibido explícitamente.
-    expect(p).toContain('En este mensaje NO va:');
+    expect(p).toContain('Aquí NO va:');
   });
 
   it('del SEGUNDO turno en adelante ya no aparece la entrada', () => {
     const p = prompt('clase');
-    expect(p).not.toContain('ESTE ES TU PRIMER MENSAJE');
+    expect(p).not.toContain('ES TU PRIMER MENSAJE');
     expect(p).toContain('YA TE CONTESTÓ');
-    expect(p).toMatch(/^• .+$/m);
     expect(p).toContain(CLASE_JUEVES.landing);
   });
 
-  it('lleva las DOS listas de dolores, la de adentro y la de afuera', () => {
-    // A la que sigue viviendo con él, "revisas su última conexión" no le dice
-    // nada: él duerme al lado. Mandarle la lista equivocada le confirma que
-    // esto es un mensaje en serie.
+  // ⚠️ 2026-08-03: esta prueba comprobaba lo contrario — que el prompt trajera
+  // las DOS listas de cuatro dolores. Ahora trae UN dolor de cada banco y en
+  // prosa, y eso no es cosmética: con cuatro delante, mini los pone en columna
+  // por mucho que se le prohíba. Con uno, lo único que puede hacer es escribir
+  // una frase. Si algún día vuelve a aparecer un "•" aquí, vuelve el folleto.
+  it('NO le pone ni una viñeta delante al modelo — es lo que la hacía copiarlas', () => {
+    // El "•" es el carácter exacto que Paula copiaba al chat, así que es el que
+    // no puede aparecer en ninguna parte de lo que ella lee.
+    for (const p of [prompt('clase'), entrada(), prompt('apego')]) {
+      expect(p).not.toContain('•');
+    }
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // EL BANCO DE PREGUNTAS DE ENTRADA
+  //
+  // Es la única frase que ella lee antes de decidir si contesta o se va, y es
+  // la más fácil de estropear después: alguien pega una que "suena bien" y se
+  // lleva por delante una regla que costó una auditoría entera descubrir. Esto
+  // no juzga si la frase vende —eso no lo puede medir un test— sino que ninguna
+  // rompa lo que no se puede romper.
+  // ═══════════════════════════════════════════════════════════════════════════
+  describe('el banco de preguntas de entrada', () => {
+    // Un ID cualquiera devuelve una del banco; recorriendo muchos salen todas.
+    const banco = [...new Set(
+      Array.from({ length: 200 }, (_, i) => preguntaEntradaPara(`mujer-${i}`)),
+    )];
+
+    it('todas caben en un globo de WhatsApp y son una pregunta', () => {
+      for (const q of banco) {
+        expect(q.length, `«${q}» tiene ${q.length} caracteres`).toBeLessThanOrEqual(160);
+        expect(q, `«${q}» no termina en pregunta`).toMatch(/\?$/);
+      }
+    });
+
+    it('ninguna diagnostica a su pareja — a él nadie lo ha evaluado', () => {
+      // Nombrar el tema en abstracto se puede; decirle que SU hombre es
+      // narcisista es lo que expone legalmente al psicólogo.
+      for (const q of banco) {
+        expect(q, `«${q}» le diagnostica el marido`).not.toMatch(
+          /\b(tu|su)\s+(pareja|esposo|marido|novio|ex)\s+(es|era)\b|\bes\s+un\s+narcisista\b|\bnarcisista\s+que\s+tienes\b/i,
+        );
+      }
+    });
+
+    it('ninguna la diagnostica a ella, ni le dice qué hacer con su vida', () => {
+      for (const q of banco) {
+        expect(q, `«${q}» la diagnostica`).not.toMatch(
+          /\b(tienes|sufres|padeces)\s+(ansiedad|depresi[óo]n|trauma|dependencia)|trauma\s+bonding|codependen/i,
+        );
+        // "déjalo" como consejo. "querer dejarlo" (algo que ella ya quiere) sí vale.
+        expect(q, `«${q}» le dice qué hacer`).not.toMatch(
+          /\b(d[ée]jalo|ya\s+es\s+hora\s+de\s+dejarlo|den[úu]ncialo|vuelve\s+con\s+[ée]l|m[úu]date)\b/i,
+        );
+        expect(q, `«${q}» usa "loca"`).not.toMatch(/\bloca\b/i);
+      }
+    });
+
+    it('ninguna suena a coach, a vendedor ni a formulario', () => {
+      for (const q of banco) {
+        expect(q, `«${q}» suena a coach`).not.toMatch(
+          /\b(sanar|sanaci[óo]n|empoderar|tu\s+mejor\s+versi[óo]n|reinventar|merecerte|brillar|guerrera|reina|tu\s+proceso|transformaci[óo]n|abundancia)\b/i,
+        );
+        expect(q, `«${q}» suena a vendedor`).not.toMatch(
+          /\b(oferta|promoci[óo]n|aprovecha|no\s+te\s+lo\s+pierdas|cupos?|inversi[óo]n|oportunidad\s+[úu]nica)\b/i,
+        );
+        expect(q, `«${q}» es un formulario`).not.toMatch(
+          /en\s+qu[ée]\s+te\s+puedo\s+ayudar|cu[ée]ntame\s+tu\s+caso|qu[ée]\s+te\s+est[áa]\s+pasando|qu[ée]\s+es\s+lo\s+que\s+m[áa]s\s+te\s+pesa/i,
+        );
+      }
+    });
+
+    it('ninguna psicoeduca ni promete un resultado', () => {
+      for (const q of banco) {
+        expect(q, `«${q}» psicoeduca`).not.toMatch(
+          /dopamina|cortisol|sistema\s+nervioso|refuerzo\s+intermitente|no\s+es\s+amor,?\s+es/i,
+        );
+        expect(q, `«${q}» promete resultado`).not.toMatch(
+          /\bvas\s+a\s+(sanar|estar\s+bien|lograrlo)\b|en\s+\d+\s+(d[íi]as|semanas|meses)/i,
+        );
+      }
+    });
+
+    it('ninguna invita a la clase todavía, ni suelta precio o link', () => {
+      // La entrada es enganche. La clase, el precio y el link son del mensaje 2.
+      for (const q of banco) {
+        expect(q, `«${q}» invita antes de tiempo`).not.toMatch(
+          /te\s+espero|jueves|clase|25\.000|120\s+pesos|\d+\s*usd|https?:\/\//i,
+        );
+      }
+    });
+  });
+
+  it('la regla de forma va escrita con números, no como una sugerencia', () => {
     const p = prompt('clase');
-    expect(p).toContain('SI TODAVÍA ESTÁ CON ÉL');
-    expect(p).toContain('SI YA LO DEJÓ');
-    expect(p).toContain('No las mezcles');
+    expect(p).toContain('Máximo TRES mensajes');
+    expect(p).toContain('160 caracteres');
+    expect(p).toContain('Nunca una lista');
+  });
+
+  it('le da UN dolor de cada banco, en prosa, y le dice cuál usar', () => {
+    const p = prompt('clase');
+    expect(p).toContain('si TODAVÍA está con él');
+    expect(p).toContain('si YA lo dejó');
+    expect(p).toContain('nunca en lista');
+    // Exactamente uno de cada banco: si aparecieran dos, vuelve la columna.
+    const dentro = DOLORES_DENTRO.filter((d) => p.includes(d));
+    const fuera = DOLORES_FUERA.filter((d) => p.includes(d));
+    expect(dentro).toHaveLength(1);
+    expect(fuera).toHaveLength(1);
   });
 
   it('si no sabe el país, lo pregunta en el mensaje 2 y dice para qué', () => {
     // De ahí sale si le toca Nequi o tarjeta. Sin teléfono no hay país.
     const sinPais = buildSystemPrompt(usuaria, '', '', { ahora: VIERNES_31, escalon: 'clase' });
-    expect(sinPais).toContain('NO sabes de qué país te escribe');
+    expect(sinPais).toContain('No sabes de qué país te escribe');
     expect(sinPais).toContain('es para decirte cómo pagas');
 
     // Y si el número ya lo dice, no se lo pregunta: eso delata al formulario.
@@ -352,14 +455,13 @@ describe('el prompt que se arma en cada turno', () => {
     expect(conPais).toContain('no se lo preguntes');
   });
 
-  it('a dos mujeres distintas les toca una lista de dolores distinta', () => {
-    // Con una lista fija, mini se la copia igual a todas y se nota el bot.
-    const vinetas = (id: string) =>
-      buildSystemPrompt({ ...usuaria, manychat_id: id }, '', '', { ahora: VIERNES_31 })
-        .split('\n')
-        .filter((l) => l.startsWith('• '))
-        .join('|');
-    expect(vinetas('mujer-a')).not.toBe(vinetas('mujer-b'));
+  it('a dos mujeres distintas les toca un dolor distinto', () => {
+    // Con un dolor fijo, mini se lo copia igual a todas y se nota el bot.
+    const dolores = (id: string) => {
+      const p = buildSystemPrompt({ ...usuaria, manychat_id: id }, '', '', { ahora: VIERNES_31 });
+      return DOLORES_DENTRO.filter((d) => p.includes(d)).join('|');
+    };
+    expect(dolores('mujer-a')).not.toBe(dolores('mujer-b'));
   });
 
   it('a quien todavía no ha entrado NO le da la fecha del próximo encuentro', () => {

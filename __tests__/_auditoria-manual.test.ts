@@ -8,6 +8,13 @@
  *
  * Así se cazaron: el folleto de 5 globos, los "15 módulos" que no existen, el
  * "¿quieres que te cuente más?" y el falso handoff de "¿y si no me funciona?".
+ *
+ * Y en la reforma del 2026-08-03, tres cosas que NINGUNA prueba unitaria vio:
+ * el recorte a 3 globos se comía la frase que explica por qué hay dos números
+ * de teléfono; al aislar un link a mitad de frase quedaba una preposición
+ * colgando ("por WhatsApp a para que te dé acceso"); y mandar las DOS vías de
+ * pago juntas dejaba un solo globo para todo el texto. Correrlo es la única
+ * forma de ver el mensaje como le llega a ella.
  */
 import fs from 'fs';
 import path from 'path';
@@ -15,6 +22,7 @@ import { describe, it, expect } from 'vitest';
 
 import { buildSystemPrompt, callOpenRouter, type WaUser } from '@/lib/whatsapp/paula';
 import { auditarRespuesta, instruccionCorreccion, motivoHandoff, instruccionHandoff, quitarVentaEnCrisis } from '@/lib/whatsapp/blindaje';
+import { aplicarFormato } from '@/lib/whatsapp/formato';
 import { normalizarNegritas, partirEnGlobos } from '@/lib/whatsapp/manychat';
 
 // .env.local a mano: un script de vitest no pasa por Next.
@@ -188,7 +196,10 @@ describe.skip('auditoría manual contra el modelo', () => {
       // morir, el mensaje sale sin links de venta, sin precio y sin viñetas,
       // diga lo que diga el modelo.
       const saneado = handoff === 'crisis' ? quitarVentaEnCrisis(texto) : texto;
-      const final = normalizarNegritas(saneado, 'whatsapp');
+      // `aplicarFormato` es la garantía por código de la forma (tres globos, cero
+      // listas) y en producción va aquí mismo. Si esta línea faltara, el informe
+      // enseñaría un mensaje que ella nunca recibe.
+      const final = aplicarFormato(normalizarNegritas(saneado, 'whatsapp'));
       const globos = partirEnGlobos(final);
       const largo = final.replace(/https?:\/\/\S+/g, '').replace(/\s+/g, ' ').trim().length;
 

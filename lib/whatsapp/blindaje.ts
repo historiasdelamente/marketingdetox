@@ -25,7 +25,17 @@
 // ============================================================================
 
 import type { Escalon } from './escalera';
-import { partirEnGlobos } from './manychat';
+import {
+  MAX_CHARS_GLOBO,
+  MAX_CHARS_TURNO,
+  MAX_GLOBOS,
+  largoSinLinks,
+  tieneVinetas,
+} from './formato';
+// Se mide con `globosDe`, NO con `partirEnGlobos`: esta última ya recorta a
+// tres, así que contando con ella un mensaje de cinco globos parecía de tres y
+// el reintento no se disparaba nunca.
+import { globosDe } from './manychat';
 import { APEGO_DETOX, CLASE_JUEVES, precioApego, proximaClase } from './programa';
 
 /** En qué está vendiendo Paula en este turno. */
@@ -51,44 +61,24 @@ export type Hallazgo = {
     | 'promesa_gratis'
     | 'modulos_inventados'
     | 'pide_permiso'
+    | 'vinetas'
+    | 'dos_vias_de_pago'
     | 'demasiado_largo';
   detalle: string;
 };
 
-// --- Largo máximo de un mensaje de WhatsApp ---
-// El link no cuenta en ninguno de los tres topes: se ve como una tarjeta, no
-// como texto.
+// --- El largo y la forma viven en formato.ts ---
 //
-// ⚠️ LO QUE DELATA UN FOLLETO ES EL GLOBO GIGANTE, NO EL TOTAL. El tope
-// anterior (300 chars en total) marcaba `demasiado_largo` justo en los dos
-// mensajes que más venden —el saludo con día, hora y link, y el cierre por
-// Nequi con sus tres pasos— y gastaba el único reintento en recortarlos: Paula
-// sonaba breve y dejaba a la mujer sin los datos con los que se decide.
-// Ahora el que manda es MAX_CHARS_GLOBO: tres frases cortas seguidas se leen
-// como una persona escribiendo; el mismo texto en un solo bloque, no. Así cabe
-// la información y el párrafo-folleto sigue prohibido.
-// Calibrado con salidas reales del modelo (`_auditoria-manual.test.ts`), no a
-// ojo: los mensajes buenos —los que cuentan de qué va la clase y dejan el
-// link— traen un bloque largo de ~225 y suman 300-430 en total. Los folletos
-// que hay que seguir cazando son un ÚNICO bloque de 340-385. De ahí los dos
-// números: el que separa a uno de otro es el del BLOQUE, no el del total.
-const MAX_CHARS_GLOBO = 230;
-// El total sube para que quepa la LISTA DE VIÑETAS del primer mensaje: cuatro
-// dolores de ~60 caracteres más la frase que los abre son ~280 de golpe, y esa
-// lista es justo lo que hace que ella se reconozca y se quede. El folleto no se
-// cuela por aquí: lo sigue frenando MAX_CHARS_GLOBO, porque un folleto es un
-// párrafo de corrido y una lista son líneas cortas.
-const MAX_CHARS_MENSAJE = 600;
-// Globos YA CONTADOS COMO LLEGAN (el link va aislado en el suyo). Un mensaje
-// bueno son 4-6: recoger lo que dijo, contarle de qué va, el link y el cierre.
-// Se queda por debajo de MAX_GLOBOS_ENVIO (7) para que el blindaje pida
-// reescribir ANTES de que el envío tenga que recortar. Lo que no se lee como
-// una persona es el bloque largo, y de eso se encarga MAX_CHARS_GLOBO.
-const MAX_GLOBOS = 6;
-
-function largoSinLinks(texto: string): number {
-  return texto.replace(URL_RE, '').replace(/\s+/g, ' ').trim().length;
-}
+// ⚠️ LOS TOPES BAJARON MUCHO EL 2026-08-03 (de 230/600/6 a 160/320/3), y el
+// motivo no es estético. Los números viejos se calibraron para que cupiera la
+// LISTA DE VIÑETAS —cuatro dolores más la frase que los abría— y esa lista es
+// justo lo que Javier mandó eliminar: *"me estás hablando con viñetas, le estás
+// haciendo como si fuera un flyer a las personas"*. Sin lista que proteger, el
+// tope vuelve a ser el de un chat: tres globos, 160 caracteres cada uno.
+//
+// Los tres números y la definición de "línea con forma de lista" viven en
+// `formato.ts`, que es también quien los HACE CUMPLIR después del modelo. Aquí
+// solo se miden para pedir un reintento: reescribir sale mejor que recortar.
 
 const TZ_COLOMBIA = 'America/Bogota';
 
@@ -246,6 +236,9 @@ const VARIANTE_CHECKOUT_CLASE = variante(CLASE_JUEVES.checkout);
 const VARIANTE_LANDING_APEGO = variante(APEGO_DETOX.landing);
 const VARIANTE_CHECKOUT_APEGO = variante(APEGO_DETOX.checkout);
 const VARIANTE_WA_JAVIER = /(?:https?:\/\/)?(?:www\.)?wa\.me\/57\s?300\s?168\s?1053(?:\?\S*)?/gi;
+
+/** "historiasdelamente.com/volver-a-mi" — para detectar la página en el texto. */
+const sinEsquemaClase = CLASE_JUEVES.landing.replace(/^https?:\/\//, '');
 
 /**
  * El WhatsApp de Javier con el mensaje ya escrito, distinto por escalón.
@@ -416,6 +409,20 @@ export function auditarRespuesta(
       const promesa = prometeGrabacion(out);
       if (promesa) hallazgos.push({ tipo: 'grabacion_inexistente', detalle: promesa });
     }
+
+    // 7b) LE MANDÓ LAS DOS VÍAS DE PAGO EN EL MISMO MENSAJE.
+    //
+    // Es el error que más ensucia el mensaje de cierre, y no se veía hasta que
+    // el tope bajó a tres globos: con dos links, a ella le quedan DOS globos
+    // ocupados por links y UNO para todo el texto, así que las tres frases se
+    // le apelmazan en un ladrillo. Además le da a escoger entre dos caminos
+    // justo cuando iba a pagar — "una sola vía por mujer" es la regla, y
+    // ofrecerle las dos la deja escogiendo en vez de pagando.
+    const llevaWhatsappJavier = /wa\.me\//i.test(out);
+    const llevaPagina = out.includes(sinEsquemaClase);
+    if (llevaWhatsappJavier && llevaPagina) {
+      hallazgos.push({ tipo: 'dos_vias_de_pago', detalle: 'el WhatsApp de Javier Vieira y la página, juntos' });
+    }
   } else {
     const precio = precioApego(ahora);
 
@@ -461,24 +468,33 @@ export function auditarRespuesta(
 
   out = out.replace(/[ \t]{2,}/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
 
-  // 12) Se le fue la mano con el largo. Va de último: se mide el texto ya limpio.
+  // 12) LE MANDÓ UNA LISTA. Es el error de forma más caro que existe en este
+  //     canal: una mujer que acaba de contar que lleva nueve años con alguien
+  //     recibe viñetas y entiende, sin pensarlo, que le llegó un folleto en
+  //     cadena. `formato.ts` lo arregla igual antes de enviarlo, pero se marca
+  //     aquí para gastar el reintento en que el modelo lo reescriba bien: una
+  //     frase escogida por él siempre queda mejor que la que salva el código.
+  if (tieneVinetas(out)) {
+    hallazgos.push({ tipo: 'vinetas', detalle: 'el mensaje trae líneas con forma de lista' });
+  }
+
+  // 13) Se le fue la mano con el largo. Va de último: se mide el texto ya limpio.
   const largo = largoSinLinks(out);
 
   // Dos medidas distintas, a propósito:
   //
   // · EL LARGO se mide sobre los BLOQUES QUE ESCRIBIÓ EL MODELO. Un folleto es
-  //   un párrafo de 340-385 caracteres de corrido, y eso solo se ve aquí: al
-  //   enviarse, `partirEnGlobos` lo trocea por frases y ya no se distingue de
-  //   un mensaje bien escrito.
+  //   un párrafo de corrido, y eso solo se ve aquí: al enviarse,
+  //   `partirEnGlobos` lo trocea por frases y ya no se distingue de un mensaje
+  //   bien escrito.
   // · EL NÚMERO se cuenta sobre los globos QUE ELLA VA A RECIBIR, con la misma
-  //   función del envío. El modelo escribe 6 líneas y el envío cose las cortas
-  //   en 4; contar las 6 marcaba como largos mensajes que llegan perfectos y
-  //   gastaba el reintento en encogerlos.
+  //   función del envío. El modelo escribe 4 líneas y el envío cose las cortas
+  //   en 3; contar las 4 marcaba como largos mensajes que llegan perfectos.
   const bloques = out.split(/\n+/).filter((g) => g.trim());
   const bloqueMasLargo = Math.max(0, ...bloques.map(largoSinLinks));
-  const globosReales = partirEnGlobos(out).length;
+  const globosReales = globosDe(out).length;
 
-  if (bloqueMasLargo > MAX_CHARS_GLOBO || largo > MAX_CHARS_MENSAJE || globosReales > MAX_GLOBOS) {
+  if (bloqueMasLargo > MAX_CHARS_GLOBO || largo > MAX_CHARS_TURNO || globosReales > MAX_GLOBOS) {
     hallazgos.push({
       tipo: 'demasiado_largo',
       detalle: `${largo} caracteres en ${globosReales} globos (el bloque más largo, ${bloqueMasLargo})`,
@@ -518,8 +534,12 @@ export function instruccionCorreccion(
         return `- Usaste "${h.detalle}". Prohibido inventar escasez. No hay cupos que se acaben.`;
       case 'psicoeducacion':
         return `- Escribiste "${h.detalle}": te pusiste a explicarle lo que le pasa por dentro, y eso NO lo haces por chat. Quita esa explicación. En su lugar: una frase humana y corta de que la escuchaste, y le abres la puerta.`;
+      case 'vinetas':
+        return `- Le mandaste una LISTA, y eso está prohibido en todos los mensajes sin excepción. Nada de •, guiones, números ni frases cortas en renglones seguidos: eso se ve como un folleto en cadena y es justo lo que la hace irse. Escoge UNA sola de esas líneas —la que más se parezca a lo que ELLA te contó— y escríbela como una frase normal, pegada a lo que ella dijo. Las demás se borran.`;
+      case 'dos_vias_de_pago':
+        return `- Mandaste ${h.detalle}. Va UNA sola vía por mensaje: si ella es de Colombia, el WhatsApp de Javier Vieira para el comprobante; si no, la página. Ofrecerle las dos la deja escogiendo en vez de pagando, y encima te come los dos globos que necesitas para el texto. Quita el link que sobre.`;
       case 'demasiado_largo':
-        return `- Te saliste del largo de WhatsApp (${h.detalle}). Pártelo en 3 globos (4 solo si uno es el link) separados por una línea en blanco, de una o dos frases cortas cada uno — ningún globo pasa de ~200 caracteres. Recorta el relleno, NO los datos: el día, la hora, el precio, los pasos del pago y el link se quedan.`;
+        return `- Te pasaste de largo: ${h.detalle}. El tope son **${MAX_CHARS_TURNO} caracteres de texto** repartidos en **${MAX_GLOBOS} globos como mucho, y el del link es uno de los tres** — o sea DOS globos de texto, de ${MAX_CHARS_GLOBO} caracteres cada uno como máximo, separados por una línea en blanco. Escoge los DOS datos que ella necesita ahora mismo y borra los demás: si preguntó el precio, el precio y el link; si va a pagar, los pasos del pago. El día, la hora, la duración, lo que incluye y cómo se paga NO caben todos en el mismo mensaje, y lo primero que sobra es la frase de despedida.`;
       case 'contenido_de_otro_producto':
         return `- Mencionaste "${h.detalle}", que es del programa Apego Detox y NO viene con esta clase. Quítalo. Solo prometes lo que pasa en las ${CLASE_JUEVES.duracionHoras} horas de la clase y lo que se lleva de ahí.`;
       case 'grabacion_inexistente':

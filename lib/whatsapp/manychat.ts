@@ -11,6 +11,8 @@
 // recordatorios en app/api/cron/recordatorios-apego).
 // ============================================================================
 
+import { MAX_CHARS_GLOBO, comprimirGlobos } from './formato';
+
 const API_URL = 'https://api.manychat.com/fb/sending/sendContent';
 
 export type Canal = 'whatsapp' | 'instagram';
@@ -31,43 +33,36 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const URL_RE = /https?:\/\/\S+/g;
 
 /**
- * Tope de globos por respuesta. Ningún link cae fuera.
+ * Tope de globos por respuesta: TRES, y el del link es uno de los tres.
  *
- * Va POR ENCIMA del tope del blindaje (que pide reescribir a 5 bloques): al
- * partir, cada URL se aísla en su propio globo, así que un mensaje aprobado de
- * 5 bloques con dos links llega a 7. Si este tope fuera igual al del blindaje,
- * el recorte se comería justo el globo del link — y sin link no hay venta.
+ * Este es el número que ella cuenta en la pantalla, así que es el que manda.
+ * Antes eran 7 —cinco bloques aprobados por el blindaje más los links
+ * aislados— y esa ráfaga es literalmente la queja de Javier el 2026-08-03:
+ * *"veo que mandas tres, cuatro mensajes seguidos, mandas el link, eso así no
+ * es"*. Cuatro mensajes de golpe no se leen como alguien contestando, se leen
+ * como un sistema descargando información encima de alguien.
+ *
+ * `formato.aplicarFormato` ya dejó tres bloques antes de llegar aquí; este
+ * tope es el último seguro, por si el corte por frases de un bloque largo
+ * volvió a multiplicarlos. El rescate de links de abajo garantiza que recortar
+ * nunca se coma el enlace: sin link no hay venta.
  */
-const MAX_GLOBOS_ENVIO = 7;
+const MAX_GLOBOS_ENVIO = 3;
 
 const tieneUrl = (texto: string) => /https?:\/\//.test(texto);
 
-/** Una línea de lista: "• Quieres dejarlo…", "- No duermes…". */
-const ES_VINETA = /^\s*[•·\-–*]\s+\S/;
-
 /**
- * Vuelve a pegar las listas de viñetas que el corte por líneas separó.
+ * Quita la palabrita que quedó colgando donde estaba el link.
  *
- * La lista de dolores del primer mensaje ("Esta clase es para ti si te pasa
- * algo de esto:" + 3 o 4 viñetas) es lo que hace que ella se reconozca y se
- * quede. Si sale como cinco mensajes de WhatsApp seguidos, deja de ser una
- * lista que se lee de un golpe y se convierte en una ráfaga de bot.
- *
- * Cada viñeta se pega a lo que tiene encima, así que la frase que abre la
- * lista viaja con ella. No se pega a un globo que sea un link: eso partiría
- * el enlace de su propio globo.
+ * "…le mandas el comprobante a" → "…le mandas el comprobante". Son las que
+ * anuncian lo que venía justo detrás: preposiciones, artículos y los "aquí /
+ * acá" de "aquí te lo dejo". También se lleva los dos puntos y la coma finales,
+ * que sin el link detrás no van a ninguna parte.
  */
-function agruparVinetas(globos: string[]): string[] {
-  const out: string[] = [];
-  for (const globo of globos) {
-    const previo = out[out.length - 1];
-    if (ES_VINETA.test(globo) && previo !== undefined && !tieneUrl(previo)) {
-      out[out.length - 1] = `${previo}\n${globo}`;
-      continue;
-    }
-    out.push(globo);
-  }
-  return out;
+const CONECTOR_FINAL = /[\s,:;]*\b(?:a|al|en|con|por|para|de|del|hacia|aqu[íi]|ac[áa]|este|esta|ese|esa|el|la|lo)\b[\s,:;]*$/i;
+
+function sinConectorFinal(texto: string): string {
+  return texto.replace(CONECTOR_FINAL, '').replace(/[\s,:;]+$/, '');
 }
 
 /**
@@ -179,7 +174,17 @@ function tiempoDeTecleo(texto: string): number {
  *   - si un globo quedó larguísimo, lo corta por frases
  *   - un link SIEMPRE va en su propio globo (así se ve limpio en WhatsApp)
  */
-export function partirEnGlobos(texto: string, maxChars = 150): string[] {
+/**
+ * Los globos TAL COMO SALDRÍAN, sin recortar.
+ *
+ * ⚠️ Existe separada de `partirEnGlobos` por un tropiezo real: cuando el tope
+ * de envío bajó a 3, el blindaje —que contaba con `partirEnGlobos`— dejó de
+ * poder detectar un mensaje de cinco globos, porque la función ya se los había
+ * recortado a tres antes de devolverlos. La comprobación quedó siempre en
+ * verde y el reintento nunca se disparaba. Quien quiera MEDIR usa esta; quien
+ * quiera ENVIAR usa la de abajo.
+ */
+export function globosDe(texto: string, maxChars = MAX_CHARS_GLOBO): string[] {
   // Se parte por CUALQUIER salto de línea, no solo por la línea en blanco. El
   // modelo mezcla los dos —a veces separa dos ideas con un `\n` suelto— y con
   // el corte antiguo esas dos ideas salían pegadas en un globo de 260
@@ -191,8 +196,30 @@ export function partirEnGlobos(texto: string, maxChars = 150): string[] {
     // Las URLs se AÍSLAN ANTES de cortar por frases. Si no, el punto de
     // "historiasdelamente.com" se lee como fin de oración y el link sale
     // partido en dos mensajes — con eso deja de ser clicable.
+    const urls = [...bloque.matchAll(/https?:\/\/\S+/g)];
+
+    // EL LINK EN MITAD DE LA FRASE. El modelo escribe "le mandas el comprobante
+    // a <link> para que te dé acceso", y al sacar la URL de ahí quedaban tres
+    // trozos: "…el comprobante a", el link, y "para que te dé acceso". En la
+    // auditoría del 2026-08-03 eso llegó al chat como *"por WhatsApp a para que
+    // te dé acceso"* — una preposición huérfana, que es justo el tipo de
+    // costura que delata a un bot. La frase se recompone entera y el link se va
+    // al final, que es donde lo pondría cualquiera escribiendo por WhatsApp.
+    if (urls.length === 1) {
+      const m = urls[0];
+      const inicio = m.index ?? 0;
+      const antes = bloque.slice(0, inicio).trim();
+      const despues = bloque.slice(inicio + m[0].length).trim();
+
+      if (antes && despues) {
+        piezas.push({ url: false, valor: `${sinConectorFinal(antes)} ${despues}`.trim() });
+        piezas.push({ url: true, valor: m[0] });
+        continue;
+      }
+    }
+
     let cursor = 0;
-    for (const m of bloque.matchAll(/https?:\/\/\S+/g)) {
+    for (const m of urls) {
       const antes = bloque.slice(cursor, m.index).trim();
       if (antes) piezas.push({ url: false, valor: antes });
       piezas.push({ url: true, valor: m[0] });
@@ -245,33 +272,21 @@ export function partirEnGlobos(texto: string, maxChars = 150): string[] {
     finales.push(globo);
   }
 
-  // Tope de seguridad: el largo real lo controla el blindaje (que pide
-  // reescribir, sin perder texto). Esto solo evita una ráfaga absurda.
-  // Las viñetas se reagrupan ANTES de contar: la lista es un globo, no cinco.
-  const limpios = agruparVinetas(finales).filter(Boolean);
-  if (limpios.length <= MAX_GLOBOS_ENVIO) return limpios;
+  return finales.filter(Boolean);
+}
 
-  // Recortar NUNCA puede tragarse un link: sin link no hay venta.
-  //
-  // ⚠️ Antes esto solo miraba si quedaba ALGÚN link dentro del recorte. Un
-  // mensaje con dos —el WhatsApp de Javier y la página— pasaba el chequeo con
-  // el primero y perdía el segundo en silencio: la mujer que acababa de decir
-  // "me convenciste" se quedaba sin la página donde pagar. Ahora se rescatan
-  // todos los links que se hayan quedado fuera, empujando texto, nunca links.
-  const recorte = limpios.slice(0, MAX_GLOBOS_ENVIO);
-  const perdidos = limpios.slice(MAX_GLOBOS_ENVIO).filter(tieneUrl);
-
-  for (const globo of perdidos) {
-    // Se pisa el último globo que NO lleve link; si todos llevan, se descarta
-    // (ya van todos los links que caben, y son más que suficientes).
-    for (let i = recorte.length - 1; i >= 0; i--) {
-      if (!tieneUrl(recorte[i])) {
-        recorte[i] = globo;
-        break;
-      }
-    }
-  }
-  return recorte;
+/**
+ * Los globos que se ENVÍAN de verdad: como mucho `MAX_GLOBOS_ENVIO`.
+ *
+ * El largo real lo controla el blindaje (que pide reescribir, sin perder texto)
+ * y la forma la garantiza `formato.ts`. Esto solo evita una ráfaga absurda si
+ * algo se les escapó a los dos.
+ */
+export function partirEnGlobos(texto: string, maxChars = MAX_CHARS_GLOBO): string[] {
+  // Se comprime FUSIONANDO, nunca tirando: los links conservan su globo y no se
+  // pierde ni una frase. El detalle de por qué —y qué se rompió cuando esto
+  // recortaba por el final— está en `formato.comprimirGlobos`.
+  return comprimirGlobos(globosDe(texto, maxChars), MAX_GLOBOS_ENVIO);
 }
 
 /**

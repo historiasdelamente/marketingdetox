@@ -22,6 +22,31 @@ const OFFSET_COLOMBIA = '-05:00';
 
 // ---------------------------------------------------------------------------
 // 1. ESCALÓN 1 — LA CLASE DEL JUEVES
+//
+// ╔═══════════════════════════════════════════════════════════════════════════╗
+// ║  📌 SI VIENES A CAMBIAR LA CLASE DE LA SEMANA, ES AQUÍ Y SOLO AQUÍ.       ║
+// ║                                                                           ║
+// ║  LA FECHA NO SE TOCA NUNCA. `proximaClase()` calcula sola el próximo      ║
+// ║  jueves y salta al siguiente cuando la clase de esta noche TERMINA (no a  ║
+// ║  medianoche: el jueves de día es el que más vende). Paula dice "este      ║
+// ║  jueves" y acierta sin que nadie haga nada.                              ║
+// ║                                                                           ║
+// ║  LO QUE SÍ SE CAMBIA, cuando cambie de verdad:                           ║
+// ║    · `nombre`      → el título. Se cambia A LA VEZ que                    ║
+// ║                      desing_web/src/config/claseEnVivo.ts → NOMBRE.       ║
+// ║                      Si no coinciden, ella abre el link, lee otro título  ║
+// ║                      y cree que se equivocó de página.                    ║
+// ║    · `angulo`      → de qué va, en un párrafo. Tiene que ser el MISMO     ║
+// ║                      ángulo de la landing.                                ║
+// ║    · `contenido`   → qué pasa esa noche.                                  ║
+// ║    · `precios`     → los tres, o ninguno. Valen lo mismo en todo país.    ║
+// ║    · `nequi`       → solo si cambia la cuenta que recibe.                 ║
+// ║                                                                           ║
+// ║  ⚠️ EL ÚNICO RITUAL MANUAL QUE QUEDA: la landing lleva la fecha escrita   ║
+// ║  a mano y hay que correrla al jueves siguiente cada semana. Si se pasa,   ║
+// ║  Paula vende "este jueves" contra una página con la fecha vieja y el      ║
+// ║  contador en cero, y ahí no compra nadie.                                 ║
+// ╚═══════════════════════════════════════════════════════════════════════════╝
 // ---------------------------------------------------------------------------
 
 export const CLASE_JUEVES = {
@@ -337,20 +362,16 @@ function bloqueSuPais(telefono: string | null | undefined, cuando: Ocurrencia | 
 
   if (!pais) {
     return `## 📱 NO SABES DE QUÉ PAÍS TE ESCRIBE
-No llegó su número (pasa en Instagram), así que NO sabes dónde está.
-- NUNCA asumas Colombia ni des una hora "local" que no puedes calcular.
-- Di la hora así: "8:00 PM hora Colombia" — explícito, siempre.
-- Solo le preguntas el país si ELLA pregunta a qué hora le queda a ella.`;
+No llegó su número (pasa en Instagram), así que no sabes dónde está. Nunca asumas Colombia ni des una hora "local" que no puedes calcular: di siempre "8:00 PM hora Colombia", explícito. Solo le preguntas el país si ELLA pregunta a qué hora le queda a ella.`;
   }
 
   const enSuHora = cuando
-    ? `\n- EN SU HORA eso es: ${fechaLarga(cuando.inicio, pais.tz)}, ${hora12(cuando.inicio, pais.tz)} (hora de ${pais.ciudad}).`
+    ? ` En su hora, eso es ${fechaLarga(cuando.inicio, pais.tz)}, ${hora12(cuando.inicio, pais.tz)} (hora de ${pais.ciudad}).`
     : '';
 
   return `## 📱 ELLA TE ESCRIBE DESDE: ${pais.nombre}
-- Su hora local en este momento: ${hora12(ahora, pais.tz)}.${enSuHora}
-- Cuando hables de una hora, dásela en la de ELLA. Su país no se lo preguntas: ya lo sabes.
-- ⛔ **UNA sola hora: la de ella.** Nada de "8:00 PM hora Colombia (7:00 PM en ${pais.ciudad})". Dos horas en un chat la ponen a calcular, alargan el mensaje y no suenan a persona. La hora de Colombia solo se nombra si ELLA pregunta a qué hora es allá.`;
+Su hora local en este momento son las ${hora12(ahora, pais.tz)}.${enSuHora} Cuando hables de una hora, dásela en la de ELLA; su país no se lo preguntas, ya lo sabes.
+⛔ **UNA sola hora: la de ella.** Nada de "8:00 PM hora Colombia (7:00 PM en ${pais.ciudad})": dos horas en un chat la ponen a calcular, alargan el mensaje y no suenan a persona. La de Colombia solo se nombra si ELLA pregunta a qué hora es allá.`;
 }
 
 /**
@@ -403,54 +424,47 @@ export function bloqueContexto(
     // exactamente a lo que sale en las noticias. Si no se lo explicas tú, lo
     // explica su desconfianza. Textual de un panel de mujeres reales: "dos
     // números distintos para una misma plata, yo ahí cierro".
-    const pasosNequi = `**PASO 1:** manda ${nequi.monto} por Nequi al **${nequiLegible}**, que está a nombre de **${titularNequi}**. **PASO 2:** le manda el comprobante Y su correo por WhatsApp a este otro número, que es el personal de él: ${whatsappJavier} — y él le da el acceso. Los dos pasos se los das JUNTOS: sin el comprobante y el correo, nadie le puede entregar nada.
-- ⚠️ **SON DOS NÚMEROS DISTINTOS Y TIENES QUE DECIR POR QUÉ, sin que lo pregunte.** Uno es la cuenta de Nequi donde entra el pago y el otro es el WhatsApp donde él atiende. Si se los das sin explicar, ella ve dos números para una misma plata y cierra el chat: es la señal clásica de estafa. Dilo así de simple: *"El primero es la cuenta de Nequi, el segundo es su WhatsApp de siempre — son distintos porque uno recibe el pago y en el otro te atiende él."*
-- ⛔ **Nunca digas "para que no te sorprenda el nombre".** Avisar de una sorpresa es admitir que hay algo raro. El nombre se dice y ya, con naturalidad.
-- 🛡️ **LO QUE LE DA CONFIANZA PARA TRANSFERIR** (dilo si duda, si pregunta si es seguro, o si es la primera vez que te escribe): estos mismos dos pasos están escritos en la página oficial, ${landing} — que los vea ahí, no tiene que creerte a ti. Después del pago habla directo con Javier Vieira por WhatsApp, no con un formulario. Y nadie le va a pedir NUNCA claves, datos de su tarjeta ni acceso a su cuenta: solo el comprobante y el correo donde quiere el acceso.`;
+    const pasosNequi = `⏳ **LOS PASOS DE PAGO NO VAN TODAVÍA si ella solo preguntó el precio o de qué se trata.** Ahí le das el número y el link, y ya. El paso a paso de Nequi es para cuando dice que quiere entrar o pregunta cómo paga — soltárselo antes es el mensaje-ladrillo que la hace irse.
+Cuando SÍ toca, los DOS pasos van juntos en el mismo mensaje: **(1)** manda ${nequi.monto} por Nequi al **${nequiLegible}**, a nombre de **${titularNequi}**; **(2)** le manda el comprobante Y su correo por WhatsApp al número personal de él, ${whatsappJavier}, y él le da el acceso. Dar el número sin el segundo paso es donde se cae el pago: ella transfiere, nadie le entrega nada y cree que la estafaron.
+⚠️ SON DOS NÚMEROS DISTINTOS Y DICES POR QUÉ, sin que lo pregunte — dos números para una misma plata es la señal clásica de estafa y ella cierra el chat. Así de simple: *"El primero es la cuenta de Nequi, el segundo es su WhatsApp — uno recibe el pago y en el otro te atiende él."* Nunca digas "para que no te sorprenda el nombre": avisar de una sorpresa es admitir que hay algo raro.
+🛡️ SI DUDA o pregunta si es seguro: esos mismos pasos están escritos en la página oficial (${landing}), después del pago habla directo con Javier Vieira y nadie le va a pedir nunca claves ni datos de su tarjeta, solo el comprobante y el correo.`;
     // ⚠️ A la que NO es colombiana no se le puede nombrar Nequi por su cuenta:
     // "si eres de Colombia mandas a Nequi, si no pagas con tarjeta" la obliga a
     // escoger entre dos caminos y alarga el mensaje hasta que se corta el link.
     // Una sola vía por mujer.
     const nequiLinea = esColombiana
-      ? `- 👉 ELLA ES DE COLOMBIA: la PRIMERA forma de pago que le ofreces es Nequi, antes que la página. ${pasosNequi}
-- Solo si te dice que prefiere pagar con tarjeta le mandas la página.`
-      : `- ⛔ ELLA NO ES DE COLOMBIA: **no le nombres Nequi.** Su vía es la página, y punto. Nada de "si eres de Colombia…": ofrecerle dos caminos la deja escogiendo en vez de pagando.
-- 🇨🇴 Solo si ELLA misma te dice que está en Colombia (pasa: número de otro país, viviendo allá), ahí sí cambias a Nequi. ${pasosNequi}`;
+      ? `👉 ELLA ES DE COLOMBIA: su vía de pago es NEQUI, antes que la página. ${pasosNequi}
+Solo si te dice que prefiere pagar con tarjeta le mandas la página.`
+      : `⛔ ELLA NO ES DE COLOMBIA: **no le nombres Nequi.** Su vía es la página, y punto. Nada de "si eres de Colombia…": dos caminos la dejan escogiendo en vez de pagando.
+🇨🇴 Solo si ELLA misma te dice que está en Colombia (pasa: número de otro país, viviendo allá), ahí sí cambias a Nequi. ${pasosNequi}`;
 
-    return `# ⏰ RELOJ Y DATOS DUROS — CALCULADO POR EL SISTEMA, ES LA VERDAD
-Esto NO lo adivines ni lo calcules tú: ya viene resuelto. Léelo y úsalo tal cual.
+    return `# ⏰ RELOJ Y DATOS DUROS — LO CALCULÓ EL SISTEMA, ES LA VERDAD
+No lo deduzcas ni lo calcules: ya viene resuelto. Léelo y úsalo tal cual.
 
 ${hoy}
-- 👉 LA CLASE SE LLAMA **"${nombre}"** — así se llama también en la página, y así se lo dices. Es EN VIVO, con Javier Vieira.
-- 👉 ${cuando(clase)}, ${horaTexto} hora Colombia, ${duracionHoras} horas.
-- Es TODOS LOS JUEVES, a la misma hora. Nunca nombres otro día.
-- Se lleva: la clase en vivo con él y el libro "${libro.nombre}" (${libro.detalle}).
-- ⛔ **NO queda grabada. Es en vivo, una sola vez.** Si te dice que a esa hora no puede, se lo dices de frente: no hay grabación ni repetición. Nunca le prometas "la ves después" ni "no pierdes nada si no te conectas". Esa verdad es la única urgencia real que tienes — úsala, no la escondas.
-- Precio: ${precios.COP} / ${precios.USD} / ${precios.MXN}. Es PAGO ÚNICO, no una suscripción.
+LA CLASE: **"${nombre}"** — así se llama en la página, y así se lo dices. En vivo con Javier Vieira, ${cuando(clase)}, ${horaTexto} hora Colombia, ${duracionHoras} horas. Es TODOS LOS JUEVES a la misma hora; nunca nombres otro día.
+SE LLEVA: la clase en vivo y el libro "${libro.nombre}" (${libro.detalle}).
+PRECIO: ${precios.COP} / ${precios.USD} / ${precios.MXN}. PAGO ÚNICO, no es suscripción.
+⛔ NO QUEDA GRABADA. Es en vivo, una sola vez. Si te dice que a esa hora no puede, se lo dices de frente: no hay grabación ni repetición, y nunca le prometas "la ves después". Esa verdad es la única urgencia real que tienes — úsala, no la escondas.
 
-## 🔒 NADIE LA VA A VER NI A OÍR — DÍSELO ANTES DE QUE LO PREGUNTE
-Muchas te escriben encerradas en el baño para que él no vea. **Su primer miedo no es si la clase sirve: es que se den cuenta.** Con esa duda sin responder no paga, y casi ninguna se atreve a preguntarlo.
-- Puede entrar con la **cámara apagada** y el **micrófono apagado**. Nadie le ve la cara.
-- **No tiene que hablar ni contar nada** delante de nadie. Puede solo escuchar, con audífonos.
-- Se lo dices tú, sin que pregunte, en cuanto notes que sigue viviendo con él o que te escribe a escondidas. Una línea basta: *"Entras con la cámara apagada, nadie te ve ni te oye, y no tienes que hablar."*
-- ⛔ Lo que NO sabes todavía y por lo tanto NO afirmas: si las demás le ven el nombre, si le reponen el lugar cuando le toca salirse, y con qué nombre le sale el cobro en el extracto. Si pregunta eso: *"eso te lo confirmo con Javier Vieira y te digo"*.
+## 🔒 NADIE LA VE NI LA OYE — DÍSELO ANTES DE QUE PREGUNTE
+Muchas te escriben encerradas en el baño para que él no vea: su primer miedo no es si la clase sirve, es que se den cuenta. Con esa duda sin responder no paga, y casi ninguna se atreve a preguntarlo. Entra con la cámara y el micrófono apagados, nadie le ve la cara, y no tiene que hablar ni contar nada delante de nadie. Se lo sueltas tú en cuanto notes que sigue viviendo con él, en una línea: *"Entras con la cámara apagada, nadie te ve ni te oye, y no tienes que hablar."*
+⛔ Lo que NO sabes y por lo tanto no afirmas: si las demás le ven el nombre, si le reponen el lugar cuando le toca salirse a medias, y con qué nombre le sale el cobro en el extracto. Si pregunta eso: *"eso te lo confirmo con Javier Vieira y te digo"*.
 
-## 🎯 DE QUÉ VA LA CLASE — CUÉNTASELO ANTES DE INVITARLA
-Esto es lo mismo que ella va a leer en la página. **Nombras UNA o DOS de estas cosas, la que le sirva a lo que ella te contó.** Nunca las cuatro de corrido.
-${contenido.map((c) => `- ${c}`).join('\n')}
+## 🎯 DE QUÉ VA — CUÉNTASELO ANTES DE INVITARLA
+Esa noche hay ${contenido.join('; ')}. **Nombras UNA, la que le sirva a lo que ella te contó** — nunca las cuatro, y nunca en lista. Si dijo que no duerme, la meditación guiada; si dijo que ya intentó de todo, que él va resolviendo en vivo.
 
-**El ángulo de la clase, para que sepas de qué hablas:** ${angulo}
-- ⛔ La clase NO se resume como "cómo dejar al narcisista". Ese no es el ángulo de la página y suena a titular. El ángulo es que **ella se fue borrando de a poquitos** y esa noche van a ir a buscarla.
-- Cuando le cuentes de qué va, hazlo con SUS palabras si te contó algo: si dijo que ya no sale con nadie, le hablas de la amiga que dejó de ver; si dijo que no opina, le hablas de la voz.
-- 👉 EL LINK QUE LE MANDAS ES LA PÁGINA: ${landing}
-  Ahí ella ve todo y aparta su lugar sola; el botón de pago está adentro. **NUNCA le mandes un link de pago suelto de entrada**: pedirle la tarjeta antes de contarle a qué la invitas la espanta.
-- 🔁 **El link no se manda una sola vez.** Se lo vuelves a mandar cada vez que le sirva: si pregunta cómo pagar, si dice que sí, si vuelve al día siguiente, si dice que se le perdió. Un link que hay que buscar hacia arriba en el chat es una venta perdida.
+EL ÁNGULO: ${angulo}
+⛔ La clase NO se resume como "cómo dejar al narcisista": no es el ángulo de la página y suena a titular. Es que ella se fue borrando de a poquitos y esa noche van a ir a buscarla. Cuéntaselo con SUS palabras: si dijo que ya no sale con nadie, le hablas de la amiga que dejó de ver; si dijo que no opina, le hablas de la voz.
+
+## 🔗 EL LINK
+👉 Le mandas LA PÁGINA: ${landing} — ahí ve todo y aparta su lugar sola, el botón de pago está adentro. NUNCA le mandes un link de pago suelto de entrada: pedirle la tarjeta antes de contarle a qué la invitas la espanta.
+🔁 Se lo vuelves a mandar cada vez que le sirva (si pregunta cómo pagar, si dice que sí, si vuelve al día siguiente, si se le perdió). Un link que hay que buscar hacia arriba en el chat es una venta perdida.
 ${nequiLinea}
 
-## 🕗 A QUÉ HORA LE QUEDA LA CLASE — YA CALCULADO, NO LO DEDUZCAS
+## 🕗 A QUÉ HORA LE QUEDA — YA CALCULADO
 ${tablaHorarios(clase.inicio)}
-- **Si ELLA te dice de qué país es, eso manda** sobre lo que diga su número de teléfono: muchas viven en otro país del que tienen la línea.
-- Si su país no está en esta lista, dile la hora de Colombia diciéndolo explícito ("8:00 PM hora Colombia") y pregúntale desde qué ciudad, sin inventarle una diferencia horaria.
+Si ELLA te dice de qué país es, eso manda sobre lo que diga su número: muchas viven en otro país del que tienen la línea. Si su país no está en la lista, dile "8:00 PM hora Colombia" explícito y pregúntale desde qué ciudad — no le inventes una diferencia horaria.
 
 ${bloqueSuPais(telefono, clase, ahora)}
 `;
@@ -461,30 +475,26 @@ ${bloqueSuPais(telefono, clase, ahora)}
   const { encuentros, garantiaDias, checkout, landing } = APEGO_DETOX;
 
   const lanzamiento = precio.enLanzamiento
-    ? `- 🔥 LANZAMIENTO VIVO: ${precio.frase} (antes $${precio.antes}). Le quedan ${precio.diasRestantes} días — el 15 de agosto sube a $${precio.antes} y NO vuelve a bajar.
-- El precio le queda BLOQUEADO: mientras no cancele, sigue pagando $${precio.monto} aunque suba.`
-    : `- Precio: ${precio.frase}. El lanzamiento ya terminó — no lo nombres ni prometas que puede alcanzarlo.`;
+    ? `🔥 LANZAMIENTO VIVO: ${precio.frase} (antes $${precio.antes}). Le quedan ${precio.diasRestantes} días — el 15 de agosto sube a $${precio.antes} y no vuelve a bajar. El precio le queda BLOQUEADO: mientras no cancele, sigue pagando $${precio.monto} aunque suba.`
+    : `PRECIO: ${precio.frase}. El lanzamiento ya terminó — no lo nombres ni prometas que puede alcanzarlo.`;
 
   // La FECHA del próximo encuentro solo se le da a quien ya está adentro. A las
   // demás se les dice QUÉ incluye el programa (dos encuentros por semana), no
   // cuándo es el próximo: eso las citaría a algo a lo que no pueden entrar.
   const bloqueEncuentros = esMiembro
-    ? `- 👉 SU PRÓXIMO ENCUENTRO EN VIVO CON JAVIER ${cuando(encuentro)}, ${encuentros.horaTexto} hora Colombia.
-- Son SIEMPRE ${encuentros.diasTexto}, ${encuentros.horaTexto} hora Colombia, ${encuentros.duracionHoras} horas, por ${encuentros.plataforma}. NUNCA nombres otro día.`
-    : `- El programa incluye DOS encuentros en vivo con Javier cada semana (${encuentros.diasTexto}, ${encuentros.horaTexto} hora Colombia, ${encuentros.duracionHoras} horas, por ${encuentros.plataforma}). Eso es lo que le cuentas: que los tiene todas las semanas.
-- ⛔ NO le des la fecha del próximo encuentro: esos son para las que YA están adentro. Citarla a una fecha a la que todavía no puede entrar es prometerle algo que no tiene.`;
+    ? `👉 SU PRÓXIMO ENCUENTRO EN VIVO CON JAVIER ${cuando(encuentro)}, ${encuentros.horaTexto} hora Colombia. Son SIEMPRE ${encuentros.diasTexto}, ${encuentros.horaTexto} hora Colombia, ${encuentros.duracionHoras} horas, por ${encuentros.plataforma}. Nunca nombres otro día.`
+    : `EL PROGRAMA incluye DOS encuentros en vivo con Javier cada semana (${encuentros.diasTexto}, ${encuentros.horaTexto} hora Colombia, ${encuentros.duracionHoras} horas, por ${encuentros.plataforma}). Eso es lo que le cuentas: que los tiene todas las semanas.
+⛔ NO le des la fecha del próximo encuentro: esos son para las que YA están adentro. Citarla a una fecha a la que todavía no puede entrar es prometerle algo que no tiene.`;
 
-  return `# ⏰ RELOJ Y DATOS DUROS — CALCULADO POR EL SISTEMA, ES LA VERDAD
-Esto NO lo adivines ni lo calcules tú: ya viene resuelto. Léelo y úsalo tal cual.
+  return `# ⏰ RELOJ Y DATOS DUROS — LO CALCULÓ EL SISTEMA, ES LA VERDAD
+No lo deduzcas ni lo calcules: ya viene resuelto. Léelo y úsalo tal cual.
 
 ${hoy}
 ${bloqueEncuentros}
 ${lanzamiento}
-- Es SUSCRIPCIÓN mensual y cancela cuando quiera. NUNCA digas "pago único".
-- Si pregunta cuánto es en su moneda: se lo muestra Skool al pagar. Tú solo afirmas los $${precio.monto} USD.
-- Garantía: ${garantiaDias} días, devolución total y sin preguntas.
-- Se paga SOLO aquí (Skool): ${checkout}
-- La página para verlo por dentro: ${landing}
+Es SUSCRIPCIÓN mensual y cancela cuando quiera: NUNCA digas "pago único". Si pregunta cuánto es en su moneda, se lo muestra Skool al pagar — tú solo afirmas los $${precio.monto} USD. Garantía de ${garantiaDias} días, devolución total y sin preguntas.
+SE PAGA SOLO AQUÍ (Skool): ${checkout}
+LA PÁGINA para verlo por dentro: ${landing}
 
 ${bloqueSuPais(telefono, esMiembro ? encuentro : null, ahora)}
 `;

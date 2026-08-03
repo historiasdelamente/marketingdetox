@@ -109,7 +109,7 @@ describe('Colombia paga por Nequi antes que por tarjeta', () => {
     // Mandarle plata por Nequi a alguien que conoció por WhatsApp da miedo. No
     // se resuelve insistiendo, se resuelve dándole con qué comprobar.
     const b = bloqueContexto(ahora, '+573001112233', 'clase');
-    expect(b).toContain('CONFIANZA PARA TRANSFERIR');
+    expect(b).toMatch(/SI DUDA o pregunta si es seguro/i);
     expect(b).toContain('página oficial');
     expect(b).toContain('claves');
   });
@@ -199,7 +199,7 @@ describe('la clase NO queda grabada — y se dice de frente', () => {
     // que ante "¿y si a esa hora no puedo?" se quedaba muda. Es la objeción
     // más común de toda clase en vivo y la única urgencia real que existe.
     const b = bloqueContexto(ahora, '+573001112233', 'clase');
-    expect(b).toContain('NO queda grabada');
+    expect(b).toMatch(/NO queda grabada/i);
     expect(b).toMatch(/nunca le prometas/i);
   });
 
