@@ -300,12 +300,56 @@ describe('el prompt que se arma en cada turno', () => {
     expect(p).toContain('CUÁNDO PASA A JAVIER');
   });
 
-  it('el primer mensaje lleva la lista de dolores en viñetas', () => {
-    // Es lo que ella lee para saber si esto es para ella. Sin la lista, el
-    // primer mensaje es "hay una clase el jueves" y no se queda nadie.
+  // El primer turno recibe un prompt DISTINTO. No es una regla más dentro del
+  // mismo texto: pedírselo no bastaba, mini mandaba las viñetas igual porque
+  // las tenía renderizadas ahí mismo. La única forma de que no las mande es
+  // que no las vea.
+  const entrada = () =>
+    buildSystemPrompt(usuaria, '', '+573001112233', {
+      ahora: VIERNES_31,
+      escalon: 'clase',
+      esPrimerTurno: true,
+    });
+
+  it('en el PRIMER turno solo va la entrada: sin viñetas, sin precio, sin link', () => {
+    const p = entrada();
+    expect(p).toContain('ESTE ES TU PRIMER MENSAJE');
+    expect(p).toContain('¿Todavía estás con él, o ya lo dejaste?');
+    // Las viñetas NO pueden estar: lo que el modelo ve, lo usa.
+    expect(p).not.toMatch(/^• .+$/m);
+    expect(p).not.toContain('YA TE CONTESTÓ');
+    // El link sí sigue en el bloque del reloj (es la fuente de verdad y el
+    // blindaje lo repara), pero la entrada lo tiene prohibido explícitamente.
+    expect(p).toContain('En este mensaje NO va:');
+  });
+
+  it('del SEGUNDO turno en adelante ya no aparece la entrada', () => {
     const p = prompt('clase');
-    expect(p).toContain('EL PRIMER MENSAJE');
+    expect(p).not.toContain('ESTE ES TU PRIMER MENSAJE');
+    expect(p).toContain('YA TE CONTESTÓ');
     expect(p).toMatch(/^• .+$/m);
+    expect(p).toContain(CLASE_JUEVES.landing);
+  });
+
+  it('lleva las DOS listas de dolores, la de adentro y la de afuera', () => {
+    // A la que sigue viviendo con él, "revisas su última conexión" no le dice
+    // nada: él duerme al lado. Mandarle la lista equivocada le confirma que
+    // esto es un mensaje en serie.
+    const p = prompt('clase');
+    expect(p).toContain('SI TODAVÍA ESTÁ CON ÉL');
+    expect(p).toContain('SI YA LO DEJÓ');
+    expect(p).toContain('No las mezcles');
+  });
+
+  it('si no sabe el país, lo pregunta en el mensaje 2 y dice para qué', () => {
+    // De ahí sale si le toca Nequi o tarjeta. Sin teléfono no hay país.
+    const sinPais = buildSystemPrompt(usuaria, '', '', { ahora: VIERNES_31, escalon: 'clase' });
+    expect(sinPais).toContain('NO sabes de qué país te escribe');
+    expect(sinPais).toContain('es para decirte cómo pagas');
+
+    // Y si el número ya lo dice, no se lo pregunta: eso delata al formulario.
+    const conPais = buildSystemPrompt(usuaria, '', '+573001112233', { ahora: VIERNES_31, escalon: 'clase' });
+    expect(conPais).toContain('no se lo preguntes');
   });
 
   it('a dos mujeres distintas les toca una lista de dolores distinta', () => {

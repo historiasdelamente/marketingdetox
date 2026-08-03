@@ -52,6 +52,41 @@ const CASOS: Array<{
 }> = [
   { etiqueta: '1. saludo pelado', historial: [], mensaje: 'hola' },
   { etiqueta: '1b. otro saludo pelado (debe abrir DISTINTO al 1)', historial: [], mensaje: 'hola', id: 'audit-otra' },
+  // El caso real de Facebook: el botón del anuncio manda esta frase exacta.
+  {
+    etiqueta: '1c. VIENE DE FACEBOOK (entrada, sin país)',
+    historial: [],
+    mensaje: '¡Hola! Quiero más información',
+    telefono: '',
+    id: 'audit-fb',
+  },
+  // Ella contesta la pregunta de la entrada: aquí van las viñetas DE ADENTRO.
+  {
+    etiqueta: '1d. RESPONDE "sigo con él" (viñetas de ADENTRO)',
+    historial: [
+      {
+        role: 'assistant',
+        content:
+          'Hola 💛 Soy Paula, trabajo con Javier Vieira, Psicólogo Especialista.\n\n¿Todavía estás con él, o ya lo dejaste?',
+      },
+    ],
+    mensaje: 'sigo con el, llevamos 9 años',
+    telefono: TELEFONO_CO,
+    id: 'audit-dentro',
+  },
+  // Y la contraria: viñetas DE AFUERA.
+  {
+    etiqueta: '1e. RESPONDE "ya lo dejé" (viñetas de AFUERA)',
+    historial: [
+      {
+        role: 'assistant',
+        content:
+          'Hola 💛 Soy Paula, trabajo con Javier Vieira, Psicólogo Especialista.\n\n¿Todavía estás con él, o ya lo dejaste?',
+      },
+    ],
+    mensaje: 'ya lo deje hace como un mes',
+    id: 'audit-fuera',
+  },
   { etiqueta: '2. pregunta el precio', historial: [], mensaje: 'hola, cuanto vale?' },
   {
     // El caso del pantallazo del 2026-08-02: Paula la invitó sin contarle nada,
@@ -124,6 +159,9 @@ describe.skip('auditoría manual contra el modelo', () => {
       const prompt = buildSystemPrompt(usuaria, 'tiktok_live', caso.telefono ?? TELEFONO_MX, {
         ahora: AHORA,
         handoff,
+        // Igual que producción: si no hay ningún mensaje de Paula arriba,
+        // este turno es la ENTRADA y recibe un prompt distinto.
+        esPrimerTurno: !caso.historial.some((m) => m.role === 'assistant'),
       });
       const mensajes = [...caso.historial, { role: 'user', content: caso.mensaje }];
       let cruda = await callOpenRouter(prompt, mensajes);
