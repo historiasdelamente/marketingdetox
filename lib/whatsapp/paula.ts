@@ -130,6 +130,69 @@ function elegirPara<T>(semilla: string, banco: readonly T[]): T {
 }
 
 /**
+ * Palabras sueltas, sin tildes ni signos, para comparar dos frases.
+ *
+ * Las vocales acentuadas se cambian a mano en vez de con `normalize('NFD')` y un
+ * rango de diacríticos combinantes: ese rango son caracteres invisibles dentro
+ * del código fuente, y cualquier editor o formateador que normalice el archivo
+ * se los lleva por delante sin que nadie lo note. Aquí lo que se lee es lo que
+ * hay.
+ */
+const SIN_TILDE: Record<string, string> = {
+  á: 'a', é: 'e', í: 'i', ó: 'o', ú: 'u', ü: 'u', ñ: 'n',
+};
+
+const palabrasDe = (texto: string): string[] =>
+  texto
+    .toLowerCase()
+    .replace(/[áéíóúüñ]/g, (c) => SIN_TILDE[c] ?? c)
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean);
+
+/**
+ * ¿Estas dos frases usan la MISMA imagen?
+ *
+ * Se compara por tríos de palabras seguidas, y solo cuentan los tríos que
+ * llevan alguna palabra larga: así "borras la mitad" salta y "y ya no" no.
+ */
+function compartenImagen(a: string, b: string): boolean {
+  const trios = (texto: string) => {
+    const p = palabrasDe(texto);
+    const out = new Set<string>();
+    for (let i = 0; i + 2 < p.length; i++) {
+      const trio = [p[i], p[i + 1], p[i + 2]];
+      if (trio.some((w) => w.length >= 5)) out.add(trio.join(' '));
+    }
+    return out;
+  };
+
+  const deA = trios(a);
+  for (const t of trios(b)) if (deA.has(t)) return true;
+  return false;
+}
+
+/**
+ * Elige del banco EVITANDO repetir la imagen de una frase que ella ya leyó.
+ *
+ * ⚠️ POR QUÉ HACE FALTA. La pregunta de entrada y el banco de dolores salen del
+ * mismo material —son las mismas mujeres y las mismas escenas— y se chocan: la
+ * entrada dice *"escribes el mensaje y borras la mitad para que no suene mal"* y
+ * el banco tiene *"escribes un mensaje, lo lees tres veces y borras la mitad
+ * para que no suene mal"*. Como las dos se eligen con la MISMA semilla, a una
+ * misma mujer le tocan las dos y en el mensaje siguiente le llega calcada la
+ * frase que acaba de leer. No hay nada que delate más rápido a un bot que
+ * repetirle a alguien lo que le dijiste hace treinta segundos.
+ *
+ * Si al filtrar no quedara nada, se usa el banco entero: es preferible una
+ * repetición a quedarse sin dolor que nombrar.
+ */
+function elegirEvitando(semilla: string, banco: readonly string[], evitar: string): string {
+  const libres = banco.filter((opcion) => !compartenImagen(opcion, evitar));
+  return elegirPara(semilla, libres.length > 0 ? libres : banco);
+}
+
+/**
  * LAS PREGUNTAS DE ENTRADA — lo único que ella lee antes de decidir si contesta.
  *
  * ⚠️ CADA UNA TIENE QUE HACER CUATRO COSAS A LA VEZ, y por eso son tan difíciles
@@ -153,7 +216,23 @@ function elegirPara<T>(semilla: string, banco: readonly T[]): T {
  * calcada y eso es lo que se siente como un bot.
  */
 const PREGUNTAS_ENTRADA = [
-  '¿Te pasa que sientes alivio cuando él no está, y después te sientes mal por sentirlo?',
+  // Entra por lo que ella ESCRIBE. Le sirve a la que hoy tiene el chat abierto
+  // con él. Punto flaco: la que casi no usa WhatsApp con él lee esto y piensa
+  // "a mí no" — por eso no puede ir sola.
+  'Escribes el mensaje y borras la mitad para que no suene mal. Eso se aprende en cierta relación, y aquí se trabaja. ¿Todavía lo haces, o era con el de antes?',
+
+  // Entra por lo que ella YA NO PIDE. Es la única que no supone ningún gesto,
+  // así que cubre a la que no usa el celular, a la mayor y a la que lleva años
+  // sin contacto. Y es la que mejor segmenta de las tres: "ya es tu ex" mide el
+  // ESTADO de la relación, no si él anda cerca — la divorciada que lo ve cada
+  // viernes en la entrega de los niños entra por el carril correcto.
+  'Hay cosas que ya ni pides, para no oír la respuesta que ya te sabes. Aquí eso se trabaja. ¿Sigues con él, o ya es tu ex?',
+
+  // Entra por lo que ella SE VOLVÍA cuando él llegaba. Cubre el vínculo
+  // presencial: la que convivió, la que lo vivía en la puerta de la casa y no
+  // en el teclado. Está en pasado a propósito, para que la que ya salió pueda
+  // leerla sin que le suene falso y llegue hasta la pregunta.
+  'Aprendiste a leerle la cara apenas llegaba y a saber qué versión tuya sacar. Aquí se trabaja justo eso. ¿Todavía te toca con él, o ya es historia?',
 ];
 
 /**
@@ -243,8 +322,8 @@ Dos globos y el link:
 
 Si te sirve, puedes nombrarle en esa misma frase algo de lo que ella vive. **Uno solo, en prosa, nunca en lista.** Este es el que le toca a ella hoy:
 
-*${elegirPara(semilla, DOLORES_DENTRO)}* ← si TODAVÍA está con él
-*${elegirPara(semilla, DOLORES_FUERA)}* ← si YA lo dejó
+*${elegirEvitando(semilla, DOLORES_DENTRO, pregunta)}* ← si TODAVÍA está con él
+*${elegirEvitando(semilla, DOLORES_FUERA, pregunta)}* ← si YA lo dejó
 
 Escoge el que corresponda a lo que ella te contó y **reescríbelo con tus palabras**, pegado a lo que ella dijo. No lo copies literal ni le mandes los dos: a la que vive con él, "revisas su última conexión" no le dice nada porque él duerme al lado.
 

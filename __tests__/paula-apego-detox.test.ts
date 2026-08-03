@@ -415,6 +415,60 @@ describe('el prompt que se arma en cada turno', () => {
       }
     });
 
+    it('hay más de una: mil mujeres no pueden recibir la misma frase', () => {
+      expect(banco.length).toBeGreaterThanOrEqual(3);
+    });
+
+    it('cada una ofrece las dos salidas, para que su respuesta diga si él sigue ahí', () => {
+      // Es el requisito que más se falla. Una pregunta de sí/no sobre una
+      // conducta ("¿todavía te pasa?") no sirve: la que salió hace ocho meses y
+      // todavía relee sus mensajes contesta "sí" y el sistema le manda el dolor
+      // de la que sigue adentro. Tiene que haber DOS ramas.
+      for (const q of banco) {
+        expect(q, `«${q}» no bifurca: un "no" seco deja a Paula sin siguiente movimiento`).toMatch(/,\s*o\b/);
+      }
+    });
+
+    // ⚠️ La pregunta de entrada y el banco de dolores salen del mismo material,
+    // así que se pisan: la entrada dice "borras la mitad para que no suene mal"
+    // y el banco tiene "lo lees tres veces y borras la mitad para que no suene
+    // mal". Como se eligen con la MISMA semilla, a una misma mujer le tocaban
+    // las dos y en el mensaje 2 le llegaba calcada la frase del mensaje 1.
+    it('el dolor del mensaje 2 nunca repite la imagen de la pregunta de entrada', () => {
+      const trios = (t: string) => {
+        const p = t
+          .toLowerCase()
+          .replace(/[áéíóúüñ]/g, (c) => ({ á: 'a', é: 'e', í: 'i', ó: 'o', ú: 'u', ü: 'u', ñ: 'n' })[c] ?? c)
+          .replace(/[^a-z0-9\s]/g, ' ')
+          .split(/\s+/)
+          .filter(Boolean);
+        const out = new Set<string>();
+        for (let i = 0; i + 2 < p.length; i++) {
+          const trio = [p[i], p[i + 1], p[i + 2]];
+          if (trio.some((w) => w.length >= 5)) out.add(trio.join(' '));
+        }
+        return out;
+      };
+
+      for (let i = 0; i < 300; i++) {
+        const id = `mujer-${i}`;
+        const p = buildSystemPrompt({ ...usuaria, manychat_id: id }, '', '+573001112233', {
+          ahora: VIERNES_31,
+          escalon: 'clase',
+        });
+        const pregunta = preguntaEntradaPara(id);
+        const dolores = [...DOLORES_DENTRO, ...DOLORES_FUERA].filter((d) => p.includes(d));
+
+        for (const dolor of dolores) {
+          const compartidos = [...trios(dolor)].filter((t) => trios(pregunta).has(t));
+          expect(
+            compartidos,
+            `${id}: el dolor «${dolor}» repite «${compartidos.join(', ')}» de su pregunta de entrada`,
+          ).toHaveLength(0);
+        }
+      }
+    });
+
     it('ninguna invita a la clase todavía, ni suelta precio o link', () => {
       // La entrada es enganche. La clase, el precio y el link son del mensaje 2.
       for (const q of banco) {
