@@ -62,29 +62,29 @@ const CASOS: Array<{
   },
   // Ella contesta la pregunta de la entrada: aquí van las viñetas DE ADENTRO.
   {
-    etiqueta: '1d. RESPONDE "sigo con él" (viñetas de ADENTRO)',
+    etiqueta: '1d. CONTESTA EN PRESENTE (viñetas de ADENTRO)',
     historial: [
       {
         role: 'assistant',
         content:
-          'Hola 💛 Soy Paula, trabajo con Javier Vieira, Psicólogo Especialista.\n\n¿Todavía estás con él, o ya lo dejaste?',
+          'Hola 💛 Soy Paula, trabajo con Javier Vieira, Psicólogo Especialista.\n\n¿Te pasa que sientes alivio cuando él no está, y después te sientes mal por sentirlo?',
       },
     ],
-    mensaje: 'sigo con el, llevamos 9 años',
+    mensaje: 'si, todos los dias… y despues me siento la peor. llevamos 9 años',
     telefono: TELEFONO_CO,
     id: 'audit-dentro',
   },
   // Y la contraria: viñetas DE AFUERA.
   {
-    etiqueta: '1e. RESPONDE "ya lo dejé" (viñetas de AFUERA)',
+    etiqueta: '1e. CONTESTA EN PASADO (viñetas de AFUERA)',
     historial: [
       {
         role: 'assistant',
         content:
-          'Hola 💛 Soy Paula, trabajo con Javier Vieira, Psicólogo Especialista.\n\n¿Todavía estás con él, o ya lo dejaste?',
+          'Hola 💛 Soy Paula, trabajo con Javier Vieira, Psicólogo Especialista.\n\n¿Te pasa que sientes alivio cuando él no está, y después te sientes mal por sentirlo?',
       },
     ],
-    mensaje: 'ya lo deje hace como un mes',
+    mensaje: 'si me pasaba, ya lo deje hace como un mes pero igual estoy mal',
     id: 'audit-fuera',
   },
   { etiqueta: '2. pregunta el precio', historial: [], mensaje: 'hola, cuanto vale?' },

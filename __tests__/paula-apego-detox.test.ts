@@ -314,7 +314,7 @@ describe('el prompt que se arma en cada turno', () => {
   it('en el PRIMER turno solo va la entrada: sin viñetas, sin precio, sin link', () => {
     const p = entrada();
     expect(p).toContain('ESTE ES TU PRIMER MENSAJE');
-    expect(p).toContain('¿Todavía estás con él, o ya lo dejaste?');
+    expect(p).toContain('¿Te pasa que sientes alivio cuando él no está, y después te sientes mal por sentirlo?');
     // Las viñetas NO pueden estar: lo que el modelo ve, lo usa.
     expect(p).not.toMatch(/^• .+$/m);
     expect(p).not.toContain('YA TE CONTESTÓ');
