@@ -41,7 +41,7 @@ describe('el conocimiento sale del documento, no del código', () => {
   it('carga el documento que escribió Javier', () => {
     const texto = cargarConocimiento();
     expect(texto).toContain('QUÉ ES APEGO DETOX');
-    expect(texto).toContain('LO QUE PAULA NO PUEDE DECIR NUNCA');
+    expect(texto).toContain('LO QUE PAULA NO DICE NUNCA');
     expect(texto).toContain('CUÁNDO PASA A JAVIER');
   });
 
@@ -52,11 +52,11 @@ describe('el conocimiento sale del documento, no del código', () => {
 
   it('lleva todo: precio, links, objeciones y prohibiciones', () => {
     const texto = conocimientoPara('apego');
-    expect(texto).toContain('PRECIO, PAGO Y GARANTÍA');
+    expect(texto).toContain('PRECIO Y PAGO');
     expect(texto).toContain(APEGO_DETOX.checkout);
     expect(texto).toContain('OBJECIONES');
     expect(texto).toContain('QUÉ INCLUYE');
-    expect(texto).toContain('LO QUE PAULA NO PUEDE DECIR NUNCA');
+    expect(texto).toContain('LO QUE PAULA NO DICE NUNCA');
     expect(texto).toContain('CUÁNDO PASA A JAVIER');
   });
 
@@ -64,7 +64,7 @@ describe('el conocimiento sale del documento, no del código', () => {
     // No es material de venta: es lo que contesta a la que la vio en un anuncio
     // viejo. Sin esto, Paula se queda muda o se la inventa.
     const texto = conocimientoPara('apego');
-    expect(texto).toContain('SI ELLA PREGUNTA POR LA CLASE DEL JUEVES');
+    expect(texto).toContain('SI PREGUNTA POR LA CLASE DEL JUEVES');
   });
 
   it('el bloque de la clase va AL FINAL, no arriba', () => {
@@ -72,7 +72,7 @@ describe('el conocimiento sale del documento, no del código', () => {
     // tiene que decir y volvería a nombrar la clase por su cuenta — que es
     // justo lo que se acaba de quitar.
     const texto = conocimientoPara('apego');
-    expect(texto.indexOf('SI ELLA PREGUNTA POR LA CLASE'))
-      .toBeGreaterThan(texto.indexOf('PRECIO, PAGO Y GARANTÍA'));
+    expect(texto.indexOf('SI PREGUNTA POR LA CLASE'))
+      .toBeGreaterThan(texto.indexOf('PRECIO Y PAGO'));
   });
 });

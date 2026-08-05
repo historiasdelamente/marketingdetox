@@ -378,7 +378,7 @@ describe('el prompt que se arma en cada turno', () => {
     expect(p).toContain('QUIÉN TE ESCRIBE');
     expect(p).toContain('CÓMO ESCRIBES');
     expect(p).toContain('LO QUE NO HACES NUNCA');
-    expect(p).toContain('LO QUE PAULA NO PUEDE DECIR NUNCA');
+    expect(p).toContain('LO QUE PAULA NO DICE NUNCA');
     expect(p).toContain('CUÁNDO PASA A JAVIER');
   });
 

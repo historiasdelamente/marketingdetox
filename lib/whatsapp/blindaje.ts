@@ -562,8 +562,21 @@ const SIN_TARJETA_RE = /\bno\s+(tengo|manejo|cuento\s+con|poseo)\s+(una\s+)?tarj
 // carácter de palabra, así que `\b` después de "golpeó" no casa nunca — es el
 // mismo tropiezo que ya está documentado arriba con "pagué". Una mujer que
 // escribe "anoche me golpeó" tiene que disparar esto sí o sí.
+/**
+ * LAS SEÑALES QUE PARAN LA VENTA.
+ *
+ * ⚠️ TIENE QUE CUBRIR LO MISMO QUE `03_protocolo_crisis.md`. Estaban desfasados:
+ * el protocolo listaba "ojalá no me despertara", "ya no quiero estar aquí",
+ * "sería mejor si no estuviera" y "no tiene sentido seguir", y el regex no. Eso
+ * lo salvaba el modelo porque tenía el protocolo entero delante en cada mensaje
+ * — y dejó de valer cuando el protocolo pasó a cargarse solo en crisis. Si se
+ * añade una señal al protocolo, se añade aquí el mismo día.
+ *
+ * Ante la duda, esta lista peca de ancha: un falso positivo cuesta una venta,
+ * un falso negativo cuesta otra cosa.
+ */
 const RIESGO_RE =
-  /me\s+peg(a|ó|o)|me\s+golpe(a|ó|o)|me\s+amenaz|me\s+va\s+a\s+matar|tengo\s+miedo\s+de\s+(lo\s+que\s+)?(me\s+)?(haga|hacerme)|me\s+quiero\s+morir|quiero\s+morirme|no\s+quiero\s+vivir|quitarme\s+la\s+vida|hacerme\s+da[ñn]o|quiero\s+desaparecer|matarme|suicid/i;
+  /me\s+peg(a|ó|o)|me\s+golpe(a|ó|o)|me\s+amenaz|me\s+va\s+a\s+matar|me\s+quiere\s+matar|tengo\s+miedo\s+de\s+(lo\s+que\s+)?(me\s+)?(haga|hacerme)|me\s+quiero\s+morir|quiero\s+morirme|no\s+quiero\s+vivir|no\s+quiero\s+seguir\s+viviendo|quitarme\s+la\s+vida|hacerme\s+da[ñn]o|da[ñn]arme|lastimarme|cortarme|quiero\s+desaparecer|matarme|suicid|mejor\s+(si\s+)?no\s+estuviera|ya\s+no\s+quiero\s+estar\s+aqu[íi]|ojal[áa]\s+no\s+(me\s+)?despert|no\s+despertar(me)?\s+m[áa]s|no\s+tiene\s+sentido\s+seguir|para\s+qu[ée]\s+seguir\s+viviendo|acabar\s+con\s+(todo|mi\s+vida)/i;
 
 /** ¿Ella dijo algo que obliga a parar la venta en este mismo turno? */
 export function hayRiesgo(mensaje: string): boolean {
