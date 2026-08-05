@@ -348,7 +348,58 @@ No llegó su número (pasa en Instagram) y ella no te lo ha dicho. Nunca asumas 
 
   return `## 📱 ELLA TE ESCRIBE DESDE: ${pais.nombre}
 Su hora local en este momento son las ${hora12(ahora, pais.tz)}.${enSuHora} Cuando hables de una hora, dásela en la de ELLA; su país no se lo preguntas, ya lo sabes.
-⛔ **UNA sola hora: la de ella.** Nada de "8:00 PM hora Colombia (7:00 PM en ${pais.ciudad})": dos horas en un chat la ponen a calcular, alargan el mensaje y no suenan a persona. La de Colombia solo se nombra si ELLA pregunta a qué hora es allá.`;
+⛔ **UNA sola hora: la de ella**, la que ya viene calculada arriba. No le pongas las dos —la de allá y la de acá— en el mismo mensaje: la ponen a calcular, alargan el globo y no suenan a persona. La de Colombia solo se nombra si ELLA pregunta a qué hora es allá.
+⛔ Y NUNCA le cambies la etiqueta a una hora: coger la de Colombia y llamarla "hora de ${pais.ciudad}" la hace llegar tarde a todo. Si la hora que vas a decir no está calculada aquí arriba, no la digas.`;
+}
+
+const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+
+/**
+ * EL HORARIO DE LOS TALLERES, EN LA SEMANA DE ELLA.
+ *
+ * ⚠️ POR QUÉ EXISTE. Sin esto, el prompt le daba "martes y jueves, 8:00 PM hora
+ * Colombia" y a la vez le ordenaba "una sola hora: la de ella". El modelo
+ * resolvía la contradicción de la peor forma posible: le cambiaba la etiqueta al
+ * número. A una mujer de México le decía **"8:00 PM hora México"**, que son las
+ * 8 PM de Colombia — o sea que habría llegado una hora tarde a cada taller. Se
+ * vio en una prueba real el 2026-08-05.
+ *
+ * Y EL DÍA TAMBIÉN SE MUEVE, que es lo que casi nadie ve: las 8 PM del martes en
+ * Colombia son las 3 de la MADRUGADA DEL MIÉRCOLES en Madrid. Decirle a una
+ * española "los martes a las 3 AM" la cita el día equivocado.
+ *
+ * Se calcula sobre una ocurrencia real (no sobre una tabla de offsets) para que
+ * el horario de verano de Chile, España o Estados Unidos salga solo.
+ */
+function horarioParaElla(inicio: Date, tz: string): { dias: string; hora: string; cambiaDia: boolean } {
+  const desplazamiento = diasDeCalendario(
+    new Date(`${fechaISO(inicio, TZ_COLOMBIA)}T12:00:00Z`),
+    new Date(`${fechaISO(inicio, tz)}T12:00:00Z`),
+    'UTC',
+  );
+
+  const suyos = APEGO_DETOX.encuentros.dias
+    .map((d) => DIAS[(d + desplazamiento + 7) % 7])
+    .join(' y ');
+
+  return { dias: suyos, hora: hora12(inicio, tz), cambiaDia: desplazamiento !== 0 };
+}
+
+/**
+ * En qué días de la semana le caen los talleres a ELLA.
+ *
+ * Lo usa el BLINDAJE para no marcar como inventado un día que es correcto en su
+ * país: a una mujer de Madrid le tocan miércoles y viernes, y exigirle "martes y
+ * jueves" sería mandarla el día equivocado.
+ */
+export function diasTallerPara(
+  ahora: Date,
+  telefono?: string | null,
+  paisIso?: string | null,
+): string[] {
+  const pais = paisDeElla(telefono, paisIso);
+  if (!pais) return APEGO_DETOX.encuentros.dias.map((d) => DIAS[d]);
+  return horarioParaElla(proximoEncuentro(ahora).inicio, pais.tz).dias.split(' y ');
 }
 
 /**
@@ -399,10 +450,26 @@ export function bloqueContexto(
   // La FECHA del próximo encuentro solo se le da a quien ya está adentro. A las
   // demás se les dice QUÉ incluye el programa (dos encuentros por semana), no
   // cuándo es el próximo: eso las citaría a algo a lo que no pueden entrar.
+  // EL HORARIO EN LA SEMANA DE ELLA, ya resuelto. Si no sabemos su país, se dice
+  // "hora Colombia" explícito — que es lo honesto — y se le pregunta de dónde es.
+  const suPais = paisDeElla(telefono, paisIso);
+  const suyo = suPais ? horarioParaElla(encuentro.inicio, suPais.tz) : null;
+
+  const horarioTexto = suyo
+    ? `**${suyo.dias}, ${suyo.hora} — ESA ES LA HORA DE ELLA, ya convertida.** Dísela así, sin nombrar la de Colombia.${
+        suyo.cambiaDia
+          ? `\n⚠️ OJO: en Colombia son ${encuentros.diasTexto}, pero por la diferencia horaria a ELLA le caen en ${suyo.dias}. El día que le dices es el SUYO — si le dices el de Colombia, se conecta el día equivocado.`
+          : ''
+      }`
+    : `${encuentros.diasTexto}, ${encuentros.horaTexto} **hora Colombia** — y como no sabes su país, se lo dices así de explícito y le preguntas de dónde te escribe. NUNCA le pongas la etiqueta de su país a la hora de Colombia.`;
+
   const bloqueEncuentros = esMiembro
-    ? `👉 SU PRÓXIMO ENCUENTRO EN VIVO CON JAVIER ${cuando(encuentro)}, ${encuentros.horaTexto} hora Colombia. Son SIEMPRE ${encuentros.diasTexto}, ${encuentros.horaTexto} hora Colombia, ${encuentros.duracionHoras} horas, por ${encuentros.plataforma}. Nunca nombres otro día.`
-    : `LOS TALLERES EN VIVO: ${encuentros.horasSemana} horas de acompañamiento cada semana con Javier Vieira (son dos, ${encuentros.diasTexto}, ${encuentros.horaTexto} hora Colombia, ${encuentros.duracionHoras} horas cada uno, por ${encuentros.plataforma}). Eso es lo que le cuentas: que los tiene TODAS las semanas.
-⛔ NO le des la fecha del próximo taller: esos son para las que YA están adentro. Citarla a una fecha a la que todavía no puede entrar es prometerle algo que no tiene.`;
+    ? `👉 SU PRÓXIMO ENCUENTRO EN VIVO CON JAVIER ${cuando(encuentro)}. Son SIEMPRE dos por semana, ${encuentros.duracionHoras} horas cada uno, por ${encuentros.plataforma}.
+🕗 CUÁNDO LE CAEN A ELLA: ${horarioTexto}`
+    : `LOS TALLERES EN VIVO: ${encuentros.horasSemana} horas de acompañamiento cada semana con Javier Vieira — son DOS, de ${encuentros.duracionHoras} horas cada uno, por ${encuentros.plataforma}. Eso es lo que le cuentas: que los tiene TODAS las semanas.
+🕗 QUÉ DÍAS Y A QUÉ HORA LE CAEN A ELLA: ${horarioTexto}
+👉 **Preguntar cuándo son es una pregunta de COMPRA, no de curiosidad**: está mirando si le cabe en la vida. Contéstale el día y la hora sin rodeos — esconderlo es perderla.
+⛔ Lo que NO le das es la FECHA del próximo, con su número y su mes: eso es de las que ya están adentro, y citarla a un día al que todavía no puede entrar es prometerle algo que no tiene. **El horario de cada semana SÍ; la fecha concreta NO.**`;
 
   return `# ⏰ RELOJ Y DATOS DUROS — LO CALCULÓ EL SISTEMA, ES LA VERDAD
 No lo deduzcas ni lo calcules: ya viene resuelto. Léelo y úsalo tal cual.

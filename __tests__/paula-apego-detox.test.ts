@@ -184,6 +184,33 @@ describe('blindaje — la clase del jueves ya no se vende', () => {
     expect(correccion).toContain(APEGO_DETOX.checkout);
   });
 
+  it('el día del taller se juzga en la zona de ELLA, no en la de Colombia', () => {
+    // ⚠️ FALSO POSITIVO REAL, visto el 2026-08-05 hablando con el bot como una
+    // mujer de Madrid: Paula le dijo —correctamente— "miércoles y viernes",
+    // porque las 8 PM del martes en Colombia son las 3 AM del miércoles allí.
+    // El blindaje se lo marcó como día inventado, y la corrección le habría
+    // exigido decirle "martes y jueves": el día equivocado, cada semana.
+    const enMadrid = ['miércoles', 'viernes'];
+    const texto = 'Los talleres en vivo son los miércoles y viernes a las 3:00 AM para ti.';
+
+    expect(auditarRespuesta(texto, VIERNES_31, 'apego', enMadrid).hallazgos.map((h) => h.tipo))
+      .not.toContain('dia_encuentro_equivocado');
+
+    // Y con los días de Colombia esa misma frase SÍ se marca, que es lo correcto
+    // para una mujer que no cambia de día.
+    expect(auditarRespuesta(texto, VIERNES_31, 'apego').hallazgos.map((h) => h.tipo))
+      .toContain('dia_encuentro_equivocado');
+  });
+
+  it('la corrección le dice los días de ELLA, no los de Colombia', () => {
+    const { hallazgos } = auditarRespuesta('Los talleres son los lunes', VIERNES_31, 'apego', [
+      'miércoles',
+      'viernes',
+    ]);
+    expect(instruccionCorreccion(hallazgos, 'apego', VIERNES_31, ['miércoles', 'viernes']))
+      .toContain('miércoles y viernes');
+  });
+
   it('hablar de los talleres en vivo NO es un error', () => {
     // "clase" a secas es legítimo: lo prohibido es la CLASE como producto suelto.
     expect(auditar('Son dos talleres en vivo cada semana con Javier Vieira 💛').hallazgos)
@@ -619,9 +646,10 @@ describe('el prompt que se arma en cada turno', () => {
     // Citar a una fecha a la que no puede entrar es prometerle lo que no tiene.
     const p = prompt();
     expect(p).not.toContain('martes 4 de agosto');
-    expect(p).toContain('NO le des la fecha del próximo taller');
-    // Pero sí sabe QUÉ incluye el programa, y su hora local.
+    expect(p).toMatch(/Lo que NO le das es la FECHA del próximo/);
+    // Pero sí sabe QUÉ incluye el programa, el horario EN SU HORA, y su país.
     expect(p).toContain('4 horas de acompañamiento cada semana');
+    expect(p).toContain('martes y jueves, 7:00 PM');
     expect(p).toContain('ELLA TE ESCRIBE DESDE: México');
   });
 

@@ -139,19 +139,44 @@ const MODULOS = /(\d{1,2})\s+m[óo]dulos/gi;
 /** Sale de `programa.ts`, que es lo que dice la página de Skool. Nunca a mano. */
 const MODULOS_REALES = APEGO_DETOX.modulos;
 
-// Los encuentros en vivo son martes y jueves. Cualquier otro día es inventado.
-// OJO con el falso positivo: "hoy es viernes y el próximo encuentro es el
-// martes" es CORRECTO. Por eso no basta con que el día aparezca cerca de la
-// palabra "encuentro" — tiene que estar AFIRMÁNDOLO como día de sesión.
-const DIA_NO_ENCUENTRO = 'lunes|mi[ée]rcoles|viernes|s[áa]bado|domingo';
-const PATRONES_DIA_INVENTADO: RegExp[] = [
+/**
+ * Los talleres son martes y jueves EN COLOMBIA. Cualquier otro día es inventado…
+ * salvo que ella viva donde la diferencia horaria los corre de día.
+ *
+ * ⚠️ ESTO ERA UN FALSO POSITIVO CARO, visto el 2026-08-05 probando el bot como
+ * una mujer de Madrid: las 8 PM del martes en Colombia son las 3 de la madrugada
+ * del MIÉRCOLES en España, así que Paula le dijo —bien— "miércoles y viernes", y
+ * el blindaje se lo marcó como día inventado. La corrección le habría exigido
+ * decirle "martes y jueves", que para ella es el día equivocado.
+ *
+ * Por eso los días válidos LLEGAN POR PARÁMETRO, ya calculados para su zona.
+ * Aquí no se decide cuáles son: solo se comprueba que no diga otros.
+ */
+const TODOS_LOS_DIAS = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+
+/** Colombia, que es lo que vale mientras no sepamos de dónde escribe ella. */
+export const DIAS_TALLER_COLOMBIA = ['martes', 'jueves'];
+
+/** "lunes|mi[ée]rcoles|viernes|…" — todos MENOS los suyos. */
+function patronDiasProhibidos(validos: string[]): string {
+  const sinTilde = (s: string) => s.replace('é', '[ée]').replace('á', '[áa]');
+  return TODOS_LOS_DIAS.filter((d) => !validos.includes(d)).map(sinTilde).join('|');
+}
+
+// OJO con el otro falso positivo, el de siempre: "hoy es viernes y el próximo
+// taller es el martes" es CORRECTO. Por eso no basta con que el día aparezca
+// cerca de la palabra "taller" — tiene que estar AFIRMÁNDOLO como día de sesión.
+const patronesDiaInventado = (validos: string[]): RegExp[] => {
+  const DIA_NO_ENCUENTRO = patronDiasProhibidos(validos);
+  return [
   // "los viernes", "todos los miércoles" → día recurrente que no existe
   new RegExp(`\\b(?:los|todos\\s+los)\\s+(${DIA_NO_ENCUENTRO})\\b`, 'i'),
   // "la sesión es el viernes", "clase en vivo los lunes"
-  new RegExp(`\\b(?:en\\s+vivo|encuentros?|sesi[óo]n|sesiones|clases?)\\s+(?:es\\s+|son\\s+)?(?:el\\s+|los\\s+)?(${DIA_NO_ENCUENTRO})\\b`, 'i'),
+  new RegExp(`\\b(?:en\\s+vivo|encuentros?|sesi[óo]n|sesiones|clases?|talleres?)\\s+(?:es\\s+|son\\s+)?(?:el\\s+|los\\s+)?(${DIA_NO_ENCUENTRO})\\b`, 'i'),
   // "el viernes hay clase", "los lunes tenemos sesión"
-  new RegExp(`\\b(?:el|los)\\s+(?:${DIA_NO_ENCUENTRO})\\s+(?:hay|tienes|tenemos|son|es)\\s+(?:la\\s+|el\\s+|una\\s+)?(?:clase|sesi[óo]n|encuentro|en\\s+vivo)`, 'i'),
-];
+  new RegExp(`\\b(?:el|los)\\s+(?:${DIA_NO_ENCUENTRO})\\s+(?:hay|tienes|tenemos|son|es)\\s+(?:la\\s+|el\\s+|una\\s+)?(?:clase|sesi[óo]n|encuentro|taller|en\\s+vivo)`, 'i'),
+  ];
+};
 
 // --- Reglas generales --------------------------------------------------------
 
@@ -177,8 +202,8 @@ const PIDE_PERMISO =
 const PSICOEDUCACION = /no\s+es\s+amor,?\s+es\b|sistema\s+nervioso|pidiendo\s+la\s+dosis|la\s+dosis\s+que|reca[íi]da\s+qu[íi]mica|es\s+qu[íi]mica\b|tu\s+cerebro\s+(te\s+)?(miente|est[áa]|te\s+enga)|refuerzo\s+intermitente|dopamina|cortisol/i;
 
 /** Un día de la semana que no es martes ni jueves, afirmado como día de sesión. */
-function diaDeEncuentroInventado(texto: string): string | null {
-  for (const patron of PATRONES_DIA_INVENTADO) {
+function diaDeEncuentroInventado(texto: string, validos: string[]): string | null {
+  for (const patron of patronesDiaInventado(validos)) {
     const m = texto.match(patron);
     if (m) return m[0].trim();
   }
@@ -313,6 +338,13 @@ export function auditarRespuesta(
   texto: string,
   ahora: Date = new Date(),
   modo: ModoVenta = MODO_VENTA,
+  /**
+   * Los días en que los talleres le caen a ELLA, ya convertidos a su zona. Por
+   * defecto los de Colombia, que es lo válido mientras no sepamos su país.
+   * Ver `patronesDiaInventado`: para una mujer en Madrid, "miércoles y viernes"
+   * es la respuesta CORRECTA y marcarla dispararía una corrección equivocada.
+   */
+  diasTaller: string[] = DIAS_TALLER_COLOMBIA,
 ): { texto: string; hallazgos: Hallazgo[] } {
   const hallazgos: Hallazgo[] = [];
   let out = repararLinks(texto || '');
@@ -372,7 +404,7 @@ export function auditarRespuesta(
     if (retirado) hallazgos.push({ tipo: 'producto_retirado', detalle: retirado[0] });
 
     // 5') Un día de encuentro que no existe.
-    const dia = diaDeEncuentroInventado(out);
+    const dia = diaDeEncuentroInventado(out, diasTaller);
     if (dia) hallazgos.push({ tipo: 'dia_encuentro_equivocado', detalle: dia });
 
     // 6') Un número de módulos que ella no va a encontrar adentro.
@@ -442,6 +474,8 @@ export function instruccionCorreccion(
   hallazgos: Hallazgo[],
   _modo: ModoVenta = MODO_VENTA,
   ahora: Date = new Date(),
+  /** Los días del taller EN LA ZONA DE ELLA. Ver `auditarRespuesta`. */
+  diasTaller: string[] = DIAS_TALLER_COLOMBIA,
 ): string {
   const precio = precioApego(ahora);
 
@@ -466,7 +500,7 @@ export function instruccionCorreccion(
       case 'pago_unico':
         return `- Escribiste "${h.detalle}". ${APEGO_DETOX.nombre} es una SUSCRIPCIÓN mensual (${precio.frase}) que ella cancela cuando quiera, no un pago único. Corrígelo: al pagar lo descubriría y perderías su confianza.`;
       case 'dia_encuentro_equivocado':
-        return `- Nombraste el día "${h.detalle}" hablando de los talleres en vivo. Son SIEMPRE ${APEGO_DETOX.encuentros.diasTexto}, ${APEGO_DETOX.encuentros.horaTexto} hora Colombia, ${APEGO_DETOX.encuentros.horasSemana} horas por semana entre los dos.`;
+        return `- Nombraste el día "${h.detalle}" hablando de los talleres en vivo. A ELLA le caen **${diasTaller.join(' y ')}**, tal como está calculado en el bloque del reloj. Usa esos días y esa hora: no los deduzcas ni los traduzcas tú.`;
       case 'promesa_gratis':
         return `- Escribiste "${h.detalle}". En este canal no se regala nada: no hay clase, libro, curso ni prueba gratis. Quita esa promesa.`;
       case 'modulos_inventados':

@@ -24,6 +24,7 @@ import { escalonDe } from '@/lib/whatsapp/escalera';
 import { aplicarFormato } from '@/lib/whatsapp/formato';
 import { normalizarNegritas, partirEnGlobos } from '@/lib/whatsapp/manychat';
 import { tasas } from '@/lib/whatsapp/moneda';
+import { diasTallerPara } from '@/lib/whatsapp/programa';
 import { buildSystemPrompt, callOpenRouter, type WaUser } from '@/lib/whatsapp/paula';
 
 // --- .env.local a mano: vitest no lo carga como sí hace Next ---
@@ -98,17 +99,20 @@ describe('conversación manual con Paula', () => {
     const mensajes = [...estado.historial, { role: 'user', content: mensaje }];
     let respuesta = await callOpenRouter(systemPrompt, mensajes);
 
-    // Blindaje + reintento, igual que en producción.
-    let auditoria = auditarRespuesta(sinMarcas(respuesta), ahora, escalon);
+    // Blindaje + reintento, igual que en producción. Los días del taller van en
+    // la zona de ELLA: sin esto el simulador audita con las reglas de Colombia y
+    // marca como error el día que es correcto para una mujer de Madrid.
+    const diasTaller = diasTallerPara(ahora, telefono, estado.usuaria.pais);
+    let auditoria = auditarRespuesta(sinMarcas(respuesta), ahora, escalon, diasTaller);
     if (auditoria.hallazgos.length > 0) {
       out.push(`⚠️  BLINDAJE: ${auditoria.hallazgos.map((h) => `${h.tipo} («${h.detalle}»)`).join(', ')}`);
       out.push('   → se le pidió reescribir\n');
       const reintento = await callOpenRouter(systemPrompt, [
         ...mensajes,
         { role: 'assistant', content: respuesta },
-        { role: 'user', content: instruccionCorreccion(auditoria.hallazgos, escalon, ahora) },
+        { role: 'user', content: instruccionCorreccion(auditoria.hallazgos, escalon, ahora, diasTaller) },
       ]);
-      const segunda = auditarRespuesta(sinMarcas(reintento), ahora, escalon);
+      const segunda = auditarRespuesta(sinMarcas(reintento), ahora, escalon, diasTaller);
       if (segunda.texto && segunda.hallazgos.length <= auditoria.hallazgos.length) {
         respuesta = reintento;
         auditoria = segunda;

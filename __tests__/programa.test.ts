@@ -103,6 +103,61 @@ describe('el precio se calcula, no se escribe', () => {
   });
 });
 
+describe('el horario de los talleres, en la semana de ELLA', () => {
+  // ⚠️ BUG REAL cazado el 2026-08-05 hablando con el bot como una mujer de
+  // México: Paula le dijo "8:00 PM hora México", que son las 8 PM de COLOMBIA
+  // con otra etiqueta. Habría llegado una hora tarde a cada taller. El prompt le
+  // daba la hora de Colombia y a la vez le ordenaba "una sola hora: la de ella",
+  // y el modelo resolvió la contradicción cambiándole el nombre al número.
+  const ahora = colombia('2026-08-05T10:00:00');
+
+  it('a México le da SU hora, no la de Colombia', () => {
+    const b = bloqueContexto(ahora, '+525512345678', false, TASAS);
+    expect(b).toContain('martes y jueves, 7:00 PM');
+    // Y no le deja la hora de Colombia delante para que la copie.
+    expect(b).not.toContain('8:00 PM hora Colombia');
+  });
+
+  it('a España le corre el DÍA, no solo la hora', () => {
+    // Las 8 PM del martes en Colombia son las 3 de la madrugada del MIÉRCOLES en
+    // Madrid. Decirle "los martes a las 3 AM" la cita el día equivocado.
+    const b = bloqueContexto(ahora, '+34600112233', false, TASAS);
+    expect(b).toContain('miércoles y viernes, 3:00 AM');
+    expect(b).toMatch(/en Colombia son martes y jueves/i);
+    expect(b).toMatch(/se conecta el día equivocado/i);
+  });
+
+  it('a Chile, que no cambia de día, no le mete la advertencia', () => {
+    // En agosto Chile va una hora por delante de Colombia: las 8 PM de allá son
+    // las 9 PM suyas. Mismo día, así que la advertencia sobra.
+    const b = bloqueContexto(ahora, '+56912345678', false, TASAS);
+    expect(b).toContain('martes y jueves, 9:00 PM');
+    expect(b).not.toMatch(/se conecta el día equivocado/i);
+  });
+
+  it('sin país, dice "hora Colombia" explícito y prohíbe reetiquetarla', () => {
+    const b = bloqueContexto(ahora, null, false, TASAS);
+    expect(b).toContain('hora Colombia');
+    expect(b).toMatch(/NUNCA le pongas la etiqueta de su país a la hora de Colombia/i);
+  });
+
+  it('el horario SÍ se da, la fecha del próximo NO', () => {
+    // Preguntar cuándo son es una pregunta de compra: está midiendo si le cabe
+    // en la vida. Lo que se reserva es el día del mes del próximo taller.
+    const b = bloqueContexto(ahora, '+525512345678', false, TASAS);
+    expect(b).toMatch(/pregunta de COMPRA/i);
+    // El próximo taller cae el jueves 6; la única fecha que puede aparecer es la
+    // de HOY, en la línea del reloj.
+    expect(b).not.toContain('jueves 6 de agosto');
+  });
+
+  it('a la que ya entró sí le da la fecha, y también en su hora', () => {
+    const b = bloqueContexto(ahora, '+525512345678', true, TASAS);
+    expect(b).toContain('jueves 6 de agosto');
+    expect(b).toContain('martes y jueves, 7:00 PM');
+  });
+});
+
 describe('el precio en la moneda de ELLA', () => {
   const ahora = colombia('2026-08-05T10:00:00');
 

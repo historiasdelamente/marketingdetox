@@ -11,7 +11,7 @@ import {
 import { conocimientoPara } from './conocimiento';
 import { escalonDe, instruccionEscalon, type Escalon } from './escalera';
 import { aplicarFormato } from './formato';
-import { APEGO_DETOX, bloqueContexto, precioApego } from './programa';
+import { APEGO_DETOX, bloqueContexto, diasTallerPara, precioApego } from './programa';
 import { normalizarCanal, normalizarNegritas } from './manychat';
 import { PAISES, detectarPais, paisPorIso } from './paises';
 import { precioLocal, tasas } from './moneda';
@@ -1127,16 +1127,21 @@ export async function processPaulaMessage(
   // Si el modelo se inventó una fecha, un precio o un link, se le pide que
   // reescriba el mensaje UNA vez con la corrección exacta. Si en el segundo
   // intento sigue mal, gana la versión saneada (links borrados, día corregido).
-  let auditoria = auditarRespuesta(stripHiddenTags(paulaResponse), ahora, escalon);
+  // Los días en que los talleres le caen a ELLA. Sin esto, a una mujer de Madrid
+  // —a la que le tocan miércoles y viernes— el blindaje le marcaba el día bueno
+  // como inventado y la corrección la mandaba al día equivocado.
+  const diasTaller = diasTallerPara(ahora, telefono, paisDicho);
+
+  let auditoria = auditarRespuesta(stripHiddenTags(paulaResponse), ahora, escalon, diasTaller);
   if (auditoria.hallazgos.length > 0) {
     console.warn('[Paula blindaje]', manychatId, auditoria.hallazgos.map((h) => h.tipo).join(', '));
     try {
       const reintento = await callOpenRouter(systemPrompt, [
         ...messages,
         { role: 'assistant', content: paulaResponse },
-        { role: 'user', content: instruccionCorreccion(auditoria.hallazgos, escalon, ahora) },
+        { role: 'user', content: instruccionCorreccion(auditoria.hallazgos, escalon, ahora, diasTaller) },
       ]);
-      const auditoria2 = auditarRespuesta(stripHiddenTags(reintento), ahora, escalon);
+      const auditoria2 = auditarRespuesta(stripHiddenTags(reintento), ahora, escalon, diasTaller);
       if (auditoria2.texto && auditoria2.hallazgos.length <= auditoria.hallazgos.length) {
         paulaResponse = reintento;
         auditoria = auditoria2;
