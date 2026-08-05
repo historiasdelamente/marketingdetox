@@ -286,8 +286,30 @@ function numeroAEnlace(texto: string): string {
  */
 const JAVIER_SIN_APELLIDO = /\bJavier\b(?!\s+Vieira)/g;
 
-function apellidarAJavier(texto: string): string {
-  return fueraDeLinks(texto, (plano) => plano.replace(JAVIER_SIN_APELLIDO, 'Javier Vieira'));
+/**
+ * ⛔ NO SE APELLIDA CUANDO "JAVIER" ES UN SALUDO A ELLA.
+ *
+ * Bug real visto en producción el 2026-08-05: una mujer llamada Javier (o el
+ * propio Javier probando el bot) recibió **"Mucho gusto, Javier Vieira."**. El
+ * reparador convertía cualquier "Javier" en "Javier Vieira" sin mirar si estaba
+ * nombrando al psicólogo o saludándola a ella.
+ *
+ * Se detectan las fórmulas de saludo y de vocativo, que es donde el nombre es
+ * de la persona que escribe y no del profesional.
+ */
+/** Un saludo o un vocativo justo antes: ahí "Javier" es ELLA, no el psicólogo. */
+const SALUDO_PREVIO = /(mucho\s+gusto|encantad[ao]|hola|buenas(?:\s+\w+)?|qu[ée]\s+tal|bienvenida)\s*,?\s*$/i;
+
+function apellidarAJavier(texto: string, nombreDeElla?: string | null): string {
+  // Si ELLA se llama Javier, aquí no se apellida nada: tratarla con el apellido
+  // del psicólogo es peor error que dejarlo a él sin apellido una vez.
+  if (nombreDeElla && /^javier\b/i.test(nombreDeElla.trim())) return texto;
+
+  return fueraDeLinks(texto, (plano) =>
+    plano.replace(/((?:\S+\s+){0,2})\bJavier\b(?!\s+Vieira)/g, (todo, previa: string) =>
+      SALUDO_PREVIO.test(previa) ? todo : `${previa}Javier Vieira`,
+    ),
+  );
 }
 
 /**
@@ -331,7 +353,7 @@ function desambiguarEl(texto: string): string {
   );
 }
 
-function repararLinks(texto: string): string {
+function repararLinks(texto: string, nombreDeElla?: string | null): string {
   let out = texto;
   // Puntuación pegada al final: "…/apegodetox." rompe el clic en WhatsApp.
   out = out.replace(/(https?:\/\/\S+?)[.,;:!?)]+(?=\s|$)/g, '$1');
@@ -342,7 +364,7 @@ function repararLinks(texto: string): string {
   out = out.replace(VARIANTE_WA_JAVIER, linkJavier());
   out = numeroAEnlace(out);
   out = desambiguarEl(out);
-  out = apellidarAJavier(out);
+  out = apellidarAJavier(out, nombreDeElla);
   return out;
 }
 
@@ -367,9 +389,11 @@ export function auditarRespuesta(
    * ahí Paula no debería dar ninguna, y si da una la caza igual el prompt.
    */
   cifrasLocales: string[] = [],
+  /** Cómo se llama ELLA. Si es "Javier", no se le pone el apellido del psicólogo. */
+  nombreDeElla?: string | null,
 ): { texto: string; hallazgos: Hallazgo[] } {
   const hallazgos: Hallazgo[] = [];
-  let out = repararLinks(texto || '');
+  let out = repararLinks(texto || '', nombreDeElla);
 
   // 1) LA PLATAFORMA EQUIVOCADA — se mira ANTES de borrar nada.
   //

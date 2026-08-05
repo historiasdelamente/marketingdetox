@@ -184,6 +184,21 @@ describe('blindaje — la clase del jueves ya no se vende', () => {
     expect(correccion).toContain(APEGO_DETOX.checkout);
   });
 
+  it('no le pone el apellido del psicólogo al nombre de ELLA', () => {
+    // Bug real visto en producción el 2026-08-05: "Mucho gusto, Javier Vieira."
+    // El reparador convertía cualquier "Javier" en "Javier Vieira" sin mirar si
+    // estaba nombrando al psicólogo o saludándola a ella.
+    const saludo = 'Mucho gusto, Javier.';
+    expect(auditarRespuesta(saludo, VIERNES_31, 'apego', undefined, [], 'Javier').texto)
+      .toBe(saludo);
+    // Y aunque no sepamos su nombre, un saludo no se apellida.
+    expect(auditarRespuesta(saludo, VIERNES_31, 'apego').texto).toBe(saludo);
+
+    // Pero al psicólogo sí se le sigue poniendo, que es para lo que existe.
+    expect(auditarRespuesta('Eso lo trabaja Javier contigo', VIERNES_31, 'apego').texto)
+      .toContain('Javier Vieira');
+  });
+
   it('una conversión que no salió del bloque del reloj se marca', () => {
     // El caso de Estela, 2026-08-05: "unos 5.600 pesos argentinos" cuando eran
     // unos 30.000. `precio_falso` no lo veía —y a propósito, porque solo vigila

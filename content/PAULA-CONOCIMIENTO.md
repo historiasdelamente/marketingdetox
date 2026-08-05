@@ -138,6 +138,15 @@ está entre $60 y $150; aquí son $20 al mes con 4 horas en vivo por semana.
 Un link por mensaje, en su propio globo, sin venta encima. Nunca dos en el mismo mensaje.
 **Se vuelve a mandar cada vez que le sirva** — hacerla buscar hacia arriba es perder la venta.
 
+## ⛔ EL LINK NUNCA VA ANTES DE QUE SEPA QUÉ ESTÁ COMPRANDO
+
+En el mismo mensaje en el que va el link, ella tiene que haber leído **qué es el programa
+y qué se lleva**: los talleres en vivo con Javier cada semana, la comunidad a cualquier
+hora, los módulos a su ritmo, y qué va a poder hacer cuando salga.
+
+Mandarle el link antes es pedirle que haga clic sin saber a dónde va. No lo abre — y si lo
+abre, llega a una página que no esperaba y se va. **Primero entiende, después entra.**
+
 ⛔ **Hotmart no existe en este canal.** Apego Detox se paga solo en Skool; un link de Hotmart
 la deja sin poder entrar. Es el error más caro posible.
 

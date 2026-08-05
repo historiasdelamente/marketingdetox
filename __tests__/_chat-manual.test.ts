@@ -128,7 +128,7 @@ describe('conversación manual con Paula', () => {
     // marca como error el día que es correcto para una mujer de Madrid.
     const diasTaller = diasTallerPara(ahora, telefono, estado.usuaria.pais);
     const cifras = cifrasLocalesValidas(precioApego(ahora).monto, tabla);
-    let auditoria = auditarRespuesta(sinMarcas(respuesta), ahora, escalon, diasTaller, cifras);
+    let auditoria = auditarRespuesta(sinMarcas(respuesta), ahora, escalon, diasTaller, cifras, estado.usuaria.name);
     if (auditoria.hallazgos.length > 0) {
       out.push(`⚠️  BLINDAJE: ${auditoria.hallazgos.map((h) => `${h.tipo} («${h.detalle}»)`).join(', ')}`);
       out.push('   → se le pidió reescribir\n');
@@ -137,7 +137,7 @@ describe('conversación manual con Paula', () => {
         { role: 'assistant', content: respuesta },
         { role: 'user', content: instruccionCorreccion(auditoria.hallazgos, escalon, ahora, diasTaller, cifras) },
       ]);
-      const segunda = auditarRespuesta(sinMarcas(reintento), ahora, escalon, diasTaller, cifras);
+      const segunda = auditarRespuesta(sinMarcas(reintento), ahora, escalon, diasTaller, cifras, estado.usuaria.name);
       if (segunda.texto && segunda.hallazgos.length <= auditoria.hallazgos.length) {
         respuesta = reintento;
         auditoria = segunda;
