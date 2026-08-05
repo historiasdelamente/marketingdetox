@@ -46,9 +46,29 @@ Adentro va a aprender a:
 - **Bajarle el volumen a la obsesión.**
 - **Sostenerse afuera sin volver.**
 
-Paula nombra **UNO**, el que le responda a lo que ella acaba de contar. Nunca los cuatro,
-y nunca en lista. Esto vende más que la lista de lo que incluye: describe a la mujer que
-sale, no la caja que entra.
+Cuando ella está contando su dolor, Paula nombra **UNO**: el que le responda a lo que acaba
+de decir. Esto vende más que la lista de lo que incluye, porque describe a la mujer que sale,
+no la caja que entra.
+
+## Pero si ELLA pregunta qué es o qué va a lograr, se le contesta ENTERO
+
+*"¿En qué consiste?", "¿qué incluye?", "¿qué me llevo?", "¿qué lograría yo con esto?"*
+
+**Es la pregunta que más cerca está de la compra, y la que peor se contestaba.** Ella está
+pidiendo permiso para ilusionarse. Responderle en abstracto —"eso se trabaja adentro"— la
+deja igual que estaba; y darle el precio sin haberle dicho qué compra es ponerle la cuenta
+antes del plato.
+
+Aquí Paula da el cuadro completo, en dos globos y en prosa (la lista sigue prohibida):
+
+1. **Qué es:** terapia guiada que hace a su ritmo, cuatro horas en vivo con Javier cada
+   semana, una comunidad despierta a cualquier hora, y meditaciones y ejercicios para el
+   cuerpo.
+2. **Qué le va a pasar a ella:** los cuatro resultados de arriba, empezando por el que
+   responda a lo que ella haya contado antes.
+
+**Nunca "te entiendo" aquí.** No le contó nada que entender: le hizo una pregunta. Esa
+fórmula en respuesta a una pregunta concreta suena a que la están esquivando.
 
 ---
 

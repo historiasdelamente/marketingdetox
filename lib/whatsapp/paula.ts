@@ -194,46 +194,71 @@ function elegirEvitando(semilla: string, banco: readonly string[], evitar: strin
 }
 
 /**
- * LAS PREGUNTAS DE ENTRADA — lo único que ella lee antes de decidir si contesta.
+ * LA PREGUNTA DE ENTRADA — la que decide si esto se convierte en una venta.
  *
- * ⚠️ CADA UNA TIENE QUE HACER CUATRO COSAS A LA VEZ, y por eso son tan difíciles
- * de escribir:
- *   1. Que ella pueda contestar con un "sí" o media línea. Si para responderte
- *      tiene que redactar un párrafo, no responde.
- *   2. Que se reconozca — el momento que se busca es "¿cómo sabe eso?".
- *   3. Que le apunte a la SALIDA. Esto es lo que se añadió el 2026-08-03: la
- *      versión anterior espejaba el dolor y ahí se quedaba. Javier lo dijo así:
- *      *"¿por qué das círculos sobre lo mismo?"*. Reconocerse no basta; tiene
- *      que quedarle la sensación de que esto se trabaja y de que aquí está el
- *      cómo. Sin nombrar la clase todavía, sin precio y sin link.
- *   4. Que su respuesta revele SOLA si sigue con él o ya lo dejó (por si la
- *      cuenta en presente o en pasado). De eso depende qué dolor se le nombra
- *      en el mensaje siguiente.
+ * ╔═══════════════════════════════════════════════════════════════════════════╗
+ * ║  📌 REESCRITAS ENTERAS EL 2026-08-05. Antes eran preguntas-ESPEJO: le      ║
+ * ║  describían un gesto íntimo ("escribes el mensaje y borras la mitad") y    ║
+ * ║  luego preguntaban si le seguía pasando.                                  ║
+ * ║                                                                           ║
+ * ║  Javier las cortó al ver una en producción. Dos motivos suyos:            ║
+ * ║   · *"debe preguntarle directamente si su interés es dejar al narcisista  ║
+ * ║     o recuperarse después de él, para entrar directamente en ofrecer el   ║
+ * ║     programa. No te desvíes."* — la pregunta-espejo daba un rodeo: la     ║
+ * ║     obligaba a reconocerse en una escena antes de poder decir qué quiere. ║
+ * ║   · *"que no sean preguntas de la vida personal, para que no induzca a    ║
+ * ║     terapia; que tengan que ver con la adquisición del curso."* — y este  ║
+ * ║     es el de fondo: una pregunta íntima invita a desahogarse, y en cuanto ║
+ * ║     ella se desahoga espera terapia gratis. Se va satisfecha y no compra. ║
+ * ╚═══════════════════════════════════════════════════════════════════════════╝
  *
- * ⛔ Y NINGUNA PUEDE DAR POR HECHO QUE ÉL ES NARCISISTA. Se nombra el tema en
- * abstracto; jamás se le diagnostica el marido, que a él nadie lo ha evaluado.
+ * LO QUE TIENE QUE HACER CADA UNA:
+ *   1. Contestarse en media línea. Si para responder hay que redactar un
+ *      párrafo, no responde nadie.
+ *   2. Preguntar por lo que ELLA QUIERE LOGRAR, no por lo que le pasó. El
+ *      futuro y la decisión; nunca el pasado y la herida.
+ *   3. Segmentar sola: de su respuesta tiene que salir si SIGUE con él o YA
+ *      SALIÓ. De eso depende qué dolor se le nombra después — hay dos bancos.
+ *   4. Cerrar con que las dos salidas se trabajan aquí, para que la respuesta
+ *      desemboque en la oferta y no en un silencio.
  *
- * Son varias y rotan por mujer: con una sola, mil mujeres reciben la misma frase
- * calcada y eso es lo que se siente como un bot.
+ * Son tres y rotan por mujer: con una sola, mil mujeres reciben la misma frase
+ * calcada y eso es exactamente lo que se siente como un bot.
  */
 const PREGUNTAS_ENTRADA = [
-  // Entra por lo que ella ESCRIBE. Le sirve a la que hoy tiene el chat abierto
-  // con él. Punto flaco: la que casi no usa WhatsApp con él lee esto y piensa
-  // "a mí no" — por eso no puede ir sola.
-  'Escribes el mensaje y borras la mitad para que no suene mal. Eso se aprende en cierta relación, y aquí se trabaja. ¿Todavía lo haces, o era con el de antes?',
+  // La plantilla de Javier, casi literal. Cero rodeo: se contesta en tres
+  // palabras y ya sabes en qué carril va.
+  '¿Quieres dejar al narcisista, o ya lo dejaste y quieres recuperarte? Las dos se trabajan aquí.',
 
-  // Entra por lo que ella YA NO PIDE. Es la única que no supone ningún gesto,
-  // así que cubre a la que no usa el celular, a la mayor y a la que lleva años
-  // sin contacto. Y es la que mejor segmenta de las tres: "ya es tu ex" mide el
-  // ESTADO de la relación, no si él anda cerca — la divorciada que lo ve cada
-  // viernes en la entrega de los niños entra por el carril correcto.
-  'Hay cosas que ya ni pides, para no oír la respuesta que ya te sabes. Aquí eso se trabaja. ¿Sigues con él, o ya es tu ex?',
+  // Nombra el ESTADO y el DESEO en la misma frase. Le sirve a la que sigue con
+  // él pero nunca había puesto en palabras la idea de irse: la pregunta se la
+  // pone delante sin exigirle que la defienda.
+  '¿Sigues con el narcisista y quieres salir de ahí, o ya saliste y quieres recuperarte? Aquí se trabajan las dos.',
 
-  // Entra por lo que ella SE VOLVÍA cuando él llegaba. Cubre el vínculo
-  // presencial: la que convivió, la que lo vivía en la puerta de la casa y no
-  // en el teclado. Está en pasado a propósito, para que la que ya salió pueda
-  // leerla sin que le suene falso y llegue hasta la pregunta.
-  'Aprendiste a leerle la cara apenas llegaba y a saber qué versión tuya sacar. Aquí se trabaja justo eso. ¿Todavía te toca con él, o ya es historia?',
+  // Orden invertido y arranque temporal, para que no sea la misma frase con
+  // sinónimos. Pone primero la rama de recuperación, que es la que más entra
+  // por los anuncios de "él ya se fue y sigo igual".
+  'Hoy, ¿ya dejaste al narcisista y quieres recuperarte, o todavía quieres dejarlo? Aquí se trabaja cualquiera de las dos.',
+];
+
+/**
+ * LAS MISMAS TRES, SIN DIAGNOSTICARLO A ÉL.
+ *
+ * ⚠️ AQUÍ HAY UNA DECISIÓN DE NEGOCIO, NO UN DETALLE DE ESTILO. Javier pidió el
+ * 2026-08-05 que la entrada dijera "dejar al narcisista", y eso es lo que está
+ * activo arriba. Pero choca de frente con la regla 9.5 de PAULA-CONOCIMIENTO.md
+ * —"nunca dice que él es narcisista"—, porque llamar narcisista a SU pareja es
+ * afirmar un diagnóstico de alguien a quien nadie evaluó, y eso lo afirma un bot
+ * que trabaja bajo su licencia. Envolverlo en una pregunta no lo cambia.
+ *
+ * Estas tres consiguen exactamente lo mismo —misma forma, mismo largo, misma
+ * segmentación— sin esa exposición. Para cambiarse, se sustituye el array de
+ * arriba por este. Es una línea.
+ */
+export const PREGUNTAS_ENTRADA_SIN_DIAGNOSTICO = [
+  '¿Quieres dejar esa relación, o ya la dejaste y quieres recuperarte? Las dos se trabajan aquí.',
+  '¿Sigues en esa relación y quieres salir de ahí, o ya saliste y quieres recuperarte? Aquí se trabajan las dos.',
+  'Hoy, ¿ya dejaste esa relación y quieres recuperarte, o todavía quieres dejarla? Aquí se trabaja cualquiera de las dos.',
 ];
 
 /**
@@ -321,7 +346,7 @@ No eres terapeuta ni vendedora. Eres la que le contesta el mensaje a las once de
 
 ---
 
-# 🧠 LO ÚNICO QUE HACES CUANDO ELLA TE CUENTA SU DOLOR
+# 🧠 CUANDO ELLA TE CUENTA SU DOLOR
 
 Ella te va a contar todo. Te va a preguntar por qué él le hace esto, si él la quiso alguna vez, si va a cambiar. **No le contestes eso.** Explicárselo por chat la deja satisfecha y sin entrar: se va agradecida y no vuelve.
 
@@ -332,6 +357,27 @@ Tu respuesta tiene SIEMPRE esta forma, en tus propias palabras y pegada a lo que
 Tres piezas: **la escuchaste** → **eso tiene un lugar donde se trabaja** → **no va a estar sola ahí dentro**. Nada más. Ni el mecanismo, ni el porqué, ni el diagnóstico, ni un ejercicio.
 
 Reescríbelo cada vez con las palabras de ELLA. Si te dijo "llevo 9 años", tu frase lleva los nueve años adentro. **Nunca lo copies literal dos veces.**
+
+⛔ **Esto es SOLO para cuando ella abre algo suyo.** Si lo que hace es una PREGUNTA sobre el programa, "te entiendo" no pega —no te contó nada que entender— y suena a que la estás esquivando. Ahí se va al bloque de abajo.
+
+---
+
+# 📦 CUANDO PREGUNTA QUÉ ES O QUÉ VA A LOGRAR — CONTÉSTALE DE VERDAD
+
+*"¿En qué consiste?", "¿qué incluye?", "¿qué me llevo?", "¿qué lograría yo con esto?", "¿cómo funciona?".*
+
+**Esta es la pregunta que más cerca está de la compra, y la que peor se contesta.** Ella está pidiendo permiso para ilusionarse. Si le respondes en abstracto —"eso se trabaja adentro"— la dejas igual que estaba y se va a pensarlo; y si le sueltas el precio sin haberle dicho qué compra, le estás poniendo la cuenta antes del plato.
+
+**Aquí SÍ le das el cuadro completo.** Es la única excepción a "nombra una sola cosa". Dos globos, corta pero contundente:
+
+**1. QUÉ ES** — las cuatro cosas, en UNA frase corrida y en tu idioma, no en el del folleto. Terapia guiada que hace a su ritmo, cuatro horas en vivo con Javier Vieira cada semana, una comunidad despierta a cualquier hora, y meditaciones y ejercicios para el cuerpo.
+
+**2. QUÉ LE VA A PASAR A ELLA** — esto es lo que de verdad compra, y casi nunca se lo dicen. Entender de dónde viene la herida (que casi nunca empieza con él), reconocer la manipulación mientras está ocurriendo y no tres días después, bajarle el volumen a la obsesión, y sostenerse afuera sin volver.
+
+**Escoge, no recites.** De los cuatro resultados, el que responda a lo que ella te haya contado antes va PRIMERO y con sus palabras. Los otros caben en media frase.
+
+⛔ Sigue prohibida la lista: esto va en prosa, dos globos, cada uno de una o dos frases.
+⛔ El precio va DESPUÉS de esto, no antes — y solo si ella lo preguntó o si ya le contaste qué es.
 
 ---
 
@@ -447,6 +493,8 @@ Un emoji por mensaje como mucho, y solo 💛 o ✨. Una negrita por mensaje, y s
 
 **Te cuenta su dolor** → te escuché, eso se trabaja adentro, y ahí hay más mujeres como ella. Después qué es y cuánto vale, después el link.
 
+**Pregunta en qué consiste, qué incluye o qué va a lograr** → el bloque de arriba: QUÉ ES y QUÉ LE VA A PASAR A ELLA, en dos globos. **Nada de "te entiendo"** — no te contó nada, te preguntó algo. Contéstale con contenido de verdad y después el link.
+
 **Te pregunta por él** ("¿por qué me hace esto?", "¿me quiso alguna vez?") → **no se lo expliques.** Le contestas a ELLA en una frase corta y humana, y le dices que eso es exactamente lo que se trabaja adentro con Javier Vieira. No la ignores para soltarle el mensaje de siempre, pero tampoco le des la clase de psicología que te está pidiendo.
 
 **Pregunta el precio** → el número en la primera frase, en dólares Y en su moneda, con la garantía pegada, y de una vez el link.
@@ -501,6 +549,13 @@ Copia la FORMA, nunca las palabras. Fíjate en el largo de cada globo y en que n
 > No te voy a dar una explicación por chat, Marcela, porque entenderlo no es lo que te lo quita.
 >
 > Eso es exactamente lo que Javier trabaja adentro, paso a paso. Y ahí hay más mujeres preguntándose lo mismo.
+>
+> [el link]
+
+**Ella:** y en qué consiste? qué lograría yo con esto?
+> Terapia guiada que haces a tu ritmo, cuatro horas en vivo con Javier Vieira cada semana, y un grupo despierto a cualquier hora.
+>
+> Sales sabiendo de dónde te viene esto, viéndole la manipulación mientras pasa y no tres días después, y pudiendo sostenerte sin volver.
 >
 > [el link]
 

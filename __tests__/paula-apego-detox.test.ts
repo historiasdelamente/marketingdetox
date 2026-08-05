@@ -458,7 +458,36 @@ describe('el prompt que se arma en cada turno', () => {
     it('todas caben en un globo de WhatsApp y son una pregunta', () => {
       for (const q of banco) {
         expect(q.length, `«${q}» tiene ${q.length} caracteres`).toBeLessThanOrEqual(160);
-        expect(q, `«${q}» no termina en pregunta`).toMatch(/\?$/);
+        // Antes se exigía que TERMINARAN en "?". Dejó de valer el 2026-08-05:
+        // las preguntas nuevas cierran con "las dos se trabajan aquí" DESPUÉS
+        // de preguntar, para que su respuesta desemboque en la oferta en vez de
+        // quedar en el aire. Lo que sigue siendo obligatorio es que pregunten.
+        expect(q, `«${q}» no le pregunta nada`).toMatch(/¿[^?]+\?/);
+      }
+    });
+
+    it('todas preguntan por lo que ELLA QUIERE, no por lo que le pasó', () => {
+      // Es la corrección de fondo de Javier: una pregunta sobre su vida privada
+      // la invita a desahogarse, y en cuanto se desahoga espera terapia gratis.
+      // Se va satisfecha y no compra. La pregunta mira al futuro, no a la herida.
+      for (const q of banco) {
+        expect(q, `«${q}» le pregunta por su intención`).toMatch(/quieres|interesa|buscas/i);
+        expect(q, `«${q}» la pone a contar su caso`).not.toMatch(
+          /cu[ée]ntame|qu[ée]\s+te\s+(pasa|est[áa]\s+pasando|pas[óo])|c[óo]mo\s+(est[áa]s|te\s+sientes)|hace\s+cu[áa]nto/i,
+        );
+      }
+    });
+
+    it('todas segmentan: de la respuesta sale si sigue con él o ya salió', () => {
+      // De eso depende cuál de los dos bancos de dolores se usa después.
+      for (const q of banco) {
+        expect(q, `«${q}» no bifurca`).toMatch(/,\s*o\s+|\bo\s+ya\b|\bo\s+todav[íi]a\b/i);
+      }
+    });
+
+    it('ninguna la deja colgada: le dicen que las dos salidas se trabajan aquí', () => {
+      for (const q of banco) {
+        expect(q, `«${q}» no cierra la puerta hacia la oferta`).toMatch(/se\s+trabaja/i);
       }
     });
 
