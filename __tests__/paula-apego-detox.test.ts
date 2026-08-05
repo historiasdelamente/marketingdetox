@@ -184,6 +184,37 @@ describe('blindaje — la clase del jueves ya no se vende', () => {
     expect(correccion).toContain(APEGO_DETOX.checkout);
   });
 
+  it('una conversión que no salió del bloque del reloj se marca', () => {
+    // El caso de Estela, 2026-08-05: "unos 5.600 pesos argentinos" cuando eran
+    // unos 30.000. `precio_falso` no lo veía —y a propósito, porque solo vigila
+    // la cifra en dólares—, así que la mentira salía limpia.
+    const validas = ['65.000', '30.000', '350'];
+
+    expect(
+      auditarRespuesta('Son 20 dólares al mes, unos 5.600 pesos argentinos', VIERNES_31, 'apego', undefined, validas)
+        .hallazgos.map((h) => h.tipo),
+    ).toContain('conversion_inventada');
+
+    // Las que sí salen del bloque pasan, con código o con el nombre de la moneda.
+    for (const buena of ['unos 30.000 ARS', 'unos 30.000 pesos argentinos', 'unos 65.000 pesos']) {
+      expect(
+        auditarRespuesta(`Son 20 dólares al mes, ${buena}`, VIERNES_31, 'apego', undefined, validas)
+          .hallazgos.map((h) => h.tipo),
+        `«${buena}» debería pasar`,
+      ).not.toContain('conversion_inventada');
+    }
+  });
+
+  it('la corrección le entrega las cifras buenas', () => {
+    const validas = ['65.000', '30.000'];
+    const { hallazgos } = auditarRespuesta(
+      'Son unos 5.600 pesos argentinos', VIERNES_31, 'apego', undefined, validas,
+    );
+    const correccion = instruccionCorreccion(hallazgos, 'apego', VIERNES_31, undefined, validas);
+    expect(correccion).toContain('30.000');
+    expect(correccion).toMatch(/te la inventaste/i);
+  });
+
   it('el día del taller se juzga en la zona de ELLA, no en la de Colombia', () => {
     // ⚠️ FALSO POSITIVO REAL, visto el 2026-08-05 hablando con el bot como una
     // mujer de Madrid: Paula le dijo —correctamente— "miércoles y viernes",

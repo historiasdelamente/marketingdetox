@@ -52,6 +52,7 @@ export type Hallazgo = {
     | 'promesa_gratis'
     | 'modulos_inventados'
     | 'producto_retirado'
+    | 'conversion_inventada'
     | 'pide_permiso'
     | 'vinetas'
     | 'demasiado_largo';
@@ -113,6 +114,21 @@ const CLASE_RETIRADA =
 // tarjeta y nadie recibe transferencias: si Paula da un número de Nequi, está
 // mandando a una mujer a transferirle plata a alguien por su cuenta.
 const NEQUI = /\bnequi\b|\bdaviplata\b/i;
+
+/**
+ * UNA CIFRA EN MONEDA LOCAL. Se caza el número y la moneda que lo acompaña.
+ *
+ * ⚠️ NACIÓ DE UN FALLO EN PRODUCCIÓN (2026-08-05): a una mujer con línea
+ * colombiana que preguntó el precio en pesos argentinos, Paula le contestó
+ * "unos 5.600 pesos argentinos" cuando eran unos 30.000. El bloque del reloj
+ * solo traía la moneda de su teléfono, y lo que no tenía delante se lo inventó.
+ *
+ * El `precio_falso` de siempre no lo veía, y a propósito: solo vigila la cifra
+ * en DÓLARES, porque la conversión es aproximada por diseño. Esto cubre el otro
+ * lado — que sea aproximada no significa que pueda ser cualquiera.
+ */
+const CIFRA_LOCAL =
+  /(\d{1,3}(?:[.,]\d{3})+|\d{2,3})\s*(pesos?|COP|MXN|ARS|CLP|PEN|EUR|BRL|DOP|CRC|GTQ|soles?|euros?|reales?|quetzales?|colones?)\b/gi;
 
 // --- Reglas SOLO del escalón de Apego Detox ---------------------------------
 
@@ -345,6 +361,12 @@ export function auditarRespuesta(
    * es la respuesta CORRECTA y marcarla dispararía una corrección equivocada.
    */
   diasTaller: string[] = DIAS_TALLER_COLOMBIA,
+  /**
+   * Las cifras en moneda local que HOY son ciertas (de `cifrasLocalesValidas`).
+   * Vacío = no se comprueba, que es lo correcto cuando no hay tasa verificada:
+   * ahí Paula no debería dar ninguna, y si da una la caza igual el prompt.
+   */
+  cifrasLocales: string[] = [],
 ): { texto: string; hallazgos: Hallazgo[] } {
   const hallazgos: Hallazgo[] = [];
   let out = repararLinks(texto || '');
@@ -396,6 +418,19 @@ export function auditarRespuesta(
     // 4') Suscripción vendida como pago único.
     const unico = out.match(PAGO_UNICO);
     if (unico) hallazgos.push({ tipo: 'pago_unico', detalle: unico[0] });
+
+    // 4a') UNA CONVERSIÓN QUE NO SALIÓ DEL BLOQUE DEL RELOJ.
+    if (cifrasLocales.length > 0) {
+      for (const m of out.matchAll(CIFRA_LOCAL)) {
+        const cifra = m[1];
+        // "20 dólares… unos 65.000 pesos" — el 20 es el precio en USD y va con
+        // su moneda al lado, así que no entra aquí. Solo se juzgan las locales.
+        if (!cifrasLocales.includes(cifra)) {
+          hallazgos.push({ tipo: 'conversion_inventada', detalle: m[0].trim() });
+          break;
+        }
+      }
+    }
 
     // 4b') LA CLASE RETIRADA. El historial de las conversaciones vivas está
     //      lleno de mensajes donde Paula la vendía, y el modelo copia lo que ve
@@ -476,6 +511,8 @@ export function instruccionCorreccion(
   ahora: Date = new Date(),
   /** Los días del taller EN LA ZONA DE ELLA. Ver `auditarRespuesta`. */
   diasTaller: string[] = DIAS_TALLER_COLOMBIA,
+  /** Las cifras locales ciertas de hoy, para decírselas en la corrección. */
+  cifrasLocales: string[] = [],
 ): string {
   const precio = precioApego(ahora);
 
@@ -485,6 +522,8 @@ export function instruccionCorreccion(
         return `- Enviaste un link que NO existe (${h.detalle}). Los únicos links son el de Skool, que es donde se entra y se paga (${APEGO_DETOX.checkout}), la página (${APEGO_DETOX.landing}) y el WhatsApp de Javier (${APEGO_DETOX.whatsappJavier}).`;
       case 'plataforma_cruzada':
         return `- Mandaste un link de Hotmart (${h.detalle}). ${APEGO_DETOX.nombre} se paga SOLO en Skool: ${APEGO_DETOX.checkout} — con ese link ella no puede entrar al programa.`;
+      case 'conversion_inventada':
+        return `- Escribiste "${h.detalle}", y esa conversión NO es la de hoy: te la inventaste. Las únicas cifras válidas están en el bloque del reloj, ya calculadas con la tasa de hoy${cifrasLocales.length ? ` (${cifrasLocales.join(' · ')})` : ''}. Usa la que corresponda a la moneda que ella te pidió, y si esa moneda no está en la lista, dile que se lo confirmas — no la calcules tú.`;
       case 'producto_retirado':
         return `- Escribiste "${h.detalle}", y eso ya NO se vende. La clase suelta del jueves se retiró: ahora los talleres en vivo son parte del programa, dos por semana. Tampoco existe el pago por Nequi — se paga con tarjeta dentro de Skool. Quítalo y ofrécele ${APEGO_DETOX.nombre}, que se entra HOY: ${APEGO_DETOX.checkout}`;
       case 'urgencia_falsa':

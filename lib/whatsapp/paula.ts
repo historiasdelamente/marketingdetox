@@ -12,7 +12,14 @@ import {
 import { conocimientoPara } from './conocimiento';
 import { escalonDe, instruccionEscalon, type Escalon } from './escalera';
 import { aplicarFormato } from './formato';
-import { APEGO_DETOX, bloqueContexto, diasTallerPara, precioApego, type TablaTasas } from './programa';
+import {
+  APEGO_DETOX,
+  bloqueContexto,
+  cifrasLocalesValidas,
+  diasTallerPara,
+  precioApego,
+  type TablaTasas,
+} from './programa';
 import { normalizarCanal, normalizarNegritas } from './manychat';
 import { PAISES, detectarPais, paisPorIso } from './paises';
 import { precioLocal, tasas } from './moneda';
@@ -914,6 +921,13 @@ export type DatosExtraidos = {
   resumen: string | null;
 };
 
+/** Igual que `extraerDatos`, expuesto para el simulador de conversación. */
+export const extraerDatosParaPrueba = (
+  history: Array<{ role: string; content: string }>,
+  userMessage: string,
+  yaSabemos: { nombre?: string | null; pais?: string | null; resumen?: string | null },
+) => extraerDatos(history, userMessage, yaSabemos);
+
 async function extraerDatos(
   history: Array<{ role: string; content: string }>,
   userMessage: string,
@@ -1150,17 +1164,19 @@ export async function processPaulaMessage(
   // —a la que le tocan miércoles y viernes— el blindaje le marcaba el día bueno
   // como inventado y la corrección la mandaba al día equivocado.
   const diasTaller = diasTallerPara(ahora, telefono, paisDicho);
+  // Las conversiones ciertas de hoy: si Paula dice otra, se la inventó.
+  const cifras = cifrasLocalesValidas(precioApego(ahora).monto, tasasHoy);
 
-  let auditoria = auditarRespuesta(stripHiddenTags(paulaResponse), ahora, escalon, diasTaller);
+  let auditoria = auditarRespuesta(stripHiddenTags(paulaResponse), ahora, escalon, diasTaller, cifras);
   if (auditoria.hallazgos.length > 0) {
     console.warn('[Paula blindaje]', manychatId, auditoria.hallazgos.map((h) => h.tipo).join(', '));
     try {
       const reintento = await callOpenRouter(systemPrompt, [
         ...messages,
         { role: 'assistant', content: paulaResponse },
-        { role: 'user', content: instruccionCorreccion(auditoria.hallazgos, escalon, ahora, diasTaller) },
+        { role: 'user', content: instruccionCorreccion(auditoria.hallazgos, escalon, ahora, diasTaller, cifras) },
       ]);
-      const auditoria2 = auditarRespuesta(stripHiddenTags(reintento), ahora, escalon, diasTaller);
+      const auditoria2 = auditarRespuesta(stripHiddenTags(reintento), ahora, escalon, diasTaller, cifras);
       if (auditoria2.texto && auditoria2.hallazgos.length <= auditoria.hallazgos.length) {
         paulaResponse = reintento;
         auditoria = auditoria2;

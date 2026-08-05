@@ -179,16 +179,35 @@ describe('el precio en la moneda de ELLA', () => {
     expect(b).toMatch(/No la conviertas/i);
   });
 
-  it('sin país, no inventa la equivalencia: solo el dólar', () => {
+  it('sin país le pide el país y no le adjudica ninguna moneda', () => {
+    // La tabla de todas las monedas SÍ va (es lo que evita que se invente una),
+    // pero mientras no sepa de dónde es, no le adjudica ninguna.
     const b = bloqueContexto(ahora, null, false, TASAS);
-    expect(b).toMatch(/no conviertas nada/i);
+    expect(b).toMatch(/Todavía no sabes de qué país es/i);
+    expect(b).not.toMatch(/LA SUYA \(/);
   });
 
   it('sin tasas a mano tampoco inventa nada', () => {
-    // Si la API de cambio no responde y ni siquiera hay respaldo, Paula sigue
-    // vendiendo en dólares. Una divisa nunca puede tumbar una respuesta.
+    // Si la API de cambio no responde, Paula sigue vendiendo en dólares. Una
+    // divisa nunca puede tumbar una respuesta.
     const b = bloqueContexto(ahora, '+573001112233', false, undefined);
-    expect(b).toMatch(/no sabes de qué país es \(o no hay tasa a mano\)/i);
+    expect(b).toMatch(/no hay tasa verificada/i);
+    expect(b).toMatch(/no conviertas nada/i);
+  });
+
+  it('lleva TODAS las monedas calculadas, no solo la de su teléfono', () => {
+    // ⚠️ BUG REAL (2026-08-05): a una mujer con línea colombiana que preguntó el
+    // precio en pesos argentinos, Paula le dijo "unos 5.600" cuando eran unos
+    // 30.000. El bloque solo traía la moneda de su indicativo, y lo que no tenía
+    // delante se lo inventó.
+    const completas = { USD: 1, COP: 4000, MXN: 18, ARS: 1000, CLP: 950, PEN: 3.7, EUR: 0.92, BRL: 5.5 };
+    const b = bloqueContexto(ahora, '+573001112233', false, completas);
+    expect(b).toContain('80.000 COP');
+    expect(b).toContain('20.000 ARS');
+    expect(b).toContain('360 MXN');
+    // Y le prohíbe salirse de esa lista.
+    expect(b).toMatch(/únicas cifras que puedes decir/i);
+    expect(b).toMatch(/NUNCA calcules tú una conversión/i);
   });
 
   it('lo que ELLA dice de su país manda sobre el indicativo de su número', () => {
@@ -251,7 +270,7 @@ describe('el conversor de monedas', () => {
       vivas: false,
     });
     expect(b).not.toContain('80.000');
-    expect(b).toMatch(/no hay tasa fiable|no conviertas/i);
+    expect(b).toMatch(/no hay tasa verificada/i);
   });
 });
 

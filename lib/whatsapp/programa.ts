@@ -303,6 +303,12 @@ function paisDeElla(telefono: string | null | undefined, paisIso?: string | null
  * después no cuadra en el extracto es justo la sorpresa que hace pedir la
  * devolución — y el número que ella va a ver en Skool es el dólar, no el peso.
  */
+/**
+ * Las monedas de las que preguntan de verdad. Van TODAS calculadas en cada
+ * mensaje: son ~60 tokens y matan una familia entera de inventos.
+ */
+const MONEDAS_TABLA = ['COP', 'MXN', 'ARS', 'CLP', 'PEN', 'EUR', 'BRL', 'DOP', 'CRC', 'GTQ'];
+
 function bloqueMoneda(
   montoUSD: number,
   telefono: string | null | undefined,
@@ -311,23 +317,46 @@ function bloqueMoneda(
 ): string {
   const pais = paisDeElla(telefono, paisIso);
 
-  if (!pais || !tasasUSD) {
-    return `💵 EN SU MONEDA: no sabes de qué país es (o no hay tasa a mano), así que **no conviertas nada**. Di $${montoUSD} USD y ya. En cuanto ella te diga de dónde escribe, se lo puedes traducir.`;
+  if (!tasasUSD) {
+    return `💵 EN SU MONEDA: no hay tasa verificada ahora mismo, así que **no conviertas nada**. Di $${montoUSD} USD y ya. Nunca te inventes la equivalencia.`;
+  }
+
+  // LA TABLA COMPLETA. Sin ella, el bloque solo traía la moneda del país que se
+  // deducía de su teléfono — y si ella preguntaba por otra, el modelo se la
+  // inventaba. Pasó de verdad el 2026-08-05: a una mujer con línea colombiana
+  // que preguntó en pesos argentinos, Paula le dijo "unos 5.600" cuando eran
+  // unos 30.000. Ahora la cifra que pida está siempre delante, calculada.
+  const tabla = MONEDAS_TABLA
+    .map((c) => precioLocal(montoUSD, c, tasasUSD))
+    .filter((p) => p.frase)
+    .map((p) => p.frase.replace('unos ', ''))
+    .join(' · ');
+
+  if (!tabla) {
+    return `💵 EN SU MONEDA: no hay tasa verificada ahora mismo. Di $${montoUSD} USD y no inventes la equivalencia.`;
+  }
+
+  const comun = `## 💵 $${montoUSD} USD AL MES, EN CADA MONEDA — TASA DE HOY, YA CALCULADA
+${tabla}
+⛔ **Estas son las únicas cifras que puedes decir.** Si te pregunta por una moneda que no esté en esta lista, dile que se lo confirmas y no te la inventes. NUNCA calcules tú una conversión.
+⛔ SIEMPRE "unos", nunca la cifra exacta: lo que le cobre su banco depende de la tasa del día y del recargo de su tarjeta.
+⛔ El dólar va SIEMPRE delante, porque es lo que ella va a ver en la pantalla de Skool.`;
+
+  if (!pais) {
+    return `${comun}
+👉 Todavía no sabes de qué país es: **pregúntaselo** y dale la cifra que le toque de la lista. Mientras no lo sepas, di solo los $${montoUSD} USD.`;
   }
 
   const local = precioLocal(montoUSD, pais.moneda, tasasUSD);
 
   if (local.esDolar) {
-    return `💵 EN SU MONEDA: en ${pais.nombre} se cuenta en dólares, así que $${montoUSD} USD ya es su cifra. **No la conviertas ni la repitas dos veces.**`;
+    return `${comun}
+👉 ELLA ESCRIBE DESDE ${pais.nombre.toUpperCase()}, donde se cuenta en dólares: $${montoUSD} USD ya es su cifra. **No la conviertas ni la repitas dos veces.**`;
   }
 
-  if (!local.frase) {
-    return `💵 EN SU MONEDA: no hay tasa fiable para ${local.codigo} en este momento. Di $${montoUSD} USD y no inventes la equivalencia.`;
-  }
-
-  return `💵 EN SU MONEDA (${pais.nombre}): $${montoUSD} USD son **${local.frase} al mes**, a la tasa de hoy.
-👉 Se lo dices así de natural, con las dos cifras juntas: *"son $${montoUSD} al mes, ${local.frase}"*. Es lo que le quita la incógnita y la deja decidir.
-⛔ SIEMPRE "unos", nunca la cifra exacta ni "son exactamente": lo que le cobre su banco depende de la tasa del día y del recargo de su tarjeta. Y el dólar va SIEMPRE, porque es lo que ella va a ver en la pantalla de Skool: si solo le dices pesos, al llegar al pago ve otra cosa y se cae.`;
+  return `${comun}
+👉 **LA SUYA (${pais.nombre}): $${montoUSD} USD son ${local.frase} al mes.** Se lo dices con las dos cifras juntas: *"son $${montoUSD} al mes, ${local.frase}"*.
+🌎 Si ELLA te dice que está en otro país, o te pregunta por otra moneda, usas la de esa lista — lo que ella diga manda sobre lo que diga su número de teléfono.`;
 }
 
 /** Su país y su hora, o la advertencia de que no lo sabemos. */
@@ -386,6 +415,21 @@ function horarioParaElla(inicio: Date, tz: string): { dias: string; hora: string
     .join(' y ');
 
   return { dias: suyos, hora: hora12(inicio, tz), cambiaDia: desplazamiento !== 0 };
+}
+
+/**
+ * Las cifras en moneda local que Paula PUEDE decir hoy, tal cual salen del
+ * bloque del reloj. Lo usa el blindaje para cazar una conversión inventada.
+ *
+ * Devuelve solo los números ("65.000", "30.000"…): comparar por número y no por
+ * frase completa deja pasar que el modelo escriba "30.000 pesos argentinos" en
+ * vez de "30.000 ARS", que es correcto y natural.
+ */
+export function cifrasLocalesValidas(montoUSD: number, tasasUSD?: TablaTasas): string[] {
+  if (!tasasUSD) return [];
+  return MONEDAS_TABLA.map((c) => precioLocal(montoUSD, c, tasasUSD))
+    .map((p) => p.frase.replace(/^unos\s+/, '').replace(/\s+[A-Z]{3}$/, ''))
+    .filter(Boolean);
 }
 
 /**
