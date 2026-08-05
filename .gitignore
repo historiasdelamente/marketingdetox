@@ -51,3 +51,7 @@ next-env.d.ts
 
 # Informe de la auditoría manual de Paula (se regenera al correrla)
 auditoria-paula.txt
+
+# Simulador de conversación con Paula (__tests__/_chat-manual.test.ts)
+chat-estado.json
+chat-salida.txt

@@ -7,6 +7,7 @@ import {
   motivoHandoff,
 } from '@/lib/whatsapp/blindaje';
 import { APEGO_DETOX, precioApego, proximoEncuentro } from '@/lib/whatsapp/programa';
+import { precioLocal } from '@/lib/whatsapp/moneda';
 import { DOLORES_DENTRO, DOLORES_FUERA, buildSystemPrompt, preguntaEntradaPara } from '@/lib/whatsapp/paula';
 
 // Viernes 31 de julio de 2026, 10:00 AM Colombia. El lanzamiento de Apego Detox
@@ -304,6 +305,28 @@ describe('el prompt que se arma en cada turno', () => {
     // Y ninguna otra cifra en pesos: si aparece una segunda, es una escrita a mano.
     const enPesos = [...p.matchAll(/unos [\d.]+ COP/g)].map((m) => m[0]);
     expect(new Set(enPesos).size).toBe(1);
+  });
+
+  it('NINGUNA cifra local escrita a mano sobrevive en todo el prompt', () => {
+    // ⚠️ BUG REAL, cazado el 2026-08-05 probando el bot como una mujer de Chile:
+    // le dijo "unos 80.000 pesos" — la cifra COLOMBIANA — cuando a ella le
+    // corresponden unos 20.000. Cuatro veces el precio. El número estaba escrito
+    // a mano en PAULA-CONOCIMIENTO.md y el modelo lo copió tal cual.
+    //
+    // Este test mira el prompt ENTERO (prompt + documento de conocimiento) y
+    // exige que la ÚNICA cifra local que aparezca sea la calculada para ELLA.
+    const TASAS = { USD: 1, CLP: 950 };
+    const p = buildSystemPrompt(usuaria, '', '+56912345678', { ahora: VIERNES_31, tasas: TASAS });
+
+    const suya = precioLocal(20, 'CLP', TASAS).frase; // "unos 20.000 CLP"
+    expect(p).toContain(suya);
+
+    // Cualquier otra cantidad con pinta de precio local es una escrita a mano.
+    const sospechosas = [...p.matchAll(/\b\d{1,3}\.\d{3}\b/g)].map((m) => m[0]);
+    expect(
+      sospechosas.filter((n) => !suya.includes(n)),
+      'hay cifras locales a mano en el prompt o en PAULA-CONOCIMIENTO.md',
+    ).toEqual([]);
   });
 
   it('sin país ni tasas, los ejemplos se quedan solo con los dólares', () => {
