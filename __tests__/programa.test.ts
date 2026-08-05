@@ -230,6 +230,29 @@ describe('el conversor de monedas', () => {
   it('con una moneda desconocida calla en vez de inventar', () => {
     expect(precioLocal(20, 'XYZ', TASAS).frase).toBe('');
   });
+
+  it('SIN TASA VERIFICADA no convierte: solo dólares', () => {
+    // ⚠️ La tabla de respaldo existe para que el sistema no se caiga, NO para
+    // decirle cifras a una mujer. El 2026-08-05 la de COP decía 4.000 con el
+    // dólar real a 3.234: habría dicho "unos 80.000" cuando eran unos 65.000.
+    // Javier pidió que la conversión se verifique SIEMPRE; esto es lo que lo
+    // hace cierto cuando la API no responde.
+    const respaldo = { valores: { USD: 1, COP: 4000 }, vivas: false };
+    expect(precioLocal(20, 'COP', respaldo).frase).toBe('');
+
+    // Con la misma tabla marcada como viva, sí convierte.
+    expect(precioLocal(20, 'COP', { valores: { USD: 1, COP: 4000 }, vivas: true }).frase)
+      .toBe('unos 80.000 COP');
+  });
+
+  it('el bloque del reloj tampoco da cifra local sin tasa verificada', () => {
+    const b = bloqueContexto(colombia('2026-08-05T10:00:00'), '+573001112233', false, {
+      valores: { USD: 1, COP: 4000 },
+      vivas: false,
+    });
+    expect(b).not.toContain('80.000');
+    expect(b).toMatch(/no hay tasa fiable|no conviertas/i);
+  });
 });
 
 describe('los datos duros coinciden con la página de Skool', () => {

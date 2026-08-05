@@ -26,6 +26,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { TZ_COLOMBIA, detectarPais, fechaLarga, hora12, paisPorIso } from '@/lib/whatsapp/paises';
 import { precioLocal, tasas } from '@/lib/whatsapp/moneda';
+import type { TablaTasas } from '@/lib/whatsapp/programa';
 import { APEGO, bloqueContextoApego, proximoEncuentro } from '@/lib/whatsapp/apego-detox';
 
 export const dynamic = 'force-dynamic';
@@ -148,7 +149,7 @@ function cap(s: string): string {
 // --- Copys FIJOS (fallback si el generador LLM falla) ---
 // Regla: todo recordatorio VENDE — siempre lleva link y pregunta de decisión.
 
-function copyRecordatorio1(user: WaUserRow, linkYaEnviado: boolean, tabla: Record<string, number>): string {
+function copyRecordatorio1(user: WaUserRow, linkYaEnviado: boolean, tabla: TablaTasas): string {
   const nombre = user.name;
   const n = saludo(nombre);
   const precio = precioParaElla(user, tabla);
@@ -165,7 +166,7 @@ function copyRecordatorio1(user: WaUserRow, linkYaEnviado: boolean, tabla: Recor
   ], (nombre || '') + '1'));
 }
 
-function copyRecordatorio2(user: WaUserRow, ahora: Date, tabla: Record<string, number>): string {
+function copyRecordatorio2(user: WaUserRow, ahora: Date, tabla: TablaTasas): string {
   const nombre = user.name;
   const n = saludo(nombre);
   const precio = precioParaElla(user, tabla);
@@ -196,7 +197,7 @@ function copyInvitacionGrupo(nombre: string | null): string {
  * su banco depende de la tasa del día. Si no sabemos de qué país es, va solo el
  * dólar: inventarle una equivalencia sería peor que no darla.
  */
-function precioParaElla(user: WaUserRow, tabla: Record<string, number>): string {
+function precioParaElla(user: WaUserRow, tabla: TablaTasas): string {
   const usd = `${APEGO.precio} al mes`;
   const pais = paisPorIso(user.pais) ?? detectarPais(user.phone);
   if (!pais) return usd;

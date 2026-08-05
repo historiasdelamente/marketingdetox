@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import {
   auditarRespuesta,
+  dejarSoloJavier,
   instruccionCorreccion,
   instruccionHandoff,
   motivoHandoff,
@@ -11,7 +12,7 @@ import {
 import { conocimientoPara } from './conocimiento';
 import { escalonDe, instruccionEscalon, type Escalon } from './escalera';
 import { aplicarFormato } from './formato';
-import { APEGO_DETOX, bloqueContexto, diasTallerPara, precioApego } from './programa';
+import { APEGO_DETOX, bloqueContexto, diasTallerPara, precioApego, type TablaTasas } from './programa';
 import { normalizarCanal, normalizarNegritas } from './manychat';
 import { PAISES, detectarPais, paisPorIso } from './paises';
 import { precioLocal, tasas } from './moneda';
@@ -467,7 +468,7 @@ No hay cuarto globo: la despedida cálida sobra y te delata.
 
 **"Lo voy a pensar"** → una sola pregunta: si la frena el dinero o la duda de que le sirva a ella. Al segundo "no" claro, la sueltas con cariño.
 
-**Pregunta por la clase del jueves** → una línea: los talleres en vivo ahora son parte del programa, dos por semana. Y sigues con el programa.
+**Pregunta por la clase del jueves** → una línea (los talleres ahora son parte del programa, dos por semana) y **le pasas el WhatsApp de Javier Vieira** para que él se lo confirme. Ahí no va el link de Skool.
 
 **No tiene tarjeta** → no inventes otra forma de pagar. Le pasas el WhatsApp de Javier Vieira.
 
@@ -744,7 +745,7 @@ export function buildSystemPrompt(
     /** true cuando todavía no le has escrito nunca: manda el bloque de ENTRADA. */
     esPrimerTurno?: boolean;
     /** Tasas del día (de `moneda.ts`). Sin ellas, Paula solo dice dólares. */
-    tasas?: Record<string, number>;
+    tasas?: TablaTasas;
   } = {},
 ): string {
   const ahora = opciones.ahora ?? new Date();
@@ -1197,6 +1198,13 @@ export async function processPaulaMessage(
   // ningún precio sale de aquí, diga lo que diga el modelo. El prompt ya se lo
   // pide, pero esto es lo que lo hace cierto: es el único punto del sistema
   // donde equivocarse no cuesta una venta, cuesta otra cosa.
+  // Pregunta por la clase retirada: el mensaje tiene UN destino, el WhatsApp de
+  // Javier. Sin esto el modelo mandaba también el de Skool y, al comprimir dos
+  // links en tres globos, la frase se cortaba a la mitad.
+  if (handoff === 'pregunta_clase') {
+    paulaResponse = aplicarFormato(dejarSoloJavier(paulaResponse));
+  }
+
   if (handoff === 'crisis') {
     paulaResponse = quitarVentaEnCrisis(paulaResponse);
   }

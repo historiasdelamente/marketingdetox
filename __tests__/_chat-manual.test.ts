@@ -19,7 +19,13 @@ import fs from 'fs';
 import path from 'path';
 import { describe, it } from 'vitest';
 
-import { auditarRespuesta, instruccionCorreccion, motivoHandoff, quitarVentaEnCrisis } from '@/lib/whatsapp/blindaje';
+import {
+  auditarRespuesta,
+  dejarSoloJavier,
+  instruccionCorreccion,
+  motivoHandoff,
+  quitarVentaEnCrisis,
+} from '@/lib/whatsapp/blindaje';
 import { escalonDe } from '@/lib/whatsapp/escalera';
 import { aplicarFormato } from '@/lib/whatsapp/formato';
 import { normalizarNegritas, partirEnGlobos } from '@/lib/whatsapp/manychat';
@@ -123,6 +129,7 @@ describe('conversación manual con Paula', () => {
     }
 
     let final = aplicarFormato(normalizarNegritas(auditoria.texto, 'whatsapp'));
+    if (handoff === 'pregunta_clase') final = aplicarFormato(dejarSoloJavier(final));
     if (handoff === 'crisis') final = quitarVentaEnCrisis(final);
 
     if (handoff) out.push(`🔀 HANDOFF detectado: ${handoff}\n`);

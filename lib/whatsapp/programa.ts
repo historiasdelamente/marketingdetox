@@ -50,7 +50,10 @@ import {
   paisPorIso,
   type Pais,
 } from './paises';
-import { precioLocal } from './moneda';
+import { precioLocal, type Tasas } from './moneda';
+
+/** Las tasas del día, o una tabla pelada (lo que usan los tests). */
+export type TablaTasas = Tasas | Record<string, number>;
 
 /** Colombia no tiene horario de verano: -05:00 vale todo el año. */
 const OFFSET_COLOMBIA = '-05:00';
@@ -303,7 +306,7 @@ function paisDeElla(telefono: string | null | undefined, paisIso?: string | null
 function bloqueMoneda(
   montoUSD: number,
   telefono: string | null | undefined,
-  tasasUSD: Record<string, number> | undefined,
+  tasasUSD: TablaTasas | undefined,
   paisIso: string | null | undefined,
 ): string {
   const pais = paisDeElla(telefono, paisIso);
@@ -422,7 +425,7 @@ export function bloqueContexto(
    * Tasas de cambio del día (de `moneda.ts`). Opcional: sin ellas Paula sigue
    * dando el precio en dólares y no se rompe nada — solo pierde la conversión.
    */
-  tasasUSD?: Record<string, number>,
+  tasasUSD?: TablaTasas,
   /** El país que ELLA dijo por texto, si lo dijo. Manda sobre el indicativo. */
   paisIso?: string | null,
 ): string {

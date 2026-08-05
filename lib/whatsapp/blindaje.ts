@@ -627,6 +627,46 @@ export function quitarVentaEnCrisis(texto: string): string {
     .trim();
 }
 
+/**
+ * PREGUNTA POR LA CLASE RETIRADA.
+ *
+ * Javier lo dictó el 2026-08-05: *"si preguntan por la clase le das el link de
+ * WhatsApp"*. Va por código y no por prompt porque quien pregunta por un
+ * producto que ya no existe suele traer algo que Paula no puede resolver —
+ * la compró y no sabe qué pasa con su acceso, la vio en un anuncio que sigue
+ * corriendo, o le prometieron algo. Eso lo atiende él.
+ *
+ * ⚠️ Busca la CLASE como producto, no la palabra "clase": "¿las clases en vivo
+ * son todas las semanas?" es una pregunta legítima del programa y no puede
+ * dispararlo.
+ */
+const PREGUNTA_CLASE_RE =
+  /clase\s+del\s+jueves|recuperando\s+mi\s+ser|volver\s+a\s+m[íi]\b|la\s+clase\s+(?:en\s+vivo\s+)?(?:de|del|que)\b|clase\s+suelta|(?:compr[ée]|pagu[ée]|inscrib[íi])\s+(?:la\s+)?clase|clase\s+de\s+25|clase\s+de\s+hotmart/i;
+
+/**
+ * Deja SOLO el WhatsApp de Javier: quita el link del programa y el de la página.
+ *
+ * ⚠️ Es la garantía por código de lo que el prompt ya pide en el handoff de
+ * `pregunta_clase`. Probándolo el 2026-08-05, Paula mandó los DOS links en el
+ * mismo mensaje —el de él y el de Skool— y encima la frase quedó cortada al
+ * comprimir globos. Pedirlo por prompt no basta cuando el resto del sistema le
+ * está diciendo que venda: aquí el mensaje tiene un solo destino, y es él.
+ *
+ * Se filtra por línea, como en crisis: borrar un link a media frase deja el
+ * texto peor que no haber borrado nada.
+ */
+export function dejarSoloJavier(texto: string): string {
+  const sinEsquema = (url: string) => url.replace(/^https?:\/\//, '').replace(/\?.*$/, '');
+  const productos = [APEGO_DETOX.checkout, APEGO_DETOX.landing].map(sinEsquema);
+
+  return (texto || '')
+    .split('\n')
+    .filter((linea) => !productos.some((p) => linea.includes(p)))
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 export type MotivoHandoff =
   | 'crisis'
   | 'pide_humano'
@@ -634,6 +674,7 @@ export type MotivoHandoff =
   | 'compra_cerrada'
   | 'recibo_pago'
   | 'sin_tarjeta'
+  | 'pregunta_clase'
   | null;
 
 export function motivoHandoff(mensaje: string): MotivoHandoff {
@@ -647,6 +688,9 @@ export function motivoHandoff(mensaje: string): MotivoHandoff {
   if (COMPRA_CERRADA_RE.test(mensaje)) return 'compra_cerrada';
   if (SIN_TARJETA_RE.test(mensaje)) return 'sin_tarjeta';
   if (PIDE_HUMANO_RE.test(mensaje)) return 'pide_humano';
+  // Va de último: "ya pagué la clase" es un recibo, y "no puedo pagar la clase"
+  // es un problema de pago. Los dos se atienden antes que la pregunta en sí.
+  if (PREGUNTA_CLASE_RE.test(mensaje)) return 'pregunta_clase';
   return null;
 }
 
@@ -714,5 +758,19 @@ No inventes formas de pago, no le prometas otro método y NUNCA recibas dinero p
 ${link}
 
 Le dices qué escribirle: que no tiene tarjeta y que quiere entrar. Javier lo resuelve con ella.`;
+
+    case 'pregunta_clase':
+      return `# 🗓️ PREGUNTA POR LA CLASE DEL JUEVES — SE LA PASAS A JAVIER
+Está preguntando por un producto que **ya no se vende**. No se lo vendas, no le des su precio, no le des su fecha y NUNCA le mandes su página ni un link de Hotmart.
+
+Dos globos y el link, en este orden:
+1. La verdad en una línea: los talleres en vivo con Javier Vieira ahora son parte del programa — son dos por semana, todas las semanas, en vez de una clase suelta. Sin disculparte y sin explicarle cambios de negocio.
+2. Le dices que eso se lo confirma Javier Vieira directamente, y le mandas este link COMPLETO, solo, en su propio globo:
+
+${link}
+
+Le dices qué escribirle: que preguntó por la clase del jueves. **Si ya la había comprado, con más razón** — eso solo lo puede resolver él.
+
+⛔ En este mensaje NO va el link de Skool ni el precio del programa: un solo link por mensaje, y aquí el que toca es el de él. Si ella vuelve preguntando por el programa, ahí retomas normal.`;
   }
 }

@@ -62,18 +62,38 @@ const TTL_MS = 12 * 60 * 60 * 1000;
 /** Corto a propósito: antes que una cifra fresca, va que Paula conteste. */
 const TIMEOUT_MS = 4000;
 
-let cache: { tasas: Record<string, number>; ts: number } | null = null;
+/** Si la API falla, se reintenta en 15 min, no en 12 h: la cifra importa. */
+const TTL_FALLO_MS = 15 * 60 * 1000;
+
+export type Tasas = {
+  valores: Record<string, number>;
+  /**
+   * true solo si estas cifras vienen de la API HOY.
+   *
+   * ⚠️ ES LA PIEZA QUE EVITA MENTIR CON EL PRECIO. Con `false`, Paula NO
+   * convierte: da el precio en dólares y ya. Las de respaldo sirven para que el
+   * sistema no se caiga, no para decírselas a una mujer — el 2026-08-05 la de
+   * COP estaba en 4.000 con el dólar real a 3.234, o sea que habría dicho
+   * "unos 80.000" cuando eran unos 65.000. Una cifra sin verificar es
+   * exactamente el error que Javier pidió que no volviera a pasar.
+   */
+  vivas: boolean;
+};
+
+let cache: { tasas: Tasas; ts: number } | null = null;
 /** Evita que diez mensajes a la vez disparen diez llamadas a la API. */
-let enVuelo: Promise<Record<string, number>> | null = null;
+let enVuelo: Promise<Tasas> | null = null;
 
 /**
- * Trae las tasas vivas. Ante cualquier problema devuelve las de respaldo.
+ * Trae las tasas del día. Ante cualquier problema devuelve las de respaldo
+ * MARCADAS como no verificadas, para que nadie las diga en voz alta.
  *
  * No lanza NUNCA: quien la llama está en el camino de una respuesta a una
  * mujer que está esperando en el chat, y ninguna divisa vale una caída.
  */
-export async function tasas(ahora = Date.now()): Promise<Record<string, number>> {
-  if (cache && ahora - cache.ts < TTL_MS) return cache.tasas;
+export async function tasas(ahora = Date.now()): Promise<Tasas> {
+  const ttl = cache?.tasas.vivas === false ? TTL_FALLO_MS : TTL_MS;
+  if (cache && ahora - cache.ts < ttl) return cache.tasas;
   if (enVuelo) return enVuelo;
 
   enVuelo = (async () => {
@@ -89,19 +109,22 @@ export async function tasas(ahora = Date.now()): Promise<Record<string, number>>
       // Solo se pisan las monedas que ya conocemos, y solo con números sanos.
       // Si la API devolviera basura para una divisa, se queda la de respaldo.
       const frescas: Record<string, number> = { ...TASAS_RESPALDO };
+      let algunaViva = false;
       for (const codigo of Object.keys(TASAS_RESPALDO)) {
         const v = data.rates[codigo];
-        if (typeof v === 'number' && Number.isFinite(v) && v > 0) frescas[codigo] = v;
+        if (typeof v === 'number' && Number.isFinite(v) && v > 0) {
+          frescas[codigo] = v;
+          if (codigo !== 'USD') algunaViva = true;
+        }
       }
+      if (!algunaViva) throw new Error('la API no trajo ninguna divisa conocida');
 
-      cache = { tasas: frescas, ts: ahora };
-      return frescas;
+      cache = { tasas: { valores: frescas, vivas: true }, ts: ahora };
+      return cache.tasas;
     } catch (e) {
-      console.warn('[Paula moneda] tasa viva no disponible, usando respaldo:', (e as Error).message);
-      // Se cachea el fallo también: si no hay salida a internet, no tiene
-      // sentido reintentarlo en cada mensaje durante las próximas 12 horas.
-      cache = { tasas: TASAS_RESPALDO, ts: ahora };
-      return TASAS_RESPALDO;
+      console.warn('[Paula moneda] tasa viva no disponible:', (e as Error).message);
+      cache = { tasas: { valores: TASAS_RESPALDO, vivas: false }, ts: ahora };
+      return cache.tasas;
     } finally {
       enVuelo = null;
     }
@@ -162,12 +185,20 @@ export type PrecioLocal = {
 export function precioLocal(
   usd: number,
   codigoMoneda: string,
-  tabla: Record<string, number>,
+  tabla: Tasas | Record<string, number>,
 ): PrecioLocal {
   const codigo = (codigoMoneda || 'USD').toUpperCase();
   if (codigo === 'USD') return { codigo, esDolar: true, frase: '' };
 
-  const tasa = tabla[codigo];
+  // Acepta las dos formas para no romper a quien pase la tabla pelada (tests).
+  const esTasas = (t: unknown): t is Tasas =>
+    typeof t === 'object' && t !== null && 'valores' in t;
+  // ⛔ SIN TASA VERIFICADA NO SE CONVIERTE. Mejor darle solo los dólares que
+  // una cifra en pesos que no podemos respaldar: es dinero y es su confianza.
+  if (esTasas(tabla) && !tabla.vivas) return { codigo, esDolar: false, frase: '' };
+
+  const valores = esTasas(tabla) ? tabla.valores : tabla;
+  const tasa = valores[codigo];
   if (!Number.isFinite(tasa) || tasa <= 0) return { codigo, esDolar: false, frase: '' };
 
   const monto = redondearBonito(usd * tasa);
