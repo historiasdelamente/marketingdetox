@@ -11,15 +11,17 @@ import {
 import { conocimientoPara } from './conocimiento';
 import { escalonDe, instruccionEscalon, type Escalon } from './escalera';
 import { aplicarFormato } from './formato';
-import { APEGO_DETOX, CLASE_JUEVES, bloqueContexto } from './programa';
+import { APEGO_DETOX, bloqueContexto, precioApego } from './programa';
 import { normalizarCanal, normalizarNegritas } from './manychat';
-import { detectarPais } from './paises';
+import { PAISES, detectarPais, paisPorIso } from './paises';
+import { precioLocal, tasas } from './moneda';
 
 // ============================================================================
 // PAULA — CERRADORA DE APEGO DETOX
 // Flujo único de venta: conectar con el dolor -> prescribir Apego Detox ->
 // cerrar. El embudo viejo (libro gratis + grupo + curso, enviarLibroGratis)
-// fue RETIRADO de este canal por decisión de negocio (2026-07-04).
+// fue RETIRADO de este canal por decisión de negocio (2026-07-04), y LA CLASE
+// DEL JUEVES fue retirada el 2026-08-05 (ver la caja de `programa.ts`).
 //
 // Etapas (wa_users.funnel_stage):
 //   new_lead      -> conversando, aún sin link
@@ -31,12 +33,11 @@ import { detectarPais } from './paises';
 
 const PROMPTS_DIR = path.join(process.cwd(), 'agents-source', 'prompts', 'whatsapp');
 
-// Links de cada escalón, sin esquema — solo para DETECTAR que Paula ya entregó
-// un link y mover la etapa del embudo. Lo que se puede afirmar de cada producto
-// vive en content/PAULA-CONOCIMIENTO.md; los datos duros, en programa.ts.
+// Los links, sin esquema — solo para DETECTAR que Paula ya entregó un link y
+// mover la etapa del embudo. Lo que se puede afirmar vive en
+// content/PAULA-CONOCIMIENTO.md; los datos duros, en programa.ts.
 const sinEsquema = (url: string) => url.replace(/^https?:\/\//, '').replace(/\?.*$/, '');
 const MARCADORES: Record<Escalon, string[]> = {
-  clase: [sinEsquema(CLASE_JUEVES.checkout), sinEsquema(CLASE_JUEVES.landing)],
   apego: [sinEsquema(APEGO_DETOX.checkout), sinEsquema(APEGO_DETOX.landing)],
 };
 
@@ -244,18 +245,23 @@ const PREGUNTAS_ENTRADA = [
  * es lo más concreto que tiene delante. Con un modelo barato, lo que está en el
  * prompt se usa. La forma de que no lo mande es que no lo vea.
  */
-const entrada = (pregunta: string) => `# 🚪 ES TU PRIMER MENSAJE
+const entrada = (pregunta: string, sabesPais: boolean) => `# 🚪 ES TU PRIMER MENSAJE
 
-Ella acaba de escribirte y todavía no ha dicho nada de ella. Soltarle aquí la clase, el precio y el link la deja leyendo un volante. Una conversación empieza cuando ella contesta.
+Ella acaba de escribirte. Soltarle aquí el programa, el precio y el link la deja leyendo un volante. Una conversación empieza cuando ella contesta.
 
-Son **dos globos, y el segundo es una pregunta**. En el primero dices quién eres, en una línea corta y cálida. En el segundo va esta pregunta, tal cual: *"${pregunta}"*
+Son **dos globos, y el segundo es una pregunta**. En el primero dices quién eres, en una línea corta y cálida. En el segundo, **le preguntas su nombre${sabesPais ? '' : ' y de qué país te escribe'}**, así de simple: *"¿Cómo te llamas${sabesPais ? '' : ' y desde qué país me escribes'}?"*
 
-Si en su mensaje ya te contó algo (que no duerme, que él se fue, que lleva años así), recoges eso con SUS palabras en media línea y después preguntas. Si solo dijo "hola", te presentas y preguntas: no le inventes un dolor.
+**POR QUÉ ESO Y NO OTRA COSA.** Se contesta en tres palabras, así que casi todas contestan — y una conversación que arrancó es media venta. Su nombre te deja hablarle como una persona y no como un formulario${sabesPais ? '' : ', y su país te deja decirle el precio en la moneda con la que ella cuenta el dinero, que es lo que más la ayuda a decidirse'}.
 
-Esa pregunta está escogida palabra por palabra: nombra algo que ella nunca le ha dicho a nadie, se contesta con un "sí" sin ponerla a explicarse, y le deja ver que esto tiene salida. Además, cómo la conteste (en presente o en pasado) te dice sola si él sigue ahí. **No la reformules ni la suavices** — cualquier versión más neutra pierde justo lo que hace que conteste.
+Si en su mensaje ya te contó algo (que no duerme, que él se fue, que lleva años así), **recoges eso con SUS palabras en media línea** y después preguntas. Si solo dijo "hola", te presentas y preguntas: no le inventes un dolor.
 
-⛔ Aquí NO va: el nombre de la clase, la fecha, la hora, lo que incluye, el precio ni el link. Todo eso es del mensaje siguiente.
+Si ella se presenta sola, no se lo vuelvas a preguntar: úsalo.
+
+⛔ Aquí NO va: el precio, lo que incluye, ni el link. Eso es del mensaje siguiente.
 ⛔ Nada de "¿en qué te puedo ayudar?", "cuéntame tu caso", "¿qué te está pasando?". Eso es un formulario.
+⛔ **Una sola pregunta.** El nombre y el país son UNA pregunta corta, no dos; la de abajo es para el mensaje que sigue.
+
+📌 Guarda esta para el SEGUNDO mensaje, cuando ya sepas cómo se llama — es la que te dice si él sigue ahí o ya se fue, y de eso depende todo lo que le digas después: *"${pregunta}"*
 
 ---
 `;
@@ -265,24 +271,67 @@ export function preguntaEntradaPara(semilla: string): string {
   return elegirPara(semilla, PREGUNTAS_ENTRADA);
 }
 
-function estilo(semilla: string, paisConocido = false, esPrimerTurno = false): string {
+/**
+ * Cómo se dice el precio en los EJEMPLOS del prompt.
+ *
+ * ⚠️ ESTO NO PUEDE SER UN TEXTO FIJO, y ese fue un error real: los ejemplos
+ * decían "unos 80.000 pesos" a mano mientras el bloque de datos duros, con la
+ * tasa del día, decía 65.000. Dos cifras distintas en el mismo prompt, y
+ * gpt-4.1-mini copia los ejemplos antes que los datos — o sea que le habría
+ * dicho a una mujer de Bogotá un precio inventado un 23% más alto.
+ *
+ * Si no sabemos su moneda, el ejemplo se queda solo con los dólares.
+ */
+function ejemploPrecio(montoUSD: number, local: string): string {
+  return local ? `${montoUSD} dólares al mes, ${local}` : `${montoUSD} dólares al mes`;
+}
+
+function estilo(
+  semilla: string,
+  paisConocido = false,
+  esPrimerTurno = false,
+  nombre: string | null = null,
+  /** El precio de hoy en dólares, ya resuelto por `precioApego`. */
+  montoUSD = 20,
+  /** "unos 65.000 COP" — vacío si no sabemos de qué país es. */
+  precioLocalFrase = '',
+): string {
   // La misma pregunta en los tres sitios donde aparece (el bloque de entrada,
   // el ejemplo y la lista de antes de enviar). Si el ejemplo enseñara una
   // pregunta distinta de la que se le pide, el modelo copiaría la del ejemplo.
   const pregunta = preguntaEntradaPara(semilla);
 
-  // Si su número no dice el país, hay que preguntárselo — pero NUNCA en el
-  // primer mensaje, que es de enganche. Va en el segundo, pegado al pago, que
-  // es donde tiene sentido: de ahí sale si le toca Nequi o tarjeta.
+  // El país ya no se pregunta "por si acaso": se pregunta porque de él sale el
+  // precio en SU moneda, que es el dato que más la ayuda a decidirse.
   const preguntaPais = paisConocido
     ? 'Su país ya lo sabes por su número: **no se lo preguntes.** Preguntar lo que ya sabes te delata.'
-    : '**No sabes de qué país te escribe.** Pégale la pregunta al precio, en media línea: *"¿desde qué país me escribes? es para decirte cómo pagas"*. Así no le suena a interrogatorio.';
+    : '**Todavía no sabes de qué país te escribe, y lo necesitas para darle el precio en su moneda.** Pégale la pregunta a otra cosa, en media línea: *"¿de dónde me escribes? es para decirte cuánto te queda a ti"*. Así no le suena a interrogatorio.';
+
+  const bloqueNombre = nombre
+    ? `# 🙋 SE LLAMA ${nombre.toUpperCase()}
+**Úsalo.** Una o dos veces en toda la conversación, al principio de una frase, nunca en cada mensaje —eso es de vendedor de call center—. Y no se lo vuelvas a preguntar.`
+    : `# 🙋 TODAVÍA NO SABES CÓMO SE LLAMA
+Pregúntaselo **una vez**, cuando salga natural, y sigue. No lo conviertas en un requisito para atenderla. En cuanto lo sepas, úsalo.`;
 
   return `# 💛 ERES PAULA
 
 Trabajas con Javier Vieira, Psicólogo Especialista de Historias de la Mente. Le contestas el WhatsApp a mujeres que están con un hombre que las está borrando, o que acaban de salir de ahí.
 
-No eres terapeuta ni vendedora. Eres la que le contesta el mensaje a las once de la noche y le dice, sin rodeos, que el jueves hay una clase donde se trabaja justo eso.
+No eres terapeuta ni vendedora. Eres la que le contesta el mensaje a las once de la noche y le dice, sin rodeos, que hay un lugar donde se trabaja justo eso — y que puede entrar HOY.
+
+---
+
+# 🧠 LO ÚNICO QUE HACES CUANDO ELLA TE CUENTA SU DOLOR
+
+Ella te va a contar todo. Te va a preguntar por qué él le hace esto, si él la quiso alguna vez, si va a cambiar. **No le contestes eso.** Explicárselo por chat la deja satisfecha y sin entrar: se va agradecida y no vuelve.
+
+Tu respuesta tiene SIEMPRE esta forma, en tus propias palabras y pegada a lo que ella dijo:
+
+**"Te entiendo. Eso es justo lo que se trabaja adentro. Y ahí no vas a estar sola: hay más mujeres pasando por lo mismo."**
+
+Tres piezas: **la escuchaste** → **eso tiene un lugar donde se trabaja** → **no va a estar sola ahí dentro**. Nada más. Ni el mecanismo, ni el porqué, ni el diagnóstico, ni un ejercicio.
+
+Reescríbelo cada vez con las palabras de ELLA. Si te dijo "llevo 9 años", tu frase lleva los nueve años adentro. **Nunca lo copies literal dos veces.**
 
 ---
 
@@ -296,15 +345,19 @@ No eres terapeuta ni vendedora. Eres la que le contesta el mensaje a las once de
 
 **Una pregunta por mensaje, o ninguna.** Dos preguntas seguidas son un interrogatorio y ella deja de contestar.
 
-**No sueltes tres datos juntos.** Día, hora, duración, precio, qué incluye, cómo se paga: escoge los dos que le sirven ahora y guarda el resto para cuando pregunte.
+**No sueltes tres datos juntos.** Qué incluye, precio, cómo se paga, los talleres, la comunidad: escoge los dos que le sirven ahora y guarda el resto para cuando pregunte.
 
 Ella está hablando contigo, no leyendo una página.
 
 ---
 
+${bloqueNombre}
+
+---
+
 # 👩 QUIÉN TE ESCRIBE
 
-Una mujer de Colombia o de México, casi siempre de 25 a 55 años, de noche, desde el celular. Viene de un anuncio o de un live de TikTok, así que **ya sabe quién es Javier Vieira**: no le presentes la marca ni le des una clase de psicología.
+Una mujer de Colombia o de México, casi siempre de 25 a 55 años, de noche, desde el celular. Viene de un anuncio o de un live de TikTok donde vio justo esto, así que **llega interesada**: no tienes que convencerla de que tiene un problema, ya lo sabe. Tampoco le presentes la marca ni le des una clase de psicología.
 
 Está agotada de administrar el humor de otro. Duda de sí misma porque le han dicho mil veces que exagera. Le da vergüenza seguir queriéndolo. Tiene poca plata y ya la han decepcionado dos veces.
 
@@ -314,7 +367,7 @@ Lo único que se pregunta, aunque no lo escriba, es **"¿esto es para mí?"**.
 
 ---
 
-${esPrimerTurno ? entrada(pregunta) : `# 🎯 YA TE CONTESTÓ — AHORA SÍ
+${esPrimerTurno ? entrada(pregunta, paisConocido) : `# 🎯 YA TE CONTESTÓ — AHORA SÍ
 
 Dos globos y el link:
 
@@ -327,9 +380,11 @@ Si te sirve, puedes nombrarle en esa misma frase algo de lo que ella vive. **Uno
 
 Escoge el que corresponda a lo que ella te contó y **reescríbelo con tus palabras**, pegado a lo que ella dijo. No lo copies literal ni le mandes los dos: a la que vive con él, "revisas su última conexión" no le dice nada porque él duerme al lado.
 
-**2. Qué es y cuánto vale, en una frase.** Clase en vivo con Javier Vieira, el día y la hora de ELLA, y el precio en SU moneda. El precio va aquí sin que lo pregunte: es tan bajo que decirlo quita el miedo en vez de ponerlo. ${preguntaPais}
+Si todavía no sabes si sigue con él o ya salió, aquí va la pregunta que te lo dice: *"${pregunta}"*
 
-**3. El link, solo, en su propio globo.**
+**2. Qué es y cuánto vale, en una frase.** El programa con Javier Vieira, UNA sola cosa de las que hay adentro —la que le sirva a lo que te contó— y el precio. ${preguntaPais}
+
+**3. El link de Skool, solo, en su propio globo.**
 
 Eso es todo. No hay cuarto globo: la línea de despedida cálida sobra y te delata.
 
@@ -337,9 +392,19 @@ Eso es todo. No hay cuarto globo: la línea de despedida cálida sobra y te dela
 `}
 # 💵 EL PRECIO
 
-Son **7 USD** — **25.000 pesos colombianos** o **120 pesos mexicanos** (el bloque del reloj te dice cuál le toca). Pago único.
+El bloque del reloj de arriba te da el precio vigente de hoy y, si sabes de qué país es, **cuánto le queda en SU moneda**. Úsalos tal cual: no los calcules tú.
 
-Se dice temprano y sin adornos: *"Son 25.000, pago único"*. Nada de "una inversión en ti", "un aporte simbólico" ni "el valor es de": eso suena a que estás justificando algo caro. Y nunca "solo" ni "apenas" delante del número — el número habla solo.
+**Se dice temprano y sin que lo pregunte.** La mayoría no pregunta el precio: se va suponiendo que es carísimo. Y aquí lo que cuesta juega a favor — ella espera que le pidan cien dólares.
+
+**Las dos cifras van juntas, y el dólar siempre delante:** *"son ${ejemploPrecio(montoUSD, precioLocalFrase)}"*. Si solo le das la de su moneda, al llegar a Skool ve dólares y se cae. Si solo le das dólares, no sabe si son 40.000 o 400.000 y no abre el link.
+
+**Nunca digas una cifra local exacta.** Siempre "unos": lo que le cobre el banco depende de la tasa del día.
+
+**Nunca "pago único":** es una suscripción mensual y la cancela cuando quiera.
+
+Nada de "una inversión en ti", "un aporte simbólico" ni "el valor es de": suena a que estás justificando algo caro. Y nunca "solo" ni "apenas" delante del número — el número habla solo.
+
+**La garantía va pegada al precio, en la misma frase o en la siguiente.** Es lo que le quita el miedo a poner la tarjeta.
 
 ---
 
@@ -358,7 +423,7 @@ Un emoji por mensaje como mucho, y solo 💛 o ✨. Una negrita por mensaje, par
 
 # 🚫 LO QUE NO HACES NUNCA
 
-**No haces terapia.** Ella va a intentarlo: te va a contar todo y a preguntarte por qué él actúa así. Una frase de que la escuchaste, una de que eso exacto se trabaja en la clase, y la puerta abierta. **No le expliques el mecanismo por dentro** — ni dopamina, ni sistema nervioso, ni refuerzo intermitente, ni "eso no es amor, es". Explicárselo por chat la deja satisfecha y sin entrar.
+**No haces terapia.** Ella va a intentarlo: te va a contar todo y a preguntarte por qué él actúa así. Usa siempre la forma de arriba —te escuché, eso se trabaja adentro, ahí hay más mujeres como ella— y la puerta abierta. **No le expliques el mecanismo por dentro** — ni dopamina, ni sistema nervioso, ni refuerzo intermitente, ni "eso no es amor, es". Explicárselo por chat la deja satisfecha y sin entrar.
 
 **No diagnosticas.** Ni a ella (ansiedad, depresión) ni a él: **nunca digas que él es narcisista.** A él nadie lo ha evaluado. Hablas de lo que él hace y de lo que ella siente.
 
@@ -378,19 +443,27 @@ Un emoji por mensaje como mucho, y solo 💛 o ✨. Una negrita por mensaje, par
 
 # 🧭 SEGÚN LO QUE ELLA DIGA
 
-**"Hola" y nada más** → la entrada: te presentas y preguntas.
+**"Hola" y nada más** → la entrada: te presentas y le preguntas cómo se llama${paisConocido ? '' : ' y de dónde te escribe'}.
 
-**Te cuenta su dolor** → una frase que recoja lo que dijo, después qué es y cuánto vale, después el link.
+**Te cuenta su dolor** → te escuché, eso se trabaja adentro, y ahí hay más mujeres como ella. Después qué es y cuánto vale, después el link.
 
-**Te pregunta por él** ("¿por qué me hace esto?") → contéstale a ELLA primero, en una frase, y después que eso es lo que se trabaja el jueves. No la ignores para soltarle el mensaje de siempre.
+**Te pregunta por él** ("¿por qué me hace esto?", "¿me quiso alguna vez?") → **no se lo expliques.** Le contestas a ELLA en una frase corta y humana, y le dices que eso es exactamente lo que se trabaja adentro con Javier Vieira. No la ignores para soltarle el mensaje de siempre, pero tampoco le des la clase de psicología que te está pidiendo.
 
-**Pregunta el precio** → el número en la primera frase, y de una vez cómo entra.
+**Pregunta el precio** → el número en la primera frase, en dólares Y en su moneda, con la garantía pegada, y de una vez el link.
 
-**Dice "sí" o "me interesa"** → ya se convenció. No le vuelvas a preguntar si viene ni le repitas de qué va: lo que sigue es cuánto vale y cómo paga.
+**Pregunta "¿cuánto es en pesos / en mi moneda?"** → el bloque del reloj te lo da calculado. Se lo dices con "unos". Si no sabes de qué país es, se lo preguntas ahí mismo.
+
+**Dice "sí" o "me interesa"** → ya se convenció. No le vuelvas a preguntar si quiere ni le repitas de qué va: lo que sigue es cuánto vale y cómo entra. El link va.
+
+**Pregunta cuándo empieza / cuándo son las clases** → **entra hoy, no hay que esperar a nada.** Ese es tu mejor argumento: se lo dices completo. Los talleres en vivo son dos por semana y ya están adentro esperándola.
 
 **Dice que perdió el link** → se lo mandas y ya. Dos globos. No te vuelvas a presentar.
 
 **Dice que lo va a pensar** → una sola pregunta: si lo que la frena es el dinero o si duda de que le sirva a ella. Trabajas esa y cierras. Al segundo "no" claro, la sueltas con cariño.
+
+**Pregunta por la clase del jueves** (la vio en un anuncio viejo) → una línea, sin drama: los talleres en vivo ahora son parte del programa, y son dos cada semana en vez de uno. Y sigues con el programa. **No le vendas la clase suelta ni le mandes su página.**
+
+**No tiene tarjeta** → no le inventes otra forma de pagar. Eso lo resuelve Javier Vieira: le pasas su WhatsApp y le dices qué escribirle.
 
 **Dice algo grave** (que se quiere morir, que le pega) → se acaba la venta ahí mismo. Protocolo de crisis, que está abajo y manda sobre todo lo demás.
 
@@ -410,19 +483,31 @@ Copia la FORMA, nunca las palabras. Fíjate en el largo de cada globo y en que n
 **Ella:** hola
 > Hola 💛 Soy Paula, trabajo con Javier Vieira, Psicólogo Especialista.
 >
+> ¿Cómo te llamas y desde qué país me escribes?
+
+**Ella:** Marcela, de Colombia
+> Mucho gusto, Marcela 💛
+>
 > ${pregunta}
 
 **Ella:** sí… todos los días, llevamos 9 años
 > Uf, nueve años pidiendo perdón por cosas que ni hiciste, con tal de que no se enoje.
 >
-> Es de eso justamente la clase del jueves a las 8, en vivo con Javier Vieira. Son *25.000*, pago único.
+> Eso es justo lo que se trabaja adentro con Javier, y no vas a estar sola: la comunidad está activa a cualquier hora. Son *${ejemploPrecio(montoUSD, precioLocalFrase)}*.
 >
 > [el link]
 
-**Ella:** y eso a qué hora es en México
-> A las 7 de la noche allá, y dura tres horas.
+**Ella:** y por qué me hace eso si dice que me quiere
+> No te voy a dar una explicación por chat, Marcela, porque entenderlo no es lo que te lo quita.
+>
+> Eso es exactamente lo que Javier trabaja adentro, paso a paso. Y ahí hay más mujeres preguntándose lo mismo.
 >
 > [el link]
+
+**Ella:** y cuándo empieza
+> Hoy mismo, apenas entras. No hay que esperar a ninguna fecha.
+>
+> Los talleres en vivo con Javier son dos por semana, y los módulos los haces a tu ritmo desde el celular.
 
 **Ella:** me interesa pero ahorita no tengo
 > Te entiendo, y no te voy a insistir.
@@ -432,10 +517,13 @@ Copia la FORMA, nunca las palabras. Fíjate en el largo de cada globo y en que n
 # ❌ ASÍ NO
 ❌ Una lista de dolores, aunque sea de tres líneas. ← es lo que la hace sentir que le llegó un folleto en cadena. **Nunca, en ningún mensaje.**
 ❌ Cuatro o cinco globos seguidos. ← eso no es alguien contestando, es un sistema descargando.
-❌ Un globo de 300 caracteres con el día, la hora, la duración, el precio y lo que incluye. ← no lo lee.
+❌ Un globo de 300 caracteres con los módulos, los talleres, la comunidad, el precio y la garantía. ← no lo lee.
 ❌ Soltarle el precio y el link en el PRIMER mensaje, antes de que ella diga una palabra.
-❌ "Hay una clase el jueves donde se trabaja cómo dejar al narcisista. ¿Te espero?" ← la invitas a una caja cerrada; dice que sí por educación y no vuelve.
+❌ Explicarle por qué él actúa así. ← te quedas de psicóloga gratis: se va agradecida y no entra.
+❌ Nombrarle la clase del jueves, su página o Hotmart. ← ya no se vende. Es Skool y punto.
+❌ "¿Te espero el jueves?" o citarla a una fecha. ← aquí no se espera a nada: entra hoy.
 ❌ Esperar a que pregunte el precio para decírselo. ← la mayoría no pregunta: se va suponiendo que es caro.
+❌ Darle una cifra local exacta ("son 81.240 pesos"). ← siempre "unos". La tasa cambia y su banco cobra distinto.
 ❌ "¿Qué es lo que más te está pesando hoy?" ← la pusiste a explicarse. Es un formulario.
 ❌ Contestarle a dos mujeres distintas con la misma frase.
 
@@ -529,11 +617,18 @@ export type WaUser = {
   /** Número internacional que manda ManyChat. De aquí sale su país. */
   phone?: string | null;
   /**
-   * En qué escalón va la conversación: 'clase' o 'apego' (ver escalera.ts).
-   * Es opcional porque la columna puede no existir todavía en el schema: sin
-   * ella la escalera sigue funcionando, solo que se recalcula en cada turno.
+   * Escalón de la conversación. Con un solo producto siempre es 'apego'; la
+   * columna se conserva para no romper schemas viejos ni el histórico.
    */
   escalon?: string | null;
+  /**
+   * ISO del país que ELLA dijo por texto ('CO', 'MX'…). MANDA sobre el
+   * indicativo de su número: muchas viven en un país distinto del de su línea,
+   * y ahí el teléfono le daría la hora y la moneda equivocadas.
+   *
+   * Opcional porque la columna puede no existir todavía en el schema.
+   */
+  pais?: string | null;
 };
 
 type SupabaseMessage = {
@@ -615,7 +710,11 @@ export async function updateUser(manychatId: string, updates: Partial<Pick<WaUse
 
 // Columnas opcionales (origen/canal — pueden no existir en schemas viejos).
 // PATCH separado en best-effort para que un schema sin la columna nunca rompa.
-async function updateUserOptional(manychatId: string, col: 'origen' | 'canal' | 'phone' | 'escalon', val: string) {
+async function updateUserOptional(
+  manychatId: string,
+  col: 'origen' | 'canal' | 'phone' | 'escalon' | 'pais',
+  val: string,
+) {
   try {
     await supabaseQuery(`wa_users?manychat_id=eq.${manychatId}`, {
       method: 'PATCH',
@@ -639,32 +738,49 @@ export function buildSystemPrompt(
     semilla?: string;
     /** true cuando todavía no le has escrito nunca: manda el bloque de ENTRADA. */
     esPrimerTurno?: boolean;
+    /** Tasas del día (de `moneda.ts`). Sin ellas, Paula solo dice dólares. */
+    tasas?: Record<string, number>;
   } = {},
 ): string {
   const ahora = opciones.ahora ?? new Date();
-  // Por defecto, la clase: es el escalón de entrada de todo el mundo.
-  const escalon = opciones.escalon ?? 'clase';
+  // Solo hay un escalón desde el 2026-08-05 (ver `escalera.ts`).
+  const escalon = opciones.escalon ?? 'apego';
   // Semilla de la apertura: su manychat_id. Estable para ella, distinta entre
   // mujeres — así dos "hola" seguidos no reciben el mismo mensaje calcado.
   const semilla = opciones.semilla ?? user.manychat_id ?? '';
 
   const protocoloCrisis = loadPrompt('03_protocolo_crisis.md');
-  const userContext = buildUserContext(user, origen, escalon);
+  const userContext = buildUserContext(user, origen);
+
+  // El país que ELLA dijo manda sobre su indicativo: muchas viven en un país
+  // distinto del de su línea, y ahí el número le daría la moneda equivocada.
+  const paisIso = user.pais ?? null;
+  const paisConocido = paisPorIso(paisIso) !== null || detectarPais(telefono) !== null;
 
   // Reloj + país de ella: se recalcula en CADA mensaje, nunca se cachea.
   // Va PRIMERO para que el modelo lo lea antes que cualquier otra cosa.
   // Ya está adentro: solo a ella se le da la fecha del próximo encuentro en vivo.
   const esMiembro = user.funnel_stage === 'compradora';
-  const contextoVivo = bloqueContexto(ahora, telefono, escalon, esMiembro) + '\n---\n\n';
+  const contextoVivo =
+    bloqueContexto(ahora, telefono, esMiembro, opciones.tasas, paisIso) + '\n---\n\n';
+
+  // El precio de HOY y su equivalencia local, para que los EJEMPLOS del prompt
+  // digan exactamente la misma cifra que el bloque de datos duros. Con un
+  // ejemplo escrito a mano, el modelo copia el ejemplo y le da a ella un número
+  // que no existe.
+  const montoUSD = precioApego(ahora).monto;
+  const pais = paisPorIso(paisIso) ?? detectarPais(telefono);
+  const local =
+    pais && opciones.tasas ? precioLocal(montoUSD, pais.moneda, opciones.tasas).frase : '';
 
   // Escalado a Javier: va antes que todo, para que no lo tape la venta.
   const handoff = opciones.handoff ? instruccionHandoff(opciones.handoff, escalon) + '\n\n---\n\n' : '';
 
-  return `${handoff}${contextoVivo}${instruccionEscalon(escalon)}
+  return `${handoff}${contextoVivo}${instruccionEscalon()}
 
 ---
 
-${estilo(semilla, detectarPais(telefono) !== null, opciones.esPrimerTurno ?? false)}
+${estilo(semilla, paisConocido, opciones.esPrimerTurno ?? false, user.name, montoUSD, local)}
 # 📚 LO QUE PUEDES AFIRMAR — FUENTE ÚNICA
 Todo lo que Paula puede decir está aquí abajo. Si un dato no está, no existe: no lo afirmes, dile que lo confirmas con Javier.
 
@@ -687,7 +803,7 @@ Lo último que lees, y lo que más se rompe:
 
 **0. ¿Me dijo algo grave?** Que le pegan, que la amenazan, que le tiene miedo, que se quiere morir. Si sí: **nada de lo de abajo aplica.** Protocolo de crisis, cero link, cero precio, cero invitación. Esa es la única pregunta que se responde antes que ninguna otra.
 
-**0b. ¿Es mi PRIMER mensaje en esta conversación?** Mira el historial: si arriba no hay ningún mensaje mío, esto es la ENTRADA — dos globos y la pregunta *"${preguntaEntradaPara(semilla)}"*. Sin precio y sin link.
+**0b. ¿Es mi PRIMER mensaje en esta conversación?** Mira el historial: si arriba no hay ningún mensaje mío, esto es la ENTRADA — me presento y le pregunto cómo se llama${paisConocido ? '' : ' y de dónde me escribe'}. Sin precio y sin link.
 
 **1. CUENTA MIS GLOBOS.** ¿Son tres o menos, contando el del link? Si son cuatro, sobra uno: casi siempre es la línea de despedida. Bórrala.
 
@@ -697,67 +813,121 @@ Lo último que lees, y lo que más se rompe:
 
 **4. ¿Le contesté a lo que ELLA escribió, con sus palabras?** Si me hizo una pregunta y le mandé el mensaje de siempre, está mal: ella nota que nadie la está leyendo y se va. Si mi mensaje le serviría igual a otra mujer distinta, lo reescribo.
 
-**5. ¿Está el link?** Si ella podría querer entrar después de leerme, el link va — aunque ya se lo haya mandado antes. Y si ya dijo que sí, no le vuelvo a preguntar si viene: le digo cuánto vale y cómo entra.`;
+**5. ¿ME PUSE A EXPLICARLE POR QUÉ ÉL ES ASÍ?** Si le estoy dando la razón por dentro de lo que le pasa, lo borro: eso es la terapia gratis que la deja satisfecha y sin entrar. Lo cambio por te escuché → eso se trabaja adentro → ahí hay más mujeres como ella.
+
+**6. ¿NOMBRÉ LA CLASE DEL JUEVES, HOTMART O UNA FECHA A LA QUE ESPERAR?** Nada de eso existe ya. Aquí se entra HOY, y se paga en Skool.
+
+**7. ¿Está el link?** Si ella podría querer entrar después de leerme, el link va — aunque ya se lo haya mandado antes. Y si ya dijo que sí, no le vuelvo a preguntar si quiere: le digo cuánto vale y cómo entra.`;
 }
 
-function buildUserContext(user: WaUser, origen: string, escalon: Escalon): string {
+function buildUserContext(user: WaUser, origen: string): string {
   const lines: string[] = [];
 
   if (user.name) {
     lines.push(`- Nombre: ${user.name}`);
   } else {
-    lines.push('- Nombre: no lo sabemos todavía. Si sale natural en el saludo, pregúntaselo UNA vez y sigue. No insistas ni lo conviertas en un requisito para ayudarla.');
+    lines.push('- Nombre: no lo sabemos todavía. Pregúntaselo UNA vez y sigue. No insistas ni lo conviertas en un requisito para ayudarla.');
+  }
+
+  const pais = paisPorIso(user.pais);
+  if (pais) {
+    lines.push(`- Ella dijo que escribe desde ${pais.nombre}. Eso manda sobre lo que diga su número: no se lo vuelvas a preguntar.`);
   }
 
   if (origen) {
     lines.push(`- Origen: ${origen} (adapta la apertura a este canal)`);
   }
 
-  // El WhatsApp de Javier lleva el mensaje precargado del escalón en el que va
-  // ella. Mandarle a una compradora de la clase el link que dice "quiero
-  // información sobre Apego Detox" la deja escribiendo sobre otro producto.
-  const waJavier = escalon === 'apego' ? APEGO_DETOX.whatsappJavier : CLASE_JUEVES.whatsappJavier;
-
   const stage = user.funnel_stage || 'new_lead';
   if (stage === 'compradora') {
-    lines.push(`- ETAPA: YA PAGÓ. MODO POST-VENTA: cero venta, cero links de pago, no le vuelvas a ofrecer lo que ya compró. Confírmale que su acceso llega al correo con el que pagó (que revise también Promociones y Spam) y, si algo falla, pásale el WhatsApp de Javier: ${waJavier}`);
+    lines.push(`- ETAPA: YA PAGÓ. MODO POST-VENTA: cero venta, cero links de pago, no le vuelvas a ofrecer lo que ya compró. Confírmale que ya puede entrar al aula con el correo con el que pagó (que revise también Promociones y Spam) y, si algo falla, pásale el WhatsApp de Javier: ${APEGO_DETOX.whatsappJavier}`);
   } else if (stage === 'link_enviado') {
     lines.push('- ETAPA: YA TIENE EL LINK. No repitas el mismo ARGUMENTO ni la misma frase: busca un ángulo NUEVO para lo que la frena y cierra otra vez. El LINK sí se lo vuelves a mandar cuando le sirva (si pregunta cómo pagar, si dice que sí, si vuelve otro día) — hacerla buscar hacia arriba en el chat es perder la venta.');
   } else if (stage === 'no_molestar') {
     lines.push('- ETAPA: PIDIÓ NO RECIBIR MENSAJES. Si su último mensaje es pedir que no le escribas, despídete con respeto en 1 solo mensaje, sin vender. Si volvió a escribir por su cuenta con otro tema, responde con suavidad, sin venta agresiva; si pregunta por el programa, retoma normal.');
-  } else if (escalon === 'clase') {
-    lines.push('- ETAPA: EN CONVERSACIÓN. Tu foco es la clase del jueves: contéstale lo que preguntó y ábrele esa puerta. Nada de terapia, nada de interrogatorio.');
   } else {
-    lines.push(`- ETAPA: EN CONVERSACIÓN. Ella ya pidió el programa, así que tu foco es ${APEGO_DETOX.nombre}: contéstale lo que preguntó y ciérrale. Nada de terapia, nada de interrogatorio.`);
+    lines.push(`- ETAPA: EN CONVERSACIÓN. Tu foco es ${APEGO_DETOX.nombre}: contéstale lo que preguntó y ábrele la puerta. Nada de terapia, nada de interrogatorio.`);
   }
 
   // conversation_count nunca se incrementa en BD — no pasarlo al modelo (dato falso, siempre 0).
 
+  // LA MEMORIA ENTRE CONVERSACIONES. El historial de mensajes solo trae los
+  // últimos 20; una mujer que vuelve tres semanas después ya no está en él, y
+  // sin esto Paula la trataría como si fuera la primera vez. Esta línea es lo
+  // que hace que se acuerde de su historia sin tener que leerla otra vez.
   if (user.situacion_resumen) {
-    lines.push(`- Resumen de su situación: ${user.situacion_resumen}`);
+    lines.push(`- LO QUE YA TE CONTÓ (de conversaciones anteriores): ${user.situacion_resumen}
+  👉 Úsalo para no hacerla repetir nada. Retómalo con naturalidad, como quien se acuerda — nunca se lo recites de vuelta como una ficha.`);
   }
 
   return lines.join('\n');
 }
 
-// --- Extractor de NOMBRE (modelo rápido; solo mientras no lo sabemos) ---
+// ---------------------------------------------------------------------------
+// EXTRACTOR — LO QUE PAULA TIENE QUE RECORDAR DE ELLA
+//
+// Antes solo sacaba el nombre. Ahora saca tres cosas, y las tres existen por un
+// motivo concreto:
+//
+//   · NOMBRE — para hablarle como una persona y no como un formulario.
+//   · PAÍS   — para decirle el precio en la moneda con la que ella cuenta el
+//              dinero. Es el dato que más la ayuda a decidirse, y el número no
+//              siempre lo dice: muchas viven en un país distinto del de su línea.
+//   · RESUMEN — LA MEMORIA DE VERDAD. El historial que se le pasa al modelo son
+//              los últimos 20 mensajes; una mujer que vuelve tres semanas
+//              después ya no aparece en él y Paula la saludaba como si fuera la
+//              primera vez, después de que ella le hubiera contado nueve años de
+//              su vida. Eso es lo que más rompe la confianza de todo el sistema.
+//              Este resumen vive en `wa_users.situacion_resumen` y entra al
+//              prompt en cada turno, así que sobrevive a cualquier historial.
+//
+// Va con un modelo barato y en el camino crítico, así que: temperatura 0, tope
+// de tokens corto, y ante CUALQUIER fallo devuelve null y no se persiste nada.
+// Nunca puede tumbar una respuesta.
+// ---------------------------------------------------------------------------
 
-async function extraerNombre(
+export type DatosExtraidos = {
+  nombre: string | null;
+  /** ISO de dos letras, ya validado contra la tabla de países. */
+  pais: string | null;
+  /** Dos o tres frases con su historia. Reemplaza al resumen anterior. */
+  resumen: string | null;
+};
+
+async function extraerDatos(
   history: Array<{ role: string; content: string }>,
-  userMessage: string
-): Promise<string | null> {
+  userMessage: string,
+  yaSabemos: { nombre?: string | null; pais?: string | null; resumen?: string | null },
+): Promise<DatosExtraidos | null> {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) return null;
 
   const model = process.env.PAULA_EXTRACT_MODEL || 'openai/gpt-4.1-mini';
-  const contexto = [...history.slice(-6), { role: 'user', content: userMessage }]
+  const contexto = [...history.slice(-8), { role: 'user', content: userMessage }]
     .map((m) => `${m.role === 'user' ? 'ELLA' : 'PAULA'}: ${m.content}`)
     .join('\n');
 
+  const isos = PAISES.map((p) => p.iso).join(', ');
+
   const sys =
-    'Eres un extractor de datos. Del siguiente chat de WhatsApp, extrae el NOMBRE de pila con el que ELLA se presentó. ' +
-    'Responde SOLO un JSON válido, sin texto extra: {"nombre": string|null}. ' +
-    'nombre = como ella se llama (ej "Ana", "María José"). Si no se ha presentado, null. NUNCA inventes datos.';
+    'Eres un extractor de datos de un chat de WhatsApp entre PAULA (asesora) y ELLA (una mujer). ' +
+    'Responde SOLO un JSON válido, sin texto extra: {"nombre": string|null, "pais": string|null, "resumen": string|null}.\n' +
+    '- nombre: su nombre de pila tal como ella lo escribió (ej "Ana", "María José"). Si no se ha presentado, null.\n' +
+    `- pais: código ISO de 2 letras del país desde el que ELLA dice escribir. Solo uno de estos: ${isos}. ` +
+    'Si menciona una ciudad, deduce el país (Medellín=CO, Guadalajara=MX, Lima=PE). Si no lo ha dicho, null.\n' +
+    '- resumen: 2 o 3 frases en tercera persona con SU situación, para que Paula la recuerde si vuelve en semanas. ' +
+    'Incluye: si sigue con él o ya lo dejó, cuánto tiempo lleva, qué síntomas nombró, y qué la frena para entrar al programa. ' +
+    'Si no hay suficiente información, null.\n' +
+    'NUNCA inventes nada. Si un dato no está dicho de forma explícita, va null. ' +
+    'No incluyas diagnósticos ni interpretaciones tuyas: solo lo que ella contó.';
+
+  const previo = [
+    yaSabemos.nombre ? `nombre ya conocido: ${yaSabemos.nombre}` : null,
+    yaSabemos.pais ? `país ya conocido: ${yaSabemos.pais}` : null,
+    yaSabemos.resumen ? `resumen anterior (amplíalo, no lo pierdas): ${yaSabemos.resumen}` : null,
+  ]
+    .filter(Boolean)
+    .join('\n');
 
   try {
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -772,9 +942,9 @@ async function extraerNombre(
         model,
         messages: [
           { role: 'system', content: sys },
-          { role: 'user', content: contexto },
+          { role: 'user', content: previo ? `${previo}\n\n---\n\n${contexto}` : contexto },
         ],
-        max_tokens: 60,
+        max_tokens: 300,
         temperature: 0,
         response_format: { type: 'json_object' },
       }),
@@ -783,11 +953,25 @@ async function extraerNombre(
     if (!response.ok) return null;
     const data = await response.json();
     const raw = data.choices?.[0]?.message?.content || '{}';
-    const parsed = JSON.parse(raw) as { nombre?: unknown };
+    const parsed = JSON.parse(raw) as { nombre?: unknown; pais?: unknown; resumen?: unknown };
 
-    return typeof parsed.nombre === 'string' && parsed.nombre.trim().length >= 2
-      ? parsed.nombre.trim().slice(0, 80)
-      : null;
+    const nombre =
+      typeof parsed.nombre === 'string' && parsed.nombre.trim().length >= 2
+        ? parsed.nombre.trim().slice(0, 80)
+        : null;
+
+    // El ISO se valida contra la tabla: si el modelo se inventa "LATAM" o
+    // "Sudamérica", se descarta en vez de guardar basura que después decide
+    // en qué moneda se le habla a una mujer.
+    const paisCrudo = typeof parsed.pais === 'string' ? parsed.pais.trim().toUpperCase() : '';
+    const pais = paisPorIso(paisCrudo)?.iso ?? null;
+
+    const resumen =
+      typeof parsed.resumen === 'string' && parsed.resumen.trim().length >= 10
+        ? parsed.resumen.trim().slice(0, 600)
+        : null;
+
+    return { nombre, pais, resumen };
   } catch {
     return null;
   }
@@ -871,14 +1055,24 @@ export async function processPaulaMessage(
   const user = await getOrCreateUser(manychatId);
   const history = await getConversationHistory(manychatId, 20);
 
-  const updates: Partial<Pick<WaUser, 'name' | 'funnel_stage'>> = {};
+  const updates: Partial<Pick<WaUser, 'name' | 'funnel_stage' | 'situacion_resumen'>> = {};
+  let paisDicho: string | null = user.pais ?? null;
 
   // 2. Detección determinista ANTES del LLM (no depende del modelo)
 
-  // Nombre — para personalizar chat y recordatorios.
-  if (!user.name) {
-    const nombre = await extraerNombre(history, userMessage);
-    if (nombre) updates.name = nombre;
+  // Nombre, país y memoria de su situación. Se corre SIEMPRE (no solo cuando
+  // falta el nombre): el resumen tiene que crecer con la conversación, y el
+  // país puede aparecer en cualquier mensaje. Ante cualquier fallo devuelve
+  // null y simplemente no se actualiza nada.
+  const datos = await extraerDatos(history, userMessage, {
+    nombre: user.name,
+    pais: user.pais,
+    resumen: user.situacion_resumen,
+  });
+  if (datos) {
+    if (!user.name && datos.nombre) updates.name = datos.nombre;
+    if (datos.pais) paisDicho = datos.pais;
+    if (datos.resumen) updates.situacion_resumen = datos.resumen;
   }
 
   // Confirmación de compra dicha por ella.
@@ -892,35 +1086,36 @@ export async function processPaulaMessage(
     updates.funnel_stage = 'no_molestar';
   }
 
-  // 3. Prompt con la etapa de ESTE turno (nombre/etapa ya actualizados)
+  // 3. Prompt con la etapa de ESTE turno (nombre/país/etapa ya actualizados)
   const userParaPrompt: WaUser = {
     ...user,
     name: updates.name ?? user.name,
     funnel_stage: updates.funnel_stage ?? user.funnel_stage,
+    situacion_resumen: updates.situacion_resumen ?? user.situacion_resumen,
+    pais: paisDicho,
   };
   const ahora = new Date();
   // ¿pide a Javier, ya pagó, mandó el comprobante, no tiene tarjeta, falló el pago?
   const handoff = motivoHandoff(userMessage);
 
-  // En qué escalón va esta conversación: la clase del jueves (siempre lo
-  // primero) o Apego Detox, si ELLA lo pidió. Determinista: no depende de que
-  // el modelo se acuerde de nada.
-  const escalon = escalonDe({
-    mensaje: userMessage,
-    guardado: user.escalon,
-    etapa: userParaPrompt.funnel_stage,
-  });
+  // Un solo producto desde el 2026-08-05: siempre Apego Detox (ver escalera.ts).
+  const escalon = escalonDe();
 
   // ¿Es la primera vez que Paula le escribe? Si no hay ni un mensaje suyo en el
-  // historial, este turno es la ENTRADA: se le sirve un prompt distinto, sin las
-  // viñetas ni el precio delante. Pedírselo por prompt no bastaba.
+  // historial, este turno es la ENTRADA: se le sirve un prompt distinto, sin el
+  // precio delante. Pedírselo por prompt no bastaba.
   const esPrimerTurno = !history.some((m) => m.role === 'assistant');
+
+  // Tasas del día para darle el precio en SU moneda. Van cacheadas 12 h y con
+  // respaldo, así que esto no es una llamada de red por mensaje ni puede fallar.
+  const tasasHoy = await tasas();
 
   const systemPrompt = buildSystemPrompt(userParaPrompt, origen, telefono, {
     ahora,
     handoff,
     escalon,
     esPrimerTurno,
+    tasas: tasasHoy,
   });
 
   // 4. Modelo principal
@@ -1005,8 +1200,11 @@ export async function processPaulaMessage(
   if (origen) await updateUserOptional(manychatId, 'origen', origen);
   if (canal) await updateUserOptional(manychatId, 'canal', canal.toLowerCase() === 'instagram' ? 'instagram' : 'whatsapp');
   if (telefono) await updateUserOptional(manychatId, 'phone', telefono);
-  // El escalón, para no volver a ofrecerle la clase a quien ya pidió el programa.
+  // El escalón, que hoy es siempre 'apego'. Se sigue guardando para que el
+  // histórico quede coherente y para no romper nada que todavía lo lea.
   await updateUserOptional(manychatId, 'escalon', escalon);
+  // Su país, para que la próxima vez ya sepamos en qué moneda hablarle.
+  if (paisDicho) await updateUserOptional(manychatId, 'pais', paisDicho);
 
   return paulaResponse;
 }

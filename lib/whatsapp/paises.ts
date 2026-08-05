@@ -1,11 +1,11 @@
 // ============================================================================
 // PAÍSES Y RELOJ — de qué país te escribe ELLA, y cómo se escribe una fecha.
 //
-// ⚠️ ESTO NO ES LA FUENTE DE LA CLASE NI DE NINGÚN PRODUCTO. Nombre, fecha,
-// precio y links viven en `programa.ts` (CLASE_JUEVES, APEGO_DETOX), y ahí las
-// fechas se calculan solas. Aquí hay dos cosas, y las dos son estables: la
-// tabla de países (indicativo telefónico → zona horaria + moneda) y las
-// funciones que dan formato a fechas y horas.
+// ⚠️ ESTO NO ES LA FUENTE DE NINGÚN PRODUCTO. Nombre, precio y links viven en
+// `programa.ts` (APEGO_DETOX), las fechas se calculan solas allí, y la
+// conversión a moneda local vive en `moneda.ts`. Aquí hay dos cosas, y las dos
+// son estables: la tabla de países (indicativo telefónico → zona horaria +
+// código de moneda) y las funciones que dan formato a fechas y horas.
 //
 // POR QUÉ LA SEPARACIÓN: este archivo se llamaba `contexto-clase.ts` y tenía
 // adentro una SEGUNDA copia de la clase, con su propio interruptor `activa` y
@@ -22,13 +22,6 @@
 // 1. PAÍSES — indicativo telefónico → zona horaria + moneda
 // ---------------------------------------------------------------------------
 
-/**
- * Precio ancla en dólares: es lo que cobra la pasarela, y todo lo demás en la
- * tabla es su equivalencia local. Tiene que decir lo mismo que
- * `CLASE_JUEVES.precios.USD` en `programa.ts`.
- */
-const PRECIO_USD = '7 USD';
-
 export type Pais = {
   iso: string;
   nombre: string;
@@ -39,58 +32,62 @@ export type Pais = {
   /** Ciudad que se nombra al dar la hora. */
   ciudad: string;
   /**
-   * Precio de la clase ya formateado para decirlo tal cual. Lo usa el cron de
-   * recordatorios (`api/cron/recordatorios-apego`) para darle la cifra en SU
-   * moneda; no lo borres creyendo que sobra.
+   * Código ISO 4217 de la moneda con la que ELLA piensa el dinero.
+   *
+   * ⚠️ Aquí NO hay ningún precio. Antes sí lo había —una cifra por país,
+   * escrita a mano— y era una segunda fuente de verdad que se quedaba vieja
+   * sola. Ahora solo se dice CUÁL es su moneda; cuánto vale el programa en ella
+   * lo calcula `moneda.ts` con la tasa del día, a partir del único precio que
+   * existe: los dólares que cobra Skool.
+   *
+   * 'USD' en Ecuador, Panamá, El Salvador, Puerto Rico, Venezuela y Cuba no es
+   * un descuido: ahí se piensa y se cobra en dólares, así que no hay nada que
+   * convertir.
    */
-  precio: string;
-  /**
-   * true  = cifra oficial de la campaña o país que usa dólar (se dice exacta).
-   * false = equivalencia aproximada de 7 USD (se dice "unos ...").
-   */
-  precioExacto: boolean;
+  moneda: string;
   /** Países con más de una zona horaria. */
   zonasExtra?: Array<{ etiqueta: string; tz: string }>;
 };
 
-/**
- * Precios locales: Colombia y México son las cifras oficiales de la campaña.
- * El resto son equivalencias aproximadas de 7 USD — Paula las dice como "unos
- * X" y siempre puede apoyarse en los 7 USD, que es lo que realmente cobra la
- * pasarela. Para ajustar una moneda: cambiar el string y ya.
- */
 export const PAISES: Pais[] = [
-  { iso: 'CO', nombre: 'Colombia', prefijos: ['57'], tz: 'America/Bogota', ciudad: 'Colombia', precio: '25.000 COP', precioExacto: true },
-  { iso: 'MX', nombre: 'México', prefijos: ['52'], tz: 'America/Mexico_City', ciudad: 'Ciudad de México', precio: '120 MXN', precioExacto: true,
+  { iso: 'CO', nombre: 'Colombia', prefijos: ['57'], tz: 'America/Bogota', ciudad: 'Colombia', moneda: 'COP' },
+  { iso: 'MX', nombre: 'México', prefijos: ['52'], tz: 'America/Mexico_City', ciudad: 'Ciudad de México', moneda: 'MXN',
     zonasExtra: [{ etiqueta: 'Cancún', tz: 'America/Cancun' }, { etiqueta: 'Tijuana', tz: 'America/Tijuana' }] },
   // +1 = Estados Unidos y Canadá. No se puede separar por el indicativo, así
   // que se dan las cuatro zonas y Paula pregunta la ciudad si necesita precisión.
-  { iso: 'US', nombre: 'Estados Unidos o Canadá', prefijos: ['1'], tz: 'America/New_York', ciudad: 'Miami / Nueva York', precio: PRECIO_USD, precioExacto: true,
+  { iso: 'US', nombre: 'Estados Unidos o Canadá', prefijos: ['1'], tz: 'America/New_York', ciudad: 'Miami / Nueva York', moneda: 'USD',
     zonasExtra: [
       { etiqueta: 'Chicago / Houston', tz: 'America/Chicago' },
       { etiqueta: 'Denver', tz: 'America/Denver' },
       { etiqueta: 'Los Ángeles', tz: 'America/Los_Angeles' },
     ] },
-  { iso: 'PE', nombre: 'Perú', prefijos: ['51'], tz: 'America/Lima', ciudad: 'Lima', precio: '26 PEN', precioExacto: false },
-  { iso: 'EC', nombre: 'Ecuador', prefijos: ['593'], tz: 'America/Guayaquil', ciudad: 'Ecuador', precio: PRECIO_USD, precioExacto: true },
-  { iso: 'CL', nombre: 'Chile', prefijos: ['56'], tz: 'America/Santiago', ciudad: 'Santiago', precio: '6.500 CLP', precioExacto: false },
-  { iso: 'AR', nombre: 'Argentina', prefijos: ['54'], tz: 'America/Argentina/Buenos_Aires', ciudad: 'Buenos Aires', precio: '9.000 ARS', precioExacto: false },
-  { iso: 'VE', nombre: 'Venezuela', prefijos: ['58'], tz: 'America/Caracas', ciudad: 'Caracas', precio: PRECIO_USD, precioExacto: true },
-  { iso: 'ES', nombre: 'España', prefijos: ['34'], tz: 'Europe/Madrid', ciudad: 'España', precio: '6,50 EUR', precioExacto: false },
-  { iso: 'GT', nombre: 'Guatemala', prefijos: ['502'], tz: 'America/Guatemala', ciudad: 'Guatemala', precio: '54 GTQ', precioExacto: false },
-  { iso: 'SV', nombre: 'El Salvador', prefijos: ['503'], tz: 'America/El_Salvador', ciudad: 'El Salvador', precio: PRECIO_USD, precioExacto: true },
-  { iso: 'HN', nombre: 'Honduras', prefijos: ['504'], tz: 'America/Tegucigalpa', ciudad: 'Honduras', precio: '180 HNL', precioExacto: false },
-  { iso: 'NI', nombre: 'Nicaragua', prefijos: ['505'], tz: 'America/Managua', ciudad: 'Nicaragua', precio: '260 NIO', precioExacto: false },
-  { iso: 'CR', nombre: 'Costa Rica', prefijos: ['506'], tz: 'America/Costa_Rica', ciudad: 'Costa Rica', precio: '3.600 CRC', precioExacto: false },
-  { iso: 'PA', nombre: 'Panamá', prefijos: ['507'], tz: 'America/Panama', ciudad: 'Panamá', precio: PRECIO_USD, precioExacto: true },
-  { iso: 'BO', nombre: 'Bolivia', prefijos: ['591'], tz: 'America/La_Paz', ciudad: 'Bolivia', precio: '48 BOB', precioExacto: false },
-  { iso: 'PY', nombre: 'Paraguay', prefijos: ['595'], tz: 'America/Asuncion', ciudad: 'Paraguay', precio: '52.000 PYG', precioExacto: false },
-  { iso: 'UY', nombre: 'Uruguay', prefijos: ['598'], tz: 'America/Montevideo', ciudad: 'Uruguay', precio: '280 UYU', precioExacto: false },
-  { iso: 'DO', nombre: 'República Dominicana', prefijos: ['1809', '1829', '1849'], tz: 'America/Santo_Domingo', ciudad: 'Santo Domingo', precio: '430 DOP', precioExacto: false },
-  { iso: 'PR', nombre: 'Puerto Rico', prefijos: ['1787', '1939'], tz: 'America/Puerto_Rico', ciudad: 'Puerto Rico', precio: PRECIO_USD, precioExacto: true },
-  { iso: 'CU', nombre: 'Cuba', prefijos: ['53'], tz: 'America/Havana', ciudad: 'Cuba', precio: PRECIO_USD, precioExacto: true },
-  { iso: 'BR', nombre: 'Brasil', prefijos: ['55'], tz: 'America/Sao_Paulo', ciudad: 'São Paulo', precio: '38 BRL', precioExacto: false },
+  { iso: 'PE', nombre: 'Perú', prefijos: ['51'], tz: 'America/Lima', ciudad: 'Lima', moneda: 'PEN' },
+  { iso: 'EC', nombre: 'Ecuador', prefijos: ['593'], tz: 'America/Guayaquil', ciudad: 'Ecuador', moneda: 'USD' },
+  { iso: 'CL', nombre: 'Chile', prefijos: ['56'], tz: 'America/Santiago', ciudad: 'Santiago', moneda: 'CLP' },
+  { iso: 'AR', nombre: 'Argentina', prefijos: ['54'], tz: 'America/Argentina/Buenos_Aires', ciudad: 'Buenos Aires', moneda: 'ARS' },
+  { iso: 'VE', nombre: 'Venezuela', prefijos: ['58'], tz: 'America/Caracas', ciudad: 'Caracas', moneda: 'USD' },
+  { iso: 'ES', nombre: 'España', prefijos: ['34'], tz: 'Europe/Madrid', ciudad: 'España', moneda: 'EUR' },
+  { iso: 'GT', nombre: 'Guatemala', prefijos: ['502'], tz: 'America/Guatemala', ciudad: 'Guatemala', moneda: 'GTQ' },
+  { iso: 'SV', nombre: 'El Salvador', prefijos: ['503'], tz: 'America/El_Salvador', ciudad: 'El Salvador', moneda: 'USD' },
+  { iso: 'HN', nombre: 'Honduras', prefijos: ['504'], tz: 'America/Tegucigalpa', ciudad: 'Honduras', moneda: 'HNL' },
+  { iso: 'NI', nombre: 'Nicaragua', prefijos: ['505'], tz: 'America/Managua', ciudad: 'Nicaragua', moneda: 'NIO' },
+  { iso: 'CR', nombre: 'Costa Rica', prefijos: ['506'], tz: 'America/Costa_Rica', ciudad: 'Costa Rica', moneda: 'CRC' },
+  { iso: 'PA', nombre: 'Panamá', prefijos: ['507'], tz: 'America/Panama', ciudad: 'Panamá', moneda: 'USD' },
+  { iso: 'BO', nombre: 'Bolivia', prefijos: ['591'], tz: 'America/La_Paz', ciudad: 'Bolivia', moneda: 'BOB' },
+  { iso: 'PY', nombre: 'Paraguay', prefijos: ['595'], tz: 'America/Asuncion', ciudad: 'Paraguay', moneda: 'PYG' },
+  { iso: 'UY', nombre: 'Uruguay', prefijos: ['598'], tz: 'America/Montevideo', ciudad: 'Uruguay', moneda: 'UYU' },
+  { iso: 'DO', nombre: 'República Dominicana', prefijos: ['1809', '1829', '1849'], tz: 'America/Santo_Domingo', ciudad: 'Santo Domingo', moneda: 'DOP' },
+  { iso: 'PR', nombre: 'Puerto Rico', prefijos: ['1787', '1939'], tz: 'America/Puerto_Rico', ciudad: 'Puerto Rico', moneda: 'USD' },
+  { iso: 'CU', nombre: 'Cuba', prefijos: ['53'], tz: 'America/Havana', ciudad: 'Cuba', moneda: 'USD' },
+  { iso: 'BR', nombre: 'Brasil', prefijos: ['55'], tz: 'America/Sao_Paulo', ciudad: 'São Paulo', moneda: 'BRL' },
 ];
+
+/** Busca por código ISO ('CO'), para cuando ELLA dice de dónde es. */
+export function paisPorIso(iso?: string | null): Pais | null {
+  if (!iso) return null;
+  const buscado = String(iso).trim().toUpperCase();
+  return PAISES.find((p) => p.iso === buscado) ?? null;
+}
 
 /** Se prueba del prefijo más largo al más corto: 1809 (RD) antes que 1 (USA). */
 const PREFIJOS_ORDENADOS: Array<{ prefijo: string; pais: Pais }> = PAISES

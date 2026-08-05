@@ -6,7 +6,7 @@ import {
   instruccionHandoff,
   motivoHandoff,
 } from '@/lib/whatsapp/blindaje';
-import { APEGO_DETOX, CLASE_JUEVES, precioApego, proximoEncuentro } from '@/lib/whatsapp/programa';
+import { APEGO_DETOX, precioApego, proximoEncuentro } from '@/lib/whatsapp/programa';
 import { DOLORES_DENTRO, DOLORES_FUERA, buildSystemPrompt, preguntaEntradaPara } from '@/lib/whatsapp/paula';
 
 // Viernes 31 de julio de 2026, 10:00 AM Colombia. El lanzamiento de Apego Detox
@@ -113,7 +113,8 @@ describe('blindaje — escalón de Apego Detox', () => {
     expect(
       auditar('Hoy mismo te llegan los 15 módulos completos').hallazgos.map((h) => h.tipo),
     ).toContain('modulos_inventados');
-    expect(auditar('El aula tiene 16 módulos y el Súper Bonus 💛').hallazgos).toHaveLength(0);
+    // 17 es lo que dice la página de Skool, verificado el 2026-08-05.
+    expect(auditar('El aula tiene 17 módulos y el Súper Bonus 💛').hallazgos).toHaveLength(0);
   });
 
   it('no la deja pedir permiso para lo obvio', () => {
@@ -138,48 +139,54 @@ describe('blindaje — escalón de Apego Detox', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Escalón 1: la clase del jueves.
+// EL PRODUCTO RETIRADO — la clase del jueves (fuera desde el 2026-08-05).
+//
+// Es el candado más importante de esta tanda. El historial de TODA conversación
+// viva está lleno de mensajes de Paula vendiendo la clase, y gpt-4.1-mini copia
+// lo que ve arriba: sin esto, las mujeres que ya venían hablando con ella
+// seguirían recibiendo "la clase del jueves a las 8" durante semanas.
 // ---------------------------------------------------------------------------
 
-describe('blindaje — escalón de la clase del jueves', () => {
-  const auditar = (texto: string) => auditarRespuesta(texto, VIERNES_31, 'clase');
+describe('blindaje — la clase del jueves ya no se vende', () => {
+  const auditar = (texto: string) => auditarRespuesta(texto, VIERNES_31, 'apego');
 
-  it('la clase es pago único: hablar de mensualidades aquí es un error', () => {
-    expect(auditar('Son 7 USD al mes').hallazgos.map((h) => h.tipo)).toContain('mensualidad_en_clase');
-    expect(auditar('Son *7 USD*, un solo pago 💛').hallazgos).toHaveLength(0);
+  it('nombrar la clase del jueves se marca', () => {
+    expect(auditar('La clase del jueves es a las 8 💛').hallazgos.map((h) => h.tipo))
+      .toContain('producto_retirado');
   });
 
-  it('un link de pago suelto se cambia por la página', () => {
-    // Pedirle la tarjeta antes de contarle a qué la invitan es perderla.
-    // El botón de pago está DENTRO de la página.
-    const { texto } = auditar('Entra aquí: https://pay.hotmart.com/H106712135H');
-    expect(texto).toContain(CLASE_JUEVES.landing);
-    expect(texto).not.toContain('pay.hotmart.com');
+  it('su nombre y su precio también', () => {
+    expect(auditar('Se llama "Recuperando mi ser"').hallazgos.map((h) => h.tipo))
+      .toContain('producto_retirado');
+    expect(auditar('Son 25.000, pago único').hallazgos.map((h) => h.tipo))
+      .toContain('producto_retirado');
   });
 
-  it('el link de Skool aquí es un error: la clase se paga en Hotmart', () => {
-    const { hallazgos } = auditar('Entras aquí: https://www.skool.com/historias-de-la-mente-4978/about');
+  it('el pago por Nequi se marca: Skool cobra con tarjeta', () => {
+    // Dar un número de Nequi ahora es mandar a una mujer a transferirle plata a
+    // alguien por su cuenta, por un producto que no se cobra así.
+    expect(auditar('Mandas el pago por Nequi al 311 632 9202').hallazgos.map((h) => h.tipo))
+      .toContain('producto_retirado');
+  });
+
+  it('un link de Hotmart es plataforma cruzada', () => {
+    const { hallazgos } = auditar('Entra aquí: https://pay.hotmart.com/H106712135H');
     expect(hallazgos.map((h) => h.tipo)).toContain('plataforma_cruzada');
-    expect(instruccionCorreccion(hallazgos, 'clase', VIERNES_31)).toContain(CLASE_JUEVES.checkout);
+    expect(instruccionCorreccion(hallazgos, 'apego', VIERNES_31)).toContain(APEGO_DETOX.checkout);
   });
 
-  it('no promete los módulos de Apego Detox como parte de la clase', () => {
-    expect(
-      auditar('Te llevas los 16 módulos del programa').hallazgos.map((h) => h.tipo),
-    ).toContain('contenido_de_otro_producto');
+  it('la corrección le dice qué ofrecer en su lugar', () => {
+    const { hallazgos } = auditar('Te espero el jueves en la clase');
+    const correccion = instruccionCorreccion(hallazgos, 'apego', VIERNES_31);
+    expect(correccion).toMatch(/ya NO se vende/i);
+    expect(correccion).toMatch(/dos por semana/i);
+    expect(correccion).toContain(APEGO_DETOX.checkout);
   });
 
-  it('no promete la grabación mientras no esté confirmada', () => {
-    expect(auditar('Tranquila, queda grabada y la ves después').hallazgos.map((h) => h.tipo)).toContain(
-      'grabacion_inexistente',
-    );
-    // Decir que NO queda grabada sí se permite.
-    expect(auditar('Es en vivo, no queda grabada 💛').hallazgos).toHaveLength(0);
-  });
-
-  it('nombrar Apego Detox ya NO es un error — la escalera lo permite', () => {
-    // Con las reglas viejas esto marcaba fallo y quemaba un reintento por turno.
-    expect(auditar('Después de la clase hay un programa completo, Apego Detox ✨').hallazgos).toHaveLength(0);
+  it('hablar de los talleres en vivo NO es un error', () => {
+    // "clase" a secas es legítimo: lo prohibido es la CLASE como producto suelto.
+    expect(auditar('Son dos talleres en vivo cada semana con Javier Vieira 💛').hallazgos)
+      .toHaveLength(0);
   });
 });
 
@@ -261,32 +268,56 @@ describe('el prompt que se arma en cada turno', () => {
   };
 
   // Un número de México: de ahí salen su hora y su zona, sin preguntarle nada.
-  const prompt = (escalon: 'clase' | 'apego') =>
+  const prompt = (escalon: 'apego' = 'apego') =>
     buildSystemPrompt(usuaria, 'tiktok_live', '+521234567890', { ahora: VIERNES_31, escalon });
 
-  it('por defecto ofrece la clase — es el escalón de entrada', () => {
+  it('por defecto, y siempre, ofrece Apego Detox', () => {
     const porDefecto = buildSystemPrompt(usuaria, '', '', { ahora: VIERNES_31 });
-    expect(porDefecto).toContain('OFRECES: LA CLASE DEL JUEVES');
+    expect(porDefecto).toContain('OFRECES: APEGO DETOX');
   });
 
-  it('en el escalón de la clase no le mete encima el material de Apego Detox', () => {
-    const p = prompt('clase');
-    expect(p).toContain('OFRECES: LA CLASE DEL JUEVES');
-    // El link que lleva es la página, nunca el checkout suelto.
-    expect(p).toContain(CLASE_JUEVES.landing);
-    expect(p).not.toContain(CLASE_JUEVES.checkout);
-    // Sabe que Apego Detox existe (para reconocerlo si ella pregunta)…
-    expect(p).toContain('QUÉ ES APEGO DETOX');
-    // …pero no lleva su precio ni su checkout encima.
-    expect(p).not.toContain(APEGO_DETOX.checkout);
-  });
-
-  it('en el escalón de Apego Detox lleva el precio del día y su plataforma', () => {
-    const p = prompt('apego');
+  it('lleva el precio del día, su plataforma y el link de Skool', () => {
+    const p = prompt();
     expect(p).toContain('OFRECES: APEGO DETOX');
     expect(p).toContain(APEGO_DETOX.checkout);
     expect(p).toContain(precioApego(VIERNES_31).frase);
     expect(p).toContain('LANZAMIENTO VIVO');
+  });
+
+  it('no ofrece la clase del jueves por ninguna parte', () => {
+    const p = prompt();
+    expect(p).toMatch(/Ya NO existe "la clase del jueves"/i);
+    expect(p).not.toContain('pay.hotmart.com');
+    expect(p).not.toContain('/volver-a-mi');
+  });
+
+  it('los EJEMPLOS dicen el mismo precio local que los datos duros', () => {
+    // ⚠️ REGRESIÓN REAL (2026-08-05). Los ejemplos del prompt llevaban "unos
+    // 80.000 pesos" escrito a mano mientras el bloque de datos duros, con la
+    // tasa del día, decía 65.000. Dos cifras distintas en el mismo prompt — y
+    // mini copia los ejemplos antes que los datos, así que a una mujer de
+    // Bogotá le habría dicho un precio inventado un 23% más alto.
+    const TASAS = { USD: 1, COP: 4000 };
+    const p = buildSystemPrompt(usuaria, '', '+573001112233', { ahora: VIERNES_31, tasas: TASAS });
+
+    expect(p).toContain('unos 80.000 COP');
+    // Y ninguna otra cifra en pesos: si aparece una segunda, es una escrita a mano.
+    const enPesos = [...p.matchAll(/unos [\d.]+ COP/g)].map((m) => m[0]);
+    expect(new Set(enPesos).size).toBe(1);
+  });
+
+  it('sin país ni tasas, los ejemplos se quedan solo con los dólares', () => {
+    const p = buildSystemPrompt(usuaria, '', '', { ahora: VIERNES_31 });
+    expect(p).not.toMatch(/unos [\d.]+ (COP|MXN|EUR)/);
+    expect(p).toContain('20 dólares al mes');
+  });
+
+  it('le da la forma canónica para cuando ella pida terapia por chat', () => {
+    // Dictada por Javier el 2026-08-05: te escuché → eso se trabaja adentro →
+    // ahí hay más mujeres. Nada de explicarle el mecanismo.
+    const p = prompt();
+    expect(p).toMatch(/Te entiendo\. Eso es justo lo que se trabaja adentro/);
+    expect(p).toMatch(/no vas a estar sola/i);
   });
 
   it('lleva las reglas de estilo y el conocimiento del documento', () => {
@@ -308,16 +339,15 @@ describe('el prompt que se arma en cada turno', () => {
   const entrada = () =>
     buildSystemPrompt(usuaria, '', '+573001112233', {
       ahora: VIERNES_31,
-      escalon: 'clase',
+      escalon: 'apego',
       esPrimerTurno: true,
     });
 
   it('en el PRIMER turno solo va la entrada: sin dolores, sin precio, sin link', () => {
     const p = entrada();
     expect(p).toContain('ES TU PRIMER MENSAJE');
-    // La pregunta rota por mujer, así que se compara con la que le toca a ELLA
-    // y no con una frase escrita a mano: si no, cambiar el banco rompe la prueba
-    // por un motivo que no es el que importa.
+    // La pregunta de segmentación ya no va en el primer mensaje, pero sí se le
+    // deja guardada para el siguiente: de ella depende qué dolor se le nombra.
     expect(p).toContain(preguntaEntradaPara(usuaria.manychat_id));
     expect(p).not.toContain('YA TE CONTESTÓ');
     // El link sí sigue en el bloque del reloj (es la fuente de verdad y el
@@ -325,11 +355,26 @@ describe('el prompt que se arma en cada turno', () => {
     expect(p).toContain('Aquí NO va:');
   });
 
+  it('la entrada pregunta su nombre — es lo que la hace contestar', () => {
+    // Se contesta en tres palabras, así que casi todas contestan; y una
+    // conversación que arrancó es media venta. Además deja el nombre para
+    // tratarla como persona en los turnos siguientes.
+    expect(entrada()).toMatch(/¿Cómo te llamas/);
+  });
+
+  it('si no sabe su país, se lo pregunta en la entrada — de ahí sale su moneda', () => {
+    const sinTelefono = buildSystemPrompt(usuaria, '', '', {
+      ahora: VIERNES_31,
+      esPrimerTurno: true,
+    });
+    expect(sinTelefono).toMatch(/desde qué país me escribes/i);
+  });
+
   it('del SEGUNDO turno en adelante ya no aparece la entrada', () => {
-    const p = prompt('clase');
+    const p = prompt();
     expect(p).not.toContain('ES TU PRIMER MENSAJE');
     expect(p).toContain('YA TE CONTESTÓ');
-    expect(p).toContain(CLASE_JUEVES.landing);
+    expect(p).toContain(APEGO_DETOX.checkout);
   });
 
   // ⚠️ 2026-08-03: esta prueba comprobaba lo contrario — que el prompt trajera
@@ -340,7 +385,7 @@ describe('el prompt que se arma en cada turno', () => {
   it('NO le pone ni una viñeta delante al modelo — es lo que la hacía copiarlas', () => {
     // El "•" es el carácter exacto que Paula copiaba al chat, así que es el que
     // no puede aparecer en ninguna parte de lo que ella lee.
-    for (const p of [prompt('clase'), entrada(), prompt('apego')]) {
+    for (const p of [prompt(), entrada()]) {
       expect(p).not.toContain('•');
     }
   });
@@ -454,7 +499,7 @@ describe('el prompt que se arma en cada turno', () => {
         const id = `mujer-${i}`;
         const p = buildSystemPrompt({ ...usuaria, manychat_id: id }, '', '+573001112233', {
           ahora: VIERNES_31,
-          escalon: 'clase',
+          escalon: 'apego',
         });
         const pregunta = preguntaEntradaPara(id);
         const dolores = [...DOLORES_DENTRO, ...DOLORES_FUERA].filter((d) => p.includes(d));
@@ -469,25 +514,31 @@ describe('el prompt que se arma en cada turno', () => {
       }
     });
 
-    it('ninguna invita a la clase todavía, ni suelta precio o link', () => {
-      // La entrada es enganche. La clase, el precio y el link son del mensaje 2.
+    it('ninguna invita ni suelta precio o link', () => {
+      // Es enganche. El programa, el precio y el link son del mensaje siguiente.
       for (const q of banco) {
         expect(q, `«${q}» invita antes de tiempo`).not.toMatch(
-          /te\s+espero|jueves|clase|25\.000|120\s+pesos|\d+\s*usd|https?:\/\//i,
+          /te\s+espero|25\.000|120\s+pesos|\d+\s*usd|https?:\/\//i,
         );
+      }
+    });
+
+    it('ninguna nombra la clase retirada', () => {
+      for (const q of banco) {
+        expect(q, `«${q}» nombra un producto que ya no existe`).not.toMatch(/clase|jueves/i);
       }
     });
   });
 
   it('la regla de forma va escrita con números, no como una sugerencia', () => {
-    const p = prompt('clase');
+    const p = prompt();
     expect(p).toContain('Máximo TRES mensajes');
     expect(p).toContain('160 caracteres');
     expect(p).toContain('Nunca una lista');
   });
 
   it('le da UN dolor de cada banco, en prosa, y le dice cuál usar', () => {
-    const p = prompt('clase');
+    const p = prompt();
     expect(p).toContain('si TODAVÍA está con él');
     expect(p).toContain('si YA lo dejó');
     expect(p).toContain('nunca en lista');
@@ -498,15 +549,37 @@ describe('el prompt que se arma en cada turno', () => {
     expect(fuera).toHaveLength(1);
   });
 
-  it('si no sabe el país, lo pregunta en el mensaje 2 y dice para qué', () => {
-    // De ahí sale si le toca Nequi o tarjeta. Sin teléfono no hay país.
-    const sinPais = buildSystemPrompt(usuaria, '', '', { ahora: VIERNES_31, escalon: 'clase' });
-    expect(sinPais).toContain('No sabes de qué país te escribe');
-    expect(sinPais).toContain('es para decirte cómo pagas');
+  it('si no sabe el país lo pregunta, y dice que es para darle su moneda', () => {
+    // Ya no es para saber si le toca Nequi o tarjeta: es para el precio en la
+    // moneda con la que ella cuenta el dinero, que es lo que la hace decidirse.
+    const sinPais = buildSystemPrompt(usuaria, '', '', { ahora: VIERNES_31 });
+    expect(sinPais).toMatch(/Todavía no sabes de qué país te escribe/);
+    expect(sinPais).toContain('es para decirte cuánto te queda a ti');
 
     // Y si el número ya lo dice, no se lo pregunta: eso delata al formulario.
-    const conPais = buildSystemPrompt(usuaria, '', '+573001112233', { ahora: VIERNES_31, escalon: 'clase' });
+    const conPais = buildSystemPrompt(usuaria, '', '+573001112233', { ahora: VIERNES_31 });
     expect(conPais).toContain('no se lo preguntes');
+  });
+
+  it('si ya sabe su nombre, le dice que lo use y que no lo vuelva a preguntar', () => {
+    const conNombre = { ...usuaria, name: 'Marcela' };
+    const p = buildSystemPrompt(conNombre, '', '+573001112233', { ahora: VIERNES_31 });
+    expect(p).toContain('SE LLAMA MARCELA');
+    expect(p).toMatch(/no se lo vuelvas a preguntar/i);
+  });
+
+  it('lo que ella contó en conversaciones anteriores entra al prompt', () => {
+    // El historial son los últimos 20 mensajes: una mujer que vuelve tres
+    // semanas después ya no está ahí, y sin esto Paula la trata como nueva
+    // después de que le contó nueve años de su vida.
+    const conMemoria = {
+      ...usuaria,
+      situacion_resumen: 'Lleva 9 años con él, no duerme, la frena el dinero.',
+    };
+    const p = buildSystemPrompt(conMemoria, '', '', { ahora: VIERNES_31 });
+    expect(p).toContain('LO QUE YA TE CONTÓ');
+    expect(p).toContain('Lleva 9 años con él');
+    expect(p).toMatch(/para no hacerla repetir nada/i);
   });
 
   it('a dos mujeres distintas les toca un dolor distinto', () => {
@@ -518,37 +591,27 @@ describe('el prompt que se arma en cada turno', () => {
     expect(dolores('mujer-a')).not.toBe(dolores('mujer-b'));
   });
 
-  it('a quien todavía no ha entrado NO le da la fecha del próximo encuentro', () => {
-    // Los encuentros del martes y jueves son de las que ya están adentro.
+  it('a quien todavía no ha entrado NO le da la fecha del próximo taller', () => {
+    // Los talleres del martes y jueves son de las que ya están adentro.
     // Citar a una fecha a la que no puede entrar es prometerle lo que no tiene.
-    const p = prompt('apego');
+    const p = prompt();
     expect(p).not.toContain('martes 4 de agosto');
-    expect(p).toContain('NO le des la fecha del próximo encuentro');
+    expect(p).toContain('NO le des la fecha del próximo taller');
     // Pero sí sabe QUÉ incluye el programa, y su hora local.
-    expect(p).toContain('DOS encuentros en vivo con Javier cada semana');
+    expect(p).toContain('4 horas de acompañamiento cada semana');
     expect(p).toContain('ELLA TE ESCRIBE DESDE: México');
   });
 
-  it('a la que ya está adentro sí le entrega el reloj de sus encuentros', () => {
+  it('a la que ya está adentro sí le entrega el reloj de sus talleres', () => {
     const miembro = { ...usuaria, funnel_stage: 'compradora' };
     const p = buildSystemPrompt(miembro, '', '+521234567890', { ahora: VIERNES_31, escalon: 'apego' });
     expect(p).toContain('martes 4 de agosto');
     expect(p).toContain('SU PRÓXIMO ENCUENTRO EN VIVO');
   });
 
-  it('en la clase del jueves no se nombran los encuentros del programa', () => {
-    const p = prompt('clase');
-    expect(p).not.toContain('martes 4 de agosto');
-    expect(p).toContain('NO nombres los encuentros en vivo de los martes y jueves');
-  });
-
-  it('en la clase le entrega el próximo jueves, no una fecha escrita a mano', () => {
-    expect(prompt('clase')).toContain('jueves 6 de agosto');
-  });
-
   it('ya no queda nada que anular: el prompt no se contradice a sí mismo', () => {
     // El bloque viejo tenía que decir "más abajo dice 15 módulos: ANULADO".
-    for (const p of [prompt('clase'), prompt('apego')]) {
+    for (const p of [prompt()]) {
       expect(p).not.toContain('ANULADO');
       expect(p).not.toContain('15 módulos');
     }

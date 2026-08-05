@@ -5,58 +5,45 @@ import { aplicarFormato } from "@/lib/whatsapp/formato";
 import { normalizarNegritas, partirEnGlobos } from "@/lib/whatsapp/manychat";
 
 
-// La clase es TODOS los jueves, 8 PM Colombia, y la fecha la calcula
-// `proximaClase()` de programa.ts. Desde el lunes 27 el jueves es el 30 de
-// julio; desde el viernes 31, el 6 de agosto.
+// Dos instantes de referencia. Ya no hay fecha de clase que cuadrar: el
+// programa se vende igual cualquier día, porque se entra HOY.
 const LUNES_27 = new Date("2026-07-27T15:00:00Z"); // 10:00 AM Colombia
-const VIERNES_31 = new Date("2026-07-31T15:00:00Z"); // la del 30 ya se dictó
+const VIERNES_31 = new Date("2026-07-31T15:00:00Z");
 
-// El blindaje audita con reglas OPUESTAS según lo que se esté vendiendo, y su
-// modo por defecto es 'apego'. Estas pruebas piden 'clase' explícito.
-const auditarClase = (texto: string, ahora: Date) => auditarRespuesta(texto, ahora, "clase");
+/** Un solo producto desde el 2026-08-05: siempre se audita en modo 'apego'. */
+const auditarClase = (texto: string, ahora: Date) => auditarRespuesta(texto, ahora, "apego");
 
-describe("blindaje anti-invento — campaña de clase en vivo", () => {
-  it("deja el link de la clase perfecto, escriba el modelo lo que escriba", () => {
-    const CANON = "https://historiasdelamente.com/volver-a-mi";
+const SKOOL = "https://www.skool.com/historias-de-la-mente-4978/about";
+
+describe("blindaje anti-invento — Apego Detox en Skool", () => {
+  it("deja el link de Skool perfecto, escriba el modelo lo que escriba", () => {
     const casos = [
-      "Entra aquí: historiasdelamente.com/volver-a-mi",           // sin https
-      "Entra aquí: www.historiasdelamente.com/volver-a-mi",       // con www
-      "Entra aquí: https://historiasdelamente.com/volver-a-mi.",  // punto pegado
-      "Entra aquí: https://historiasdelamente.com/volver-a-mi/",  // barra de más
-      "Entra aquí: (https://historiasdelamente.com/volver-a-mi)", // entre paréntesis
+      "Entras aquí: www.skool.com/historias-de-la-mente-4978/about",   // sin https
+      "Entras aquí: https://www.skool.com/historias-de-la-mente-4978/about.",  // punto pegado
+      "Entras aquí: https://www.skool.com/historias-de-la-mente-4978/about/",  // barra de más
+      "Entras aquí: (https://www.skool.com/historias-de-la-mente-4978/about)", // entre paréntesis
     ];
     for (const caso of casos) {
       const { texto } = auditarClase(caso, LUNES_27);
-      expect(texto).toContain(CANON);
+      expect(texto).toContain(SKOOL);
       // Y sin basura pegada que rompa el clic.
-      expect(texto).not.toMatch(/volver-a-mi[./)]/);
+      expect(texto).not.toMatch(/about[.)]/);
     }
   });
 
   it("borra un link que Paula se inventó", () => {
     const { texto, hallazgos } = auditarClase(
-      "Entra aquí https://historiasdelamente.com/volver-a-mi y también a https://bit.ly/abc123",
+      `Entra aquí ${SKOOL} y también a https://bit.ly/abc123`,
       LUNES_27,
     );
-    expect(texto).toContain("historiasdelamente.com/volver-a-mi");
+    expect(texto).toContain("skool.com/historias-de-la-mente-4978");
     expect(texto).not.toContain("bit.ly");
     expect(hallazgos.map((h) => h.tipo)).toContain("link_inventado");
   });
 
-  it("corrige el día de la semana equivocado", () => {
-    const { texto, hallazgos } = auditarClase("La clase es el martes 30 de julio", LUNES_27);
-    expect(texto).toBe("La clase es el jueves 30 de julio");
-    expect(hallazgos[0].tipo).toBe("dia_equivocado");
-  });
-
-  it("marca una fecha que no es la de la clase", () => {
-    const { hallazgos } = auditarClase("Nos vemos el 6 de agosto", LUNES_27);
-    expect(hallazgos.map((h) => h.tipo)).toContain("fecha_inventada");
-  });
-
   it("no molesta cuando la respuesta está bien", () => {
     const { hallazgos } = auditarClase(
-      "La clase es el jueves 30 de julio a las 8:00 PM. Entras aquí: https://historiasdelamente.com/volver-a-mi",
+      `Son $20 USD al mes, con 7 días de garantía. Entras aquí: ${SKOOL}`,
       LUNES_27,
     );
     expect(hallazgos).toHaveLength(0);
@@ -74,77 +61,68 @@ describe("blindaje anti-invento — campaña de clase en vivo", () => {
     expect(ok.hallazgos).toHaveLength(0);
   });
 
-  it("no deja prometer contenido de Apego Detox como si viniera con la clase", () => {
-    expect(
-      auditarClase("Hay un módulo 7 con el protocolo de 8 pasos", LUNES_27).hallazgos.map((h) => h.tipo),
-    ).toContain("contenido_de_otro_producto");
+  it("la forma canónica anti-terapia pasa limpia", () => {
+    // Te escuché → eso se trabaja adentro → ahí hay más mujeres como ella.
+    // Si el blindaje marcara esto, Paula no podría decir lo único que debe.
+    const { hallazgos } = auditarClase(
+      "Te entiendo. Eso es justo lo que se trabaja adentro, y ahí no vas a estar sola.",
+      LUNES_27,
+    );
+    expect(hallazgos).toHaveLength(0);
   });
 
-  it("la clase es pago único: una mensualidad aquí es de otro producto", () => {
+  it("un número de módulos que ella no va a encontrar se marca", () => {
     expect(
-      auditarClase("Son $37.97 al mes", LUNES_27).hallazgos.map((h) => h.tipo),
-    ).toContain("mensualidad_en_clase");
+      auditarClase("Son 9 módulos", LUNES_27).hallazgos.map((h) => h.tipo),
+    ).toContain("modulos_inventados");
+    // 17 es el número real de la página de Skool.
+    expect(
+      auditarClase("Son 17 módulos de terapia guiada", LUNES_27).hallazgos.map((h) => h.tipo),
+    ).not.toContain("modulos_inventados");
+  });
+
+  it("es suscripción: vendérselo como pago único se marca", () => {
+    expect(
+      auditarClase("Son 20 dólares, un solo pago", LUNES_27).hallazgos.map((h) => h.tipo),
+    ).toContain("pago_unico");
     expect(
       auditarClase("¡Corre, queda el último cupo!", LUNES_27).hallazgos.map((h) => h.tipo),
     ).toContain("urgencia_falsa");
   });
 
-  it("la clase ya no caduca: es todos los jueves y la fecha rueda sola", () => {
-    // Antes esto era un error ('clase_caducada') porque la clase era una sola y
-    // ya se había dictado. Ahora siempre hay un jueves por delante.
-    const { hallazgos } = auditarClase("Es este jueves, no te lo pierdas", VIERNES_31);
-    expect(hallazgos).toHaveLength(0);
-
-    // El viernes 31, el próximo jueves es el 6 de agosto: cualquier otra fecha
-    // que el modelo escriba se marca como inventada.
+  it("un precio en dólares que no es el de hoy se marca", () => {
     expect(
-      auditarClase("La clase es el 30 de julio", VIERNES_31).hallazgos.map((h) => h.tipo),
-    ).toContain("fecha_inventada");
+      auditarClase("Son $37.97 al mes", LUNES_27).hallazgos.map((h) => h.tipo),
+    ).toContain("precio_falso");
   });
 
-  it("la instrucción de corrección le dice al modelo la fecha correcta", () => {
-    // El lunes 27, el próximo jueves es el 30 de julio.
-    const { hallazgos } = auditarClase("La clase es el martes 30 de julio", LUNES_27);
-    expect(instruccionCorreccion(hallazgos, "clase", LUNES_27)).toContain("jueves 30 de julio");
+  it("la cifra en moneda local NO se confunde con un precio falso", () => {
+    // Es el falso positivo que habría quemado el reintento en cada cierre: la
+    // conversión es aproximada por diseño, y el único número que tiene que
+    // cuadrar exacto es el dólar.
+    const { hallazgos } = auditarClase(
+      "Son $20 USD al mes, unos 80.000 pesos. Tienes 7 días de garantía.",
+      LUNES_27,
+    );
+    expect(hallazgos.map((h) => h.tipo)).not.toContain("precio_falso");
   });
 
-  it("no deja prometer una grabación que no existe", () => {
-    const casos = [
-      "Si no puedes en vivo, te queda la grabación",
-      "No te preocupes, la ves después",
-      "Queda grabada en tu área de miembros",
-    ];
-    for (const caso of casos) {
-      expect(auditarClase(caso, LUNES_27).hallazgos.map((h) => h.tipo)).toContain(
-        "grabacion_inexistente",
-      );
-    }
-
-    // Decirle la VERDAD sí pasa — si no, Paula no podría ni negarlo.
-    const verdades = [
-      "Es en vivo y una sola vez, por eso vale la pena hacer el esfuerzo de estar 💛",
-      "No, la clase no queda grabada: es en vivo y solo se da una vez.",
-      "Si a esa hora no puedes, te aviso: no se repite ni queda grabada.",
-    ];
-    for (const v of verdades) {
-      expect(auditarClase(v, LUNES_27).hallazgos).toHaveLength(0);
-    }
-
-    // Pero una negación de otra cosa no sirve de coartada.
-    expect(
-      auditarClase("No te preocupes, queda grabada", LUNES_27).hallazgos.map((h) => h.tipo),
-    ).toContain("grabacion_inexistente");
+  it("la instrucción de corrección le dice el precio y la plataforma correctos", () => {
+    const { hallazgos } = auditarClase("Son $37.97 al mes", LUNES_27);
+    const correccion = instruccionCorreccion(hallazgos, "apego", LUNES_27);
+    expect(correccion).toContain("$20 USD al mes");
+    expect(correccion).toMatch(/7 días de garantía/);
   });
 
   it("no la deja escribir un folleto", () => {
     const folleto =
-      "Hola, soy Paula, del equipo de Javier. La clase en vivo Recuperando mi Ser es este jueves 30 de julio a las 7:00 PM hora de Ciudad de Mexico. Son 3 horas con terapia en vivo, meditacion, testimonios, el libro de la clase, el area de miembros y la grabacion por si no puedes conectarte en ese momento. Aqui te dejo el link para asegurar tu lugar.";
+      "Hola, soy Paula, del equipo de Javier. Apego Detox es la plataforma para salir del apego emocional: tiene 17 modulos de terapia guiada paso a paso, cuatro horas de talleres en vivo cada semana con Javier, una comunidad activa a toda hora, meditaciones y ejercicios para el cuerpo, mas el super bonus con PDFs de trabajo. Aqui te dejo el link para que entres hoy mismo.";
     const { hallazgos } = auditarClase(folleto, LUNES_27);
     expect(hallazgos.map((h) => h.tipo)).toContain("demasiado_largo");
   });
 
   it("el link no cuenta para el largo (se ve como tarjeta, no como texto)", () => {
-    const corto = "Perfecto, aquí aseguras tu lugar:\n\nhttps://historiasdelamente.com/volver-a-mi\n\nTe espero adentro 💛";
+    const corto = `Perfecto, aquí entras:\n\n${SKOOL}\n\nTe espero adentro 💛`;
     expect(auditarClase(corto, LUNES_27).hallazgos).toHaveLength(0);
   });
 
@@ -445,9 +423,9 @@ describe("ninguna lista llega al chat", () => {
     const enProsa = [
       "Uf, nueve años pidiendo perdón por cosas que ni hiciste.",
       "",
-      "Es de eso justamente la clase del jueves a las 8. Son 25.000, pago único.",
+      "Eso es justo lo que se trabaja adentro. Son $20 USD al mes, unos 80.000 pesos.",
       "",
-      "https://historiasdelamente.com/volver-a-mi",
+      SKOOL,
     ].join("\n");
 
     expect(auditarClase(enProsa, LUNES_27).hallazgos).toHaveLength(0);
@@ -499,81 +477,45 @@ describe("máximo tres globos, y el link es uno de los tres", () => {
   });
 
   it("con varios links, el texto se junta y cada link conserva su globo", () => {
-    // El caso del cierre por Nequi: número de cuenta + WhatsApp de Javier +
-    // la página. Ninguna de las tres cosas se puede caer.
-    const nequi = [
-      "Son 25.000, pago único.",
-      "Manda el pago por Nequi al 311 632 9202, a nombre de Javier Vieira.",
+    // El caso del handoff: ella no tiene tarjeta, así que va el WhatsApp de
+    // Javier además del link del programa. Ninguna de las dos cosas se cae.
+    const conDosLinks = [
+      "Son $20 USD al mes, unos 80.000 pesos.",
+      "Si no tienes tarjeta, escríbele a Javier Vieira y él te lo resuelve.",
       "https://wa.me/573001681053",
-      "Ese segundo número es su WhatsApp: uno recibe el pago y en el otro te atiende él.",
-      "https://historiasdelamente.com/volver-a-mi",
+      "Y si sí la tienes, entras directo aquí:",
+      SKOOL,
     ].join("\n\n");
 
-    const globos = partirEnGlobos(aplicarFormato(nequi));
+    const globos = partirEnGlobos(aplicarFormato(conDosLinks));
     expect(globos).toHaveLength(3);
 
     const todo = globos.join(" ");
-    expect(todo).toContain("311 632 9202");
-    expect(todo).toContain("uno recibe el pago y en el otro te atiende él");
+    expect(todo).toContain("$20 USD al mes");
     expect(globos.some((g) => g.includes("wa.me/573001681053"))).toBe(true);
-    expect(globos.some((g) => g.includes("volver-a-mi"))).toBe(true);
+    expect(globos.some((g) => g.includes("skool.com"))).toBe(true);
   });
 
   it("recortar NUNCA se come el link, aunque venga de último", () => {
     const conLinkAlFinal = [
       "Uf, nueve años.",
-      "Eso exacto es lo que se trabaja el jueves.",
-      "Es a las 8 de la noche y dura tres horas.",
-      "Son 25.000, pago único.",
-      "https://historiasdelamente.com/volver-a-mi",
+      "Eso exacto es lo que se trabaja adentro.",
+      "Y no vas a estar sola: la comunidad está activa a cualquier hora.",
+      "Son $20 al mes.",
+      SKOOL,
     ].join("\n\n");
 
     const globos = partirEnGlobos(aplicarFormato(conLinkAlFinal));
     expect(globos.length).toBeLessThanOrEqual(3);
-    expect(globos).toContain("https://historiasdelamente.com/volver-a-mi");
-  });
-
-  it("los dos links de la vía Nequi sobreviven al recorte", () => {
-    // Ella necesita los dos: el WhatsApp de Javier para el comprobante y la
-    // página por si prefiere tarjeta. Perder uno de los dos es perder el pago.
-    const conDos = [
-      "Le mandas 25.000 por Nequi al 311 632 9202, a nombre de Javier Vieira.",
-      "Después el comprobante y tu correo aquí:",
-      "https://wa.me/573001681053",
-      "Y si prefieres tarjeta, es por acá:",
-      "https://historiasdelamente.com/volver-a-mi",
-    ].join("\n\n");
-
-    const globos = partirEnGlobos(aplicarFormato(conDos));
-    expect(globos.length).toBeLessThanOrEqual(3);
-    expect(globos.some((g) => g.includes("wa.me/573001681053"))).toBe(true);
-    expect(globos.some((g) => g.includes("volver-a-mi"))).toBe(true);
-  });
-
-  it("marca las dos vías de pago juntas — es lo que apelmaza el cierre", () => {
-    // Con dos links, a ella le quedan DOS globos ocupados por links y UNO para
-    // todo el texto: las tres frases se le juntan en un ladrillo. Y encima la
-    // pone a escoger camino justo cuando iba a pagar.
-    const dosVias = [
-      "Manda 25.000 por Nequi al 311 632 9202, a nombre de Javier Vieira.",
-      "https://wa.me/573001681053",
-      "Y si prefieres tarjeta:",
-      "https://historiasdelamente.com/volver-a-mi",
-    ].join("\n\n");
-
-    expect(auditarClase(dosVias, LUNES_27).hallazgos.map((h) => h.tipo)).toContain("dos_vias_de_pago");
-
-    // Una sola vía no dispara nada.
-    const unaVia = "Manda 25.000 por Nequi al 311 632 9202.\n\nhttps://wa.me/573001681053";
-    expect(auditarClase(unaVia, LUNES_27).hallazgos.map((h) => h.tipo)).not.toContain("dos_vias_de_pago");
+    expect(globos).toContain(SKOOL);
   });
 
   it("el blindaje marca los mensajes de más de tres globos", () => {
     const cinco = [
       "Hola, soy Paula.",
       "Trabajo con Javier Vieira.",
-      "La clase es el jueves.",
-      "Son 25.000.",
+      "El programa se llama Apego Detox.",
+      "Son 20 dólares.",
       "Te espero 💛",
     ].join("\n\n");
 

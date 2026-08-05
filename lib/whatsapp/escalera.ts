@@ -1,83 +1,56 @@
 // ============================================================================
 // LA ESCALERA — QUÉ LE OFRECE PAULA EN ESTE TURNO
 //
-// Escalón 1: LA CLASE DEL JUEVES. Aquí entra todo el mundo, siempre.
-// Escalón 2: APEGO DETOX. Solo se sube cuando ELLA lo pide.
-//
-// POR QUÉ NO SUBE SOLA: si Paula ofrece las dos cosas a la vez, se contradice
-// (dos precios, dos plataformas, dos links en el mismo mensaje) y ella se queda
-// sin saber a cuál darle. La versión anterior resolvía esto con un interruptor
-// excluyente —o clase o Apego, nunca los dos— y eso obligaba a apagar un
-// producto para vender el otro. La escalera los deja convivir en orden.
-//
-// UNA VEZ ARRIBA, NO SE BAJA. Si ella ya preguntó por Apego Detox, volver a
-// ofrecerle la clase es retroceder la venta.
+// ╔═══════════════════════════════════════════════════════════════════════════╗
+// ║  📌 2026-08-05 — LA ESCALERA SE ACABÓ. AHORA HAY UN SOLO ESCALÓN.         ║
+// ║                                                                           ║
+// ║  Hasta hoy esto tenía dos peldaños: todo el mundo entraba por LA CLASE    ║
+// ║  DEL JUEVES y solo se subía a Apego Detox si ELLA lo pedía. Javier lo     ║
+// ║  cortó: de ahora en adelante Paula ofrece SOLO Apego Detox (Skool).       ║
+// ║                                                                           ║
+// ║  POR QUÉ LA ESCALERA ERA PARTE DEL PROBLEMA, y no solo la clase:          ║
+// ║  el escalón 2 únicamente se abría si ella pronunciaba una de cuatro       ║
+// ║  palabras ("programa", "talleres", "terapia", "Apego Detox"). O sea que   ║
+// ║  el producto de 20 dólares al mes —el que de verdad la sostiene— solo se  ║
+// ║  le ofrecía a la mujer que ya sabía que existía y sabía cómo pedirlo. A   ║
+// ║  la que llegaba de TikTok sin saber nada, jamás. El mejor producto        ║
+// ║  estaba escondido detrás de una contraseña que casi nadie adivinaba.      ║
+// ║                                                                           ║
+// ║  EL TIPO `Escalon` SE QUEDA, con un solo valor. No es ceremonia: hace     ║
+// ║  que TypeScript señale como error cualquier rama de código que todavía    ║
+// ║  crea que existe la clase, en vez de dejarla viva y muerta a la vez.      ║
+// ║  Cuando ya no quede ninguna, el tipo y este archivo se borran.            ║
+// ╚═══════════════════════════════════════════════════════════════════════════╝
 // ============================================================================
 
-export type Escalon = 'clase' | 'apego';
+export type Escalon = 'apego';
 
 /**
- * Ella pidió el escalón 2. Son las cuatro puertas que dictó Javier:
- * pregunta por Apego Detox, pide un programa, pregunta por los talleres,
- * o pregunta por terapia.
+ * En qué escalón está esta conversación. Siempre el mismo: solo hay uno.
  *
- * OJO con "terapia": pedir terapia INDIVIDUAL con Javier no es esto — eso lo
- * detecta `motivoHandoff` y va directo a su WhatsApp. Aquí cae la mujer que
- * pregunta por terapia en general, y a esa le sirve Apego Detox.
+ * Se conserva la función (en vez de borrarla y poner la constante a mano en
+ * cada sitio) porque es el punto donde se enchufaría un segundo producto el día
+ * que exista. Y porque los tests de la escalera siguen valiendo como candado:
+ * verifican que NINGUNA entrada —diga lo que diga ella— devuelve la clase.
  */
-const PIDE_ESCALON_2 =
-  /apego\s*detox|\bprogramas?\b|\btalleres?\b|\bterapias?\b|acompa[ñn]amiento|membres[íi]a|suscripci[óo]n|\bcomunidad\b|algo\s+m[áa]s\s+(?:largo|profundo|completo|serio)|qu[ée]\s+m[áa]s\s+(?:tienes|tienen|hay|ofreces)/i;
-
-export type EntradaEscalera = {
-  /** Lo que ella acaba de escribir (todos sus mensajitos del turno, juntos). */
-  mensaje: string;
-  /** El escalón guardado de turnos anteriores. */
-  guardado?: string | null;
-  /** wa_users.funnel_stage — 'compradora' = ya pagó algo. */
-  etapa?: string | null;
-};
-
-/**
- * En qué escalón está esta conversación AHORA.
- * Determinista: no depende de que el modelo se acuerde de nada.
- */
-export function escalonDe({ mensaje, guardado, etapa }: EntradaEscalera): Escalon {
-  // 1. Una vez arriba, no se baja.
-  if (guardado === 'apego') return 'apego';
-
-  // 2. Ya compró: la clase no se le vuelve a vender. Lo que sigue es el programa.
-  if (etapa === 'compradora') return 'apego';
-
-  // 3. Ella abrió la puerta.
-  if (PIDE_ESCALON_2.test(mensaje)) return 'apego';
-
-  // 4. Por defecto, siempre la clase.
-  return 'clase';
-}
-
-/** ¿Este turno es el que subió de escalón? Sirve para no repetir el pitch. */
-export function acabaDeSubir(anterior: string | null | undefined, ahora: Escalon): boolean {
-  return ahora === 'apego' && anterior !== 'apego';
+export function escalonDe(): Escalon {
+  return 'apego';
 }
 
 /**
- * El bloque de orden que va arriba del prompt. Es corto a propósito: la escalera
- * se decide en código, no se le pide al modelo que la razone.
+ * El bloque de orden que va arriba del prompt.
+ *
+ * Es corto a propósito: lo que Paula ofrece se decide en código, no se le pide
+ * al modelo que lo razone.
  */
-export function instruccionEscalon(escalon: Escalon): string {
-  if (escalon === 'clase') {
-    return `# 🪜 EN ESTE MENSAJE OFRECES: LA CLASE DEL JUEVES — EL PASO NÚMERO UNO
-Es lo único que ofreces. **La mayoría llega de TikTok y no conoce a Javier**: no des por hecho que sabe quién es, ni qué es Apego Detox, ni que existe un programa. Lo único que necesita saber hoy es que hay una clase el jueves.
+export function instruccionEscalon(): string {
+  return `# 🪜 EN ESTE MENSAJE OFRECES: APEGO DETOX — Y NADA MÁS
 
-**Ella escribe porque quiere venir a esta clase.** No tienes que convencerla, ni descubrir su caso, ni ganarte el derecho a contarle. Trátala como a alguien que ya casi está adentro: despiértale la curiosidad de lo que va a pasar esa noche y ábrele la puerta. Nada de interrogatorio.
-- No nombres Apego Detox, ni su precio, ni su link, salvo que ELLA pregunte por el programa, los talleres o la terapia. Si lo hace, en ese momento cambias de escalón.
-- ⛔ NO nombres los encuentros en vivo de los martes y jueves: esos son de las que YA están dentro del programa. Aquí solo existe la clase del jueves.
-- ⛔ **El link que mandas es la página de la clase, nunca un link de pago.** Ahí ella ve todo y aparta su lugar. Skool NO se nombra aquí.
-- Si pregunta "¿y después qué sigue?", le dices que sí hay un programa completo después y se lo cuentas. Ahí sí subes.`;
-  }
+Es lo único que vendes. **La mayoría llega de TikTok y no conoce a Javier Vieira**: no des por hecho que sabe quién es ni qué es esto.
 
-  return `# 🪜 EN ESTE MENSAJE OFRECES: APEGO DETOX
-Ella ya pidió el programa, así que aquí no vuelves a la clase del jueves — eso sería retroceder. Si ella la nombra, se la confirmas en una línea y sigues con el programa.
-- **Apego Detox y la clase del jueves son dos cosas distintas.** La clase es una noche, pago único, por Hotmart. Apego Detox es el programa completo, suscripción, por Skool. Nunca las mezcles ni digas que una incluye a la otra.
-- El pago de Apego Detox es por Skool, y SOLO por Skool. Hotmart no se nombra aquí.`;
+**Ella escribe porque algo de lo que vio le tocó justo donde le duele.** No tienes que convencerla ni descubrirle el caso: tienes que dejarle claro, rápido, que eso que le pasa tiene un lugar donde se trabaja y que puede entrar HOY.
+
+- ⛔ **Ya NO existe "la clase del jueves" como algo que tú ofrezcas.** No la nombres, no la vendas, no la uses de gancho, no mandes su página ni su link de Hotmart. Si ELLA pregunta por la clase, le dices la verdad en una línea: los talleres en vivo ahora son parte del programa, y son dos cada semana. Y sigues con el programa.
+- ⛔ **Hotmart no se nombra nunca.** Apego Detox se paga SOLO en Skool. Un link de Hotmart la lleva a un sitio donde no puede entrar al programa: es el error más caro que puedes cometer.
+- 💛 **Tu ventaja es que no hay que esperar a nada.** Entra hoy, desde el celular, a la hora que sea. Úsalo temprano: es lo que le resuelve el problema que tiene esta noche.`;
 }

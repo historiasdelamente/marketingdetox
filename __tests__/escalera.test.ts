@@ -1,13 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
 import { cargarConocimiento, conocimientoPara } from '@/lib/whatsapp/conocimiento';
-import { acabaDeSubir, escalonDe } from '@/lib/whatsapp/escalera';
-import { APEGO_DETOX, CLASE_JUEVES } from '@/lib/whatsapp/programa';
+import { escalonDe, instruccionEscalon } from '@/lib/whatsapp/escalera';
+import { APEGO_DETOX } from '@/lib/whatsapp/programa';
 
-describe('la escalera — primero la clase, y solo sube si ELLA lo pide', () => {
-  const escalon = (mensaje: string, extra = {}) => escalonDe({ mensaje, ...extra });
-
-  it('todo el mundo entra por la clase del jueves', () => {
+describe('un solo producto: la escalera se retiró el 2026-08-05', () => {
+  it('diga lo que diga ella, siempre se le ofrece Apego Detox', () => {
+    // Estos mensajes son los que ANTES caían en el escalón de la clase, que era
+    // el caso normal: el 100% de las mujeres que llegaban de TikTok. El programa
+    // solo se les ofrecía si acertaban a decir "programa", "talleres" o "terapia".
     for (const mensaje of [
       'hola',
       'buenas noches',
@@ -15,41 +16,24 @@ describe('la escalera — primero la clase, y solo sube si ELLA lo pide', () => 
       'cuánto vale?',
       'a qué hora es?',
       'llevo tres meses sin dormir',
-    ]) {
-      expect(escalon(mensaje)).toBe('clase');
-    }
-  });
-
-  it('sube cuando pregunta por el programa, los talleres o la terapia', () => {
-    for (const mensaje of [
       'qué es apego detox?',
-      'me hablaron de Apego Detox',
       'tienen algún programa?',
-      'quiero el programa completo',
-      'hacen talleres?',
-      'hacen terapia?',
-      'tienen una comunidad?',
-      'quiero algo más largo, no una clase suelta',
-      'qué más tienen?',
+      'quiero saber de la clase del jueves',
     ]) {
-      expect(escalon(mensaje)).toBe('apego');
+      expect(escalonDe()).toBe('apego');
+      // El mensaje ya no decide nada: se lee aquí solo para dejar claro que
+      // ninguno de ellos cambia el resultado.
+      expect(mensaje.length).toBeGreaterThan(0);
     }
   });
 
-  it('una vez arriba no se baja: no le vuelve a ofrecer la clase', () => {
-    expect(escalon('gracias, lo voy a pensar', { guardado: 'apego' })).toBe('apego');
-    expect(escalon('y cuánto cuesta?', { guardado: 'apego' })).toBe('apego');
-  });
-
-  it('si ya pagó, la clase no se le vuelve a vender', () => {
-    expect(escalon('hola de nuevo', { etapa: 'compradora' })).toBe('apego');
-  });
-
-  it('sabe cuándo acaba de subir, para no repetir el pitch', () => {
-    expect(acabaDeSubir('clase', 'apego')).toBe(true);
-    expect(acabaDeSubir(null, 'apego')).toBe(true);
-    expect(acabaDeSubir('apego', 'apego')).toBe(false);
-    expect(acabaDeSubir('clase', 'clase')).toBe(false);
+  it('la instrucción prohíbe explícitamente la clase y Hotmart', () => {
+    const bloque = instruccionEscalon();
+    expect(bloque).toContain('APEGO DETOX');
+    expect(bloque).toMatch(/clase del jueves/i);
+    expect(bloque).toMatch(/Hotmart no se nombra/i);
+    // Y le recuerda el argumento que sustituye a la urgencia de la clase.
+    expect(bloque).toMatch(/entra hoy/i);
   });
 });
 
@@ -66,56 +50,29 @@ describe('el conocimiento sale del documento, no del código', () => {
     expect(cargarConocimiento()).not.toContain('<!--');
   });
 
-  it('en la clase no le mete encima el material de venta de Apego Detox', () => {
-    const texto = conocimientoPara('clase');
-    // Lleva la clase, con la PÁGINA como único link (nunca el checkout suelto).
-    expect(texto).toContain('LA CLASE DEL JUEVES');
-    expect(texto).toContain(CLASE_JUEVES.landing);
-    expect(texto).not.toContain(CLASE_JUEVES.checkout);
-    // …y sabe que Apego Detox existe, para reconocerlo si ella pregunta.
-    expect(texto).toContain('QUÉ ES APEGO DETOX');
-    // Pero no lleva su precio, ni su plataforma, ni sus objeciones.
-    expect(texto).not.toContain(APEGO_DETOX.checkout);
-    expect(texto).not.toContain('PRECIO, PAGO Y GARANTÍA');
-    // Las respuestas a objeciones de Apego hablan de "$20 al mes": puestas en el
-    // escalón de la clase, el blindaje marcaría cada mensaje como error.
-    expect(texto).not.toContain('OBJECIONES DE APEGO DETOX');
-    expect(texto).not.toContain('$20 al mes');
-    // El método de objeciones sí sirve para los dos productos.
-    expect(texto).toContain('OBJECIONES — EL MÉTODO');
-  });
-
-  it('el escalón de la clase carga lo suyo y nada del otro producto', () => {
-    // Importa con mini: cuanto más texto AJENO tenga delante, más se agarra de
-    // plantillas y menos lee lo que ella escribió.
-    //
-    // Antes esto se medía por tamaño (clase < 60% de apego), y era un proxy
-    // equivocado: cuando la sección de la clase creció con la lista de dolores
-    // —que es SU material, el que hace que ella se reconozca— el test se puso
-    // rojo por crecer en la dirección correcta. Lo que hay que exigir no es que
-    // pese poco, es que no traiga encima el material comercial del programa.
-    const texto = conocimientoPara('clase');
-    expect(texto).not.toContain('PRECIO, PAGO Y GARANTÍA');
-    expect(texto).not.toContain('OBJECIONES DE APEGO DETOX');
-    expect(texto).not.toContain(APEGO_DETOX.checkout);
-    // Y sigue siendo más liviano que el paquete completo del programa.
-    expect(texto.length).toBeLessThan(conocimientoPara('apego').length);
-  });
-
-  it('en Apego Detox lleva todo: precio, links, objeciones y prohibiciones', () => {
+  it('lleva todo: precio, links, objeciones y prohibiciones', () => {
     const texto = conocimientoPara('apego');
     expect(texto).toContain('PRECIO, PAGO Y GARANTÍA');
     expect(texto).toContain(APEGO_DETOX.checkout);
     expect(texto).toContain('OBJECIONES');
     expect(texto).toContain('QUÉ INCLUYE');
+    expect(texto).toContain('LO QUE PAULA NO PUEDE DECIR NUNCA');
+    expect(texto).toContain('CUÁNDO PASA A JAVIER');
   });
 
-  it('las prohibiciones y el paso a Javier van en los dos escalones', () => {
-    for (const escalon of ['clase', 'apego'] as const) {
-      const texto = conocimientoPara(escalon);
-      expect(texto).toContain('LO QUE PAULA NO PUEDE DECIR NUNCA');
-      expect(texto).toContain('CUÁNDO PASA A JAVIER');
-      expect(texto).toContain('OBJECIONES');
-    }
+  it('lleva la respuesta para cuando ella pregunte por la clase retirada', () => {
+    // No es material de venta: es lo que contesta a la que la vio en un anuncio
+    // viejo. Sin esto, Paula se queda muda o se la inventa.
+    const texto = conocimientoPara('apego');
+    expect(texto).toContain('SI ELLA PREGUNTA POR LA CLASE DEL JUEVES');
+  });
+
+  it('el bloque de la clase va AL FINAL, no arriba', () => {
+    // Si fuera lo primero que lee, el modelo lo tomaría como lo primero que
+    // tiene que decir y volvería a nombrar la clase por su cuenta — que es
+    // justo lo que se acaba de quitar.
+    const texto = conocimientoPara('apego');
+    expect(texto.indexOf('SI ELLA PREGUNTA POR LA CLASE'))
+      .toBeGreaterThan(texto.indexOf('PRECIO, PAGO Y GARANTÍA'));
   });
 });

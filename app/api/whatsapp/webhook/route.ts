@@ -2,13 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { processPaulaMessage } from '@/lib/whatsapp/paula';
 import { encolarMensaje, estadoBuffer } from '@/lib/whatsapp/buffer';
 import { SIN_OIDO, transcribirAudio, transcripcionDisponible } from '@/lib/whatsapp/audio';
-import {
-  APEGO_DETOX,
-  CLASE_JUEVES,
-  precioApego,
-  proximaClase,
-  proximoEncuentro,
-} from '@/lib/whatsapp/programa';
+import { APEGO_DETOX, precioApego, proximoEncuentro } from '@/lib/whatsapp/programa';
+import { precioLocal, tasas } from '@/lib/whatsapp/moneda';
 
 /**
  * POST /api/whatsapp/webhook
@@ -128,33 +123,39 @@ export async function POST(request: NextRequest) {
 // GET for health check / verification
 export async function GET() {
   const ahora = new Date();
-  const clase = proximaClase(ahora);
   const encuentro = proximoEncuentro(ahora);
   const precio = precioApego(ahora);
+  const tabla = await tasas();
 
   return NextResponse.json({
     status: 'ok',
     agent: 'Paula - Historias de la Mente',
     modo: modoHumano() ? 'humano (buffer + globos)' : 'clasico (respuesta sincrona)',
-    // El orden de venta: siempre la clase primero; a Apego Detox se sube cuando
-    // ella lo pide (ver lib/whatsapp/escalera.ts).
-    vendiendo: `escalera: clase del jueves → ${APEGO_DETOX.nombre}`,
+    // Un solo producto desde el 2026-08-05: la clase del jueves se retiró y los
+    // talleres en vivo pasaron a ser parte del programa (ver programa.ts).
+    vendiendo: `${APEGO_DETOX.nombre} (Skool) — producto único`,
     modelo: process.env.PAULA_MODEL || 'openai/gpt-4.1-mini (por defecto)',
     oido: transcripcionDisponible() ? 'audios activos' : 'audios sin transcriptor',
-    clase: {
-      nombre: CLASE_JUEVES.nombre,
-      proxima: `${clase.frase} (${clase.fecha}, ${CLASE_JUEVES.horaTexto} Colombia)`,
-      en_vivo_ahora: clase.enVivo,
-      pago: 'Hotmart',
-    },
     apego_detox: {
       precio: precio.frase,
       lanzamiento: precio.enLanzamiento
         ? `vivo, quedan ${precio.diasRestantes} días (después $${precio.antes})`
         : 'terminado',
+      modulos: APEGO_DETOX.modulos,
+      talleres: `${APEGO_DETOX.encuentros.horasSemana} h/semana (${APEGO_DETOX.encuentros.diasTexto})`,
       proximo_encuentro: `${encuentro.frase} (${encuentro.fecha}, ${APEGO_DETOX.encuentros.horaTexto} Colombia)`,
       en_vivo_ahora: encuentro.enVivo,
       pago: 'Skool',
+    },
+    // Sirve para ver de un vistazo si la tasa viva entró o si está corriendo con
+    // el respaldo: si estas cifras se quedan clavadas, la API no está llegando.
+    moneda: {
+      CO: precioLocal(precio.monto, 'COP', tabla).frase,
+      MX: precioLocal(precio.monto, 'MXN', tabla).frase,
+      PE: precioLocal(precio.monto, 'PEN', tabla).frase,
+      CL: precioLocal(precio.monto, 'CLP', tabla).frase,
+      AR: precioLocal(precio.monto, 'ARS', tabla).frase,
+      ES: precioLocal(precio.monto, 'EUR', tabla).frase,
     },
     buffer: estadoBuffer(),
     timestamp: ahora.toISOString(),

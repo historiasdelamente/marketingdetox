@@ -7,8 +7,8 @@
 // ("más abajo dice 15 módulos: ANULADO"). Si hay que anular algo, es que el
 // documento está mal — se arregla el documento.
 //
-// Se sirve por escalón: en la clase del jueves no se le mete encima todo el
-// material de venta de Apego Detox, porque lo repite aunque no venga al caso.
+// Desde el 2026-08-05 se sirve entero: hay un solo producto (Apego Detox en
+// Skool), así que ya no hay nada que esconderle.
 //
 // El caché tiene TTL para que el día que esto viva en Supabase, un cambio se
 // vea sin redesplegar.
@@ -57,28 +57,24 @@ export function bloques(texto = cargarConocimiento()): Array<{ n: number; titulo
 }
 
 /**
- * Qué bloques recibe cada escalón, y EN QUÉ ORDEN los va a leer.
+ * Qué bloques recibe Paula, y EN QUÉ ORDEN los va a leer.
  *
- * En la clase entra el bloque 1 (qué es Apego Detox) solo para reconocerlo si
- * ella pregunta — sin su precio, sin sus links y sin sus objeciones. El bloque 8
- * es veneno ahí: sus respuestas hablan de "$20 al mes" y el blindaje marcaría
- * `mensualidad_en_clase` en cada mensaje.
+ * ⚠️ Desde el 2026-08-05 hay un solo producto, así que entran TODOS. Esto era
+ * un `Record` con dos filas —la de la clase servía un subconjunto recortado
+ * para que Paula no nombrara Apego Detox antes de tiempo—; con la escalera
+ * retirada, ese recorte ya no tiene sentido y esconder material solo la deja
+ * sin argumentos.
  *
- * Los universales (7 el método, 9 las prohibiciones, 10 el handoff) van en los dos.
+ * El bloque 11 (qué contestar si ella pregunta por la clase del jueves) va al
+ * FINAL a propósito: es una respuesta reactiva, no material de venta. Si fuera
+ * arriba, el modelo lo leería como lo primero que tiene que decir y volvería a
+ * nombrar la clase por su cuenta — que es exactamente lo que se quitó.
  */
 const ORDEN: Record<Escalon, number[]> = {
-  clase: [11, 1, 7, 9, 10],
   apego: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
 };
 
-/**
- * Lo que Paula puede leer en ESTE turno.
- *
- * En el escalón de la clase no se le entrega el material de venta de Apego
- * Detox: con él delante lo nombra aunque nadie se lo haya preguntado, y eso
- * rompe el orden. Lo que sí lleva siempre es qué es Apego Detox (bloque 1),
- * para reconocerlo cuando ella pregunte y poder subir de escalón.
- */
+/** Lo que Paula puede leer en ESTE turno. */
 export function conocimientoPara(escalon: Escalon, texto = cargarConocimiento()): string {
   const todos = bloques(texto);
   const permitidos = ORDEN[escalon];

@@ -6,16 +6,13 @@
 // lea: repara solo lo que se puede reparar (links y el día de la semana) y
 // reporta el resto, para que el motor le pida al modelo que lo corrija.
 //
-// ⚠️ LAS REGLAS DEPENDEN DEL ESCALÓN (ver `escalera.ts`):
-//   'clase' → la clase del jueves. PAGO ÚNICO por Hotmart. Hablar de
-//             mensualidades aquí es un error: es otro producto.
-//   'apego' → Apego Detox. SUSCRIPCIÓN por Skool. Decir "pago único" es un error.
-// El escalón llega por parámetro en cada turno — ya no es un interruptor global
-// del despliegue. Antes o se vendía la clase o se vendía Apego, nunca los dos.
+// ⚠️ UN SOLO PRODUCTO DESDE EL 2026-08-05: Apego Detox, SUSCRIPCIÓN por Skool.
+// Decir "pago único" es un error, y nombrar la clase del jueves también: ya no
+// se vende (ver la caja de `programa.ts`).
 //
-// ⚠️ LA PLATAFORMA NO SE CRUZA: Apego Detox solo se paga en Skool; la clase y
-// todo lo demás, en Hotmart. Mandar el link correcto de la plataforma
-// equivocada es el error más caro: ella llega a pagar y no puede.
+// ⚠️ LA PLATAFORMA NO SE CRUZA: Apego Detox solo se paga en Skool. Un link de
+// Hotmart es el error más caro que existe aquí — ella llega a pagar y no puede,
+// o peor, paga otra cosa.
 //
 // Todos los datos salen de `programa.ts` — acá no se escribe ni una fecha ni un
 // precio a mano. Si se duplica, se contradice.
@@ -36,33 +33,27 @@ import {
 // tres, así que contando con ella un mensaje de cinco globos parecía de tres y
 // el reintento no se disparaba nunca.
 import { globosDe } from './manychat';
-import { APEGO_DETOX, CLASE_JUEVES, precioApego, proximaClase } from './programa';
+import { APEGO_DETOX, precioApego } from './programa';
 
-/** En qué está vendiendo Paula en este turno. */
+/** En qué está vendiendo Paula. Hoy solo hay una cosa. */
 export type ModoVenta = Escalon;
 
-/** Por defecto se ofrece la clase: es el escalón de entrada. */
-export const MODO_VENTA: ModoVenta = 'clase';
+export const MODO_VENTA: ModoVenta = 'apego';
 
 export type Hallazgo = {
   tipo:
     | 'link_inventado'
     | 'plataforma_cruzada'
-    | 'dia_equivocado'
-    | 'fecha_inventada'
-    | 'mensualidad_en_clase'
     | 'urgencia_falsa'
     | 'psicoeducacion'
-    | 'contenido_de_otro_producto'
-    | 'grabacion_inexistente'
     | 'precio_falso'
     | 'pago_unico'
     | 'dia_encuentro_equivocado'
     | 'promesa_gratis'
     | 'modulos_inventados'
+    | 'producto_retirado'
     | 'pide_permiso'
     | 'vinetas'
-    | 'dos_vias_de_pago'
     | 'demasiado_largo';
   detalle: string;
 };
@@ -80,12 +71,9 @@ export type Hallazgo = {
 // `formato.ts`, que es también quien los HACE CUMPLIR después del modelo. Aquí
 // solo se miden para pedir un reintento: reescribir sale mejor que recortar.
 
-const TZ_COLOMBIA = 'America/Bogota';
-
 /** Dominios/rutas que Paula tiene permitido enviar. Todo lo demás se borra. */
 const LINKS_OK = [
   'historiasdelamente.com',
-  'pay.hotmart.com',
   'skool.com',
   'wa.me/',
   'chat.whatsapp.com',
@@ -93,53 +81,53 @@ const LINKS_OK = [
   'd3734kf5tip0j0.cloudfront.net',
 ];
 
-/** El pago de cada producto vive en una plataforma y solo en una. */
+/**
+ * Apego Detox se cobra SOLO en Skool. Un link de Hotmart la manda a pagar otro
+ * producto o a una oferta muerta, y desde que la clase se retiró ya no hay
+ * ningún caso legítimo en el que Paula deba mandar uno.
+ */
 const PLATAFORMA_PROHIBIDA: Record<Escalon, { patron: RegExp; nombre: string }> = {
-  // Apego Detox se cobra SOLO en Skool. Un link de Hotmart aquí la manda a pagar
-  // otro producto (o a una oferta muerta).
-  apego: { patron: /pay\.hotmart\.com/i, nombre: 'Hotmart' },
-  // La clase se cobra en Hotmart. Skool es la puerta de Apego Detox, no de la clase.
-  clase: { patron: /skool\.com/i, nombre: 'Skool' },
+  apego: { patron: /pay\.hotmart\.com|hotmart\.com/i, nombre: 'Hotmart' },
 };
 
 const URL_RE = /https?:\/\/[^\s<>()"']+/gi;
 
-const MESES = 'enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre';
-const DIAS_SEMANA = 'lunes|martes|mi[ée]rcoles|jueves|viernes|s[áa]bado|domingo';
+// --- Productos retirados ----------------------------------------------------
 
-/** El día, el número y el mes de la PRÓXIMA clase — calculados, nunca escritos. */
-function fechaDeLaClase(ahora: Date) {
-  const { inicio } = proximaClase(ahora);
-  const fmt = (opts: Intl.DateTimeFormatOptions) =>
-    new Intl.DateTimeFormat('es-CO', { timeZone: TZ_COLOMBIA, ...opts }).format(inicio);
-  return {
-    diaSemana: fmt({ weekday: 'long' }).toLowerCase(),
-    numero: Number(new Intl.DateTimeFormat('en-CA', { timeZone: TZ_COLOMBIA, day: 'numeric' }).format(inicio)),
-    mes: fmt({ month: 'long' }).toLowerCase(),
-  };
-}
+/**
+ * LA CLASE DEL JUEVES, QUE YA NO SE VENDE.
+ *
+ * ⚠️ Esto NO es paranoia: el historial de cada conversación viva está lleno de
+ * mensajes de Paula vendiendo la clase, y el modelo copia lo que ve arriba.
+ * Sin este candado, las mujeres que ya venían hablando con ella seguirían
+ * recibiendo "la clase del jueves a las 8" durante semanas.
+ *
+ * Se busca la CLASE como producto (con su nombre, su precio o su invitación),
+ * no la palabra "clase" suelta: "las clases en vivo son dos por semana" es
+ * correcto y no puede marcarse.
+ */
+const CLASE_RETIRADA =
+  /clase\s+del\s+jueves|la\s+clase\s+en\s+vivo\s+del|recuperando\s+mi\s+ser|volver\s+a\s+m[íi]\b|te\s+espero\s+el\s+jueves|25\.?000|\b7\s*(?:usd|d[óo]lares)|120\s*(?:mxn|pesos\s+mexicanos)|volver-a-mi/i;
 
-// --- Reglas SOLO del escalón de la clase ------------------------------------
-
-// La clase es PAGO ÚNICO. Cualquier mensualidad aquí es de otro producto, y la
-// mujer termina creyendo que le van a cobrar todos los meses por una clase.
-const MENSUALIDAD = /suscripci[óo]n\s+mensual|membres[íi]a\s+mensual|\bal\s+mes\b|\bmensualidad\b/i;
-
-// Contenido de Apego Detox prometido COMO PARTE de la clase. Nombrar el programa
-// ya no es un error (la escalera lo permite): prometer sus módulos, sí.
-const OTRO_PRODUCTO = /m[óo]dulo\s*\d+|\d+\s+m[óo]dulos|protocolo\s+de\s+\d+\s+pasos/i;
-
-// La grabación es la promesa más cara de todas: la mujer paga contando con verla
-// después. Mientras `quedaGrabada` no sea `true` explícito, no se promete.
-const MENCIONA_GRABACION = /grabaci[óo]n|grabad[oa]|se\s+graba|la\s+ves\s+despu[ée]s|verla\s+despu[ée]s|queda\s+guardada|repetici[óo]n/gi;
-const NEGACION = /\b(no|nunca|tampoco|sin|ni)\b/i;
+// La clase era el único sitio donde Nequi tenía sentido. Skool cobra con
+// tarjeta y nadie recibe transferencias: si Paula da un número de Nequi, está
+// mandando a una mujer a transferirle plata a alguien por su cuenta.
+const NEQUI = /\bnequi\b|\bdaviplata\b/i;
 
 // --- Reglas SOLO del escalón de Apego Detox ---------------------------------
 
 // Un precio mensual que no sea el vigente. Se mira solo si va pegado a "al mes"
 // o "mensual": así los reencuadres honestos ("una consulta cuesta $60") y el
 // "menos de un dólar al día" no se marcan como error.
-const PRECIO_MENSUAL = /\$?\s*(\d{1,3}(?:[.,]\d{1,2})?)\s*(?:usd|d[óo]lares)?\s*(?:al\s+mes|mensual(?:es)?|por\s+mes|cada\s+mes)/gi;
+//
+// ⚠️ EXIGE MARCA DE DÓLAR ("$", "usd" o "dólares"), y no es un detalle: desde
+// que Paula convierte a moneda local, el cierre correcto dice "20 dólares al
+// mes, unos 80.000 pesos". Con la versión anterior —donde la marca de moneda
+// era opcional— ese "80.000 al mes" entraba como cifra, se leía como 0 y se
+// marcaba precio falso en CADA mensaje de cierre, quemando el reintento en algo
+// que estaba perfecto. El precio en pesos es aproximado por diseño; el único
+// número que tiene que cuadrar exacto es el dólar.
+const PRECIO_MENSUAL = /(?:\$\s*(\d{1,3}(?:[.,]\d{1,2})?)|(\d{1,3}(?:[.,]\d{1,2})?)\s*(?:usd|d[óo]lares))\s*(?:al\s+mes|mensual(?:es)?|por\s+mes|cada\s+mes)/gi;
 
 // Apego Detox es SUSCRIPCIÓN. Prometer pago único se descubre en el checkout
 // y quema la venta y la confianza en el mismo segundo.
@@ -148,7 +136,8 @@ const PAGO_UNICO = /pago\s+[úu]nico|un\s+solo\s+pago|[úu]nico\s+pago|una\s+sol
 // Un número de módulos que no es el del aula: es una promesa que ella no va a
 // encontrar cuando entre.
 const MODULOS = /(\d{1,2})\s+m[óo]dulos/gi;
-const MODULOS_REALES = 16;
+/** Sale de `programa.ts`, que es lo que dice la página de Skool. Nunca a mano. */
+const MODULOS_REALES = APEGO_DETOX.modulos;
 
 // Los encuentros en vivo son martes y jueves. Cualquier otro día es inventado.
 // OJO con el falso positivo: "hoy es viernes y el próximo encuentro es el
@@ -164,7 +153,7 @@ const PATRONES_DIA_INVENTADO: RegExp[] = [
   new RegExp(`\\b(?:el|los)\\s+(?:${DIA_NO_ENCUENTRO})\\s+(?:hay|tienes|tenemos|son|es)\\s+(?:la\\s+|el\\s+|una\\s+)?(?:clase|sesi[óo]n|encuentro|en\\s+vivo)`, 'i'),
 ];
 
-// --- Reglas de los DOS escalones --------------------------------------------
+// --- Reglas generales --------------------------------------------------------
 
 const URGENCIA_FALSA = /[úu]ltimo\s+cupo|queda\s+1\s+cupo|solo\s+queda\s+un\s+cupo|[úu]ltima\s+oportunidad/i;
 
@@ -186,21 +175,6 @@ const PIDE_PERMISO =
 // ("No estás rota. Estás programada."), un gancho que abre curiosidad, no una
 // explicación que la deje servida.
 const PSICOEDUCACION = /no\s+es\s+amor,?\s+es\b|sistema\s+nervioso|pidiendo\s+la\s+dosis|la\s+dosis\s+que|reca[íi]da\s+qu[íi]mica|es\s+qu[íi]mica\b|tu\s+cerebro\s+(te\s+)?(miente|est[áa]|te\s+enga)|refuerzo\s+intermitente|dopamina|cortisol/i;
-
-/**
- * ¿Está PROMETIENDO la grabación, o está diciendo que no existe?
- * "no queda grabada" es exactamente lo que queremos que diga — marcarlo
- * dispararía un reintento inútil en cada mensaje.
- */
-function prometeGrabacion(texto: string): string | null {
-  for (const m of texto.matchAll(MENCIONA_GRABACION)) {
-    const hasta = m.index ?? 0;
-    const inicioClausula = Math.max(...[...texto.slice(0, hasta).matchAll(/[.,;:!?¡¿\n]/g)].map((p) => (p.index ?? 0) + 1), 0);
-    const clausula = texto.slice(inicioClausula, hasta);
-    if (!NEGACION.test(clausula)) return m[0];
-  }
-  return null;
-}
 
 /** Un día de la semana que no es martes ni jueves, afirmado como día de sesión. */
 function diaDeEncuentroInventado(texto: string): string | null {
@@ -231,23 +205,16 @@ function variante(url: string): RegExp {
   return new RegExp(`(?:https?:\\/\\/)?(?:www\\.)?${sinEsquema.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\/?(?:\\?\\S*)?`, 'gi');
 }
 
-const VARIANTE_LANDING_CLASE = variante(CLASE_JUEVES.landing);
-const VARIANTE_CHECKOUT_CLASE = variante(CLASE_JUEVES.checkout);
 const VARIANTE_LANDING_APEGO = variante(APEGO_DETOX.landing);
 const VARIANTE_CHECKOUT_APEGO = variante(APEGO_DETOX.checkout);
 const VARIANTE_WA_JAVIER = /(?:https?:\/\/)?(?:www\.)?wa\.me\/57\s?300\s?168\s?1053(?:\?\S*)?/gi;
 
-/** "historiasdelamente.com/volver-a-mi" — para detectar la página en el texto. */
-const sinEsquemaClase = CLASE_JUEVES.landing.replace(/^https?:\/\//, '');
-
 /**
- * El WhatsApp de Javier con el mensaje ya escrito, distinto por escalón.
- * Antes, en el escalón de la clase se mandaba el link pelado: ella lo abría,
- * se quedaba mirando el cursor sin saber qué poner y se salía — justo el paso
- * donde se cierra el pago por Nequi.
+ * El WhatsApp de Javier con el mensaje ya escrito. Sin el texto precargado,
+ * ella abre el chat, se queda mirando el cursor sin saber qué poner y se sale.
  */
-function linkJavier(modo: ModoVenta): string {
-  return modo === 'apego' ? APEGO_DETOX.whatsappJavier : CLASE_JUEVES.whatsappJavier;
+function linkJavier(): string {
+  return APEGO_DETOX.whatsappJavier;
 }
 
 /**
@@ -258,11 +225,11 @@ function linkJavier(modo: ModoVenta): string {
 const CANDIDATO_TELEFONO = /(?:\b(?:al|el)\s+)?\+?\s?\d[\d\s().-]{8,18}\d/g;
 
 /** El número suelto de Javier → link clicable. Sin link, ella no lo toca. */
-function numeroAEnlace(texto: string, modo: ModoVenta): string {
+function numeroAEnlace(texto: string): string {
   return fueraDeLinks(texto, (plano) =>
     plano.replace(CANDIDATO_TELEFONO, (match) => {
       const digitos = match.replace(/\D/g, '');
-      return digitos.endsWith(APEGO_DETOX.numeroJavier) ? linkJavier(modo) : match;
+      return digitos.endsWith(APEGO_DETOX.numeroJavier) ? linkJavier() : match;
     }),
   );
 }
@@ -293,16 +260,16 @@ function apellidarAJavier(texto: string): string {
  * Se repara en silencio (no gasta reintento) porque el modelo lo hace por
  * economía de lenguaje por mucho que se lo prohíbas.
  */
-// ⚠️ SOLO en contextos que hablan de la CLASE. Un `\b(con|de)\s+él\b` a secas
-// es demasiado bruto y ya rompió una viñeta en una auditoría real: convirtió
-// "Ya no sabes qué te gusta a ti sin consultarlo con él" en "…con Javier
-// Vieira", que es exactamente el revés del error que esto viene a arreglar.
-// Aquí "él" solo se toca cuando va pegado a "en vivo", a "clase" o a la
-// duración — que es donde el modelo lo usa para nombrar a Javier.
+// ⚠️ SOLO en contextos donde "él" nombra a quien da la sesión. Un
+// `\b(con|de)\s+él\b` a secas es demasiado bruto y ya rompió una frase en una
+// auditoría real: convirtió "Ya no sabes qué te gusta a ti sin consultarlo con
+// él" en "…con Javier Vieira", que es exactamente el revés del error que esto
+// viene a arreglar. Aquí "él" solo se toca cuando va pegado a "en vivo", a
+// "taller/clase/terapia" o a la duración.
 const EL_ES_JAVIER: RegExp[] = [
   /\ben\s+vivo\s+con\s+(él)\b/gi,
-  /\bclase\s+(?:en\s+vivo\s+)?(?:es\s+)?con\s+(él)\b/gi,
-  /\bcon\s+(él)(?=,?\s+(?:tres|3)\s+horas)/gi,
+  /\b(?:taller(?:es)?|clases?|terapias?|sesi[óo]n|sesiones)\s+(?:en\s+vivo\s+)?(?:es\s+|son\s+)?con\s+(él)\b/gi,
+  /\bcon\s+(él)(?=,?\s+(?:dos|2|tres|3)\s+horas)/gi,
 ];
 
 /** Las viñetas son de ELLA: ahí "él" nunca es Javier. */
@@ -323,24 +290,16 @@ function desambiguarEl(texto: string): string {
   );
 }
 
-function repararLinks(texto: string, modo: ModoVenta): string {
+function repararLinks(texto: string): string {
   let out = texto;
   // Puntuación pegada al final: "…/apegodetox." rompe el clic en WhatsApp.
   out = out.replace(/(https?:\/\/\S+?)[.,;:!?)]+(?=\s|$)/g, '$1');
 
-  if (modo === 'clase') {
-    // El link de pago suelto se cambia por LA PÁGINA. El botón de pago está
-    // dentro de ella: mandarle el checkout de entrada es pedirle la tarjeta
-    // antes de contarle a qué la invitan, y eso la espanta.
-    out = out.replace(VARIANTE_CHECKOUT_CLASE, CLASE_JUEVES.landing);
-    out = out.replace(VARIANTE_LANDING_CLASE, CLASE_JUEVES.landing);
-  } else {
-    out = out.replace(VARIANTE_CHECKOUT_APEGO, APEGO_DETOX.checkout);
-    out = out.replace(VARIANTE_LANDING_APEGO, APEGO_DETOX.landing);
-  }
+  out = out.replace(VARIANTE_CHECKOUT_APEGO, APEGO_DETOX.checkout);
+  out = out.replace(VARIANTE_LANDING_APEGO, APEGO_DETOX.landing);
 
-  out = out.replace(VARIANTE_WA_JAVIER, linkJavier(modo));
-  out = numeroAEnlace(out, modo);
+  out = out.replace(VARIANTE_WA_JAVIER, linkJavier());
+  out = numeroAEnlace(out);
   out = desambiguarEl(out);
   out = apellidarAJavier(out);
   return out;
@@ -356,18 +315,15 @@ export function auditarRespuesta(
   modo: ModoVenta = MODO_VENTA,
 ): { texto: string; hallazgos: Hallazgo[] } {
   const hallazgos: Hallazgo[] = [];
-  let out = repararLinks(texto || '', modo);
+  let out = repararLinks(texto || '');
 
-  // 1) Links: se borran los que no están en la lista blanca.
-  out = out.replace(URL_RE, (url) => {
-    const limpia = url.replace(/[.,;:)]+$/, '');
-    if (LINKS_OK.some((ok) => limpia.includes(ok))) return url;
-    hallazgos.push({ tipo: 'link_inventado', detalle: limpia });
-    return '';
-  });
-
-  // 2) La plataforma del otro producto. El link existe, pero es el de la
-  //    plataforma equivocada: ella llega a pagar y no puede.
+  // 1) LA PLATAFORMA EQUIVOCADA — se mira ANTES de borrar nada.
+  //
+  // ⚠️ El orden importa desde que Hotmart salió de la lista blanca: si se
+  // borrara primero, un link de Hotmart desaparecería del texto y se reportaría
+  // como 'link_inventado' a secas. El modelo recibiría "ese link no existe" en
+  // vez de "Apego Detox se paga SOLO en Skool, y con ese link ella no puede
+  // entrar" — que es la corrección que de verdad le enseña la regla.
   const cruzada = PLATAFORMA_PROHIBIDA[modo];
   for (const m of out.matchAll(URL_RE)) {
     if (cruzada.patron.test(m[0])) {
@@ -376,59 +332,30 @@ export function auditarRespuesta(
     }
   }
 
-  if (modo === 'clase') {
-    const clase = fechaDeLaClase(ahora);
-
-    // 3) Día de la semana pegado a la fecha de la clase: se corrige solo.
-    const diaPegado = new RegExp(`\\b(${DIAS_SEMANA})\\s+(${clase.numero})\\s+de\\s+${clase.mes}`, 'gi');
-    out = out.replace(diaPegado, (match, dia) => {
-      if (String(dia).toLowerCase() === clase.diaSemana) return match;
-      hallazgos.push({ tipo: 'dia_equivocado', detalle: match });
-      return `${clase.diaSemana} ${clase.numero} de ${clase.mes}`;
-    });
-
-    // 4) Cualquier otra fecha que no sea la de la próxima clase.
-    const otraFecha = new RegExp(`\\b(\\d{1,2})\\s+de\\s+(${MESES})\\b`, 'gi');
-    for (const m of out.matchAll(otraFecha)) {
-      const esLaDeLaClase = Number(m[1]) === clase.numero && m[2].toLowerCase() === clase.mes;
-      if (!esLaDeLaClase) {
-        hallazgos.push({ tipo: 'fecha_inventada', detalle: m[0] });
-      }
+  // 2) Links: se borran los que no están en la lista blanca (Hotmart incluido).
+  out = out.replace(URL_RE, (url) => {
+    const limpia = url.replace(/[.,;:)]+$/, '');
+    if (LINKS_OK.some((ok) => limpia.includes(ok))) return url;
+    // Ya se reportó arriba como plataforma cruzada: no se cuenta dos veces.
+    if (!cruzada.patron.test(limpia)) {
+      hallazgos.push({ tipo: 'link_inventado', detalle: limpia });
     }
+    return '';
+  });
 
-    // 5) Le vendió la clase como si fuera una mensualidad.
-    const mensual = out.match(MENSUALIDAD);
-    if (mensual) hallazgos.push({ tipo: 'mensualidad_en_clase', detalle: mensual[0] });
-
-    // 6) Prometió contenido de Apego Detox como si viniera con la clase.
-    const otro = out.match(OTRO_PRODUCTO);
-    if (otro) hallazgos.push({ tipo: 'contenido_de_otro_producto', detalle: otro[0] });
-
-    // 7) Prometió una grabación que no está confirmada (decir que NO existe sí se permite).
-    if (CLASE_JUEVES.quedaGrabada !== true) {
-      const promesa = prometeGrabacion(out);
-      if (promesa) hallazgos.push({ tipo: 'grabacion_inexistente', detalle: promesa });
-    }
-
-    // 7b) LE MANDÓ LAS DOS VÍAS DE PAGO EN EL MISMO MENSAJE.
-    //
-    // Es el error que más ensucia el mensaje de cierre, y no se veía hasta que
-    // el tope bajó a tres globos: con dos links, a ella le quedan DOS globos
-    // ocupados por links y UNO para todo el texto, así que las tres frases se
-    // le apelmazan en un ladrillo. Además le da a escoger entre dos caminos
-    // justo cuando iba a pagar — "una sola vía por mujer" es la regla, y
-    // ofrecerle las dos la deja escogiendo en vez de pagando.
-    const llevaWhatsappJavier = /wa\.me\//i.test(out);
-    const llevaPagina = out.includes(sinEsquemaClase);
-    if (llevaWhatsappJavier && llevaPagina) {
-      hallazgos.push({ tipo: 'dos_vias_de_pago', detalle: 'el WhatsApp de Javier Vieira y la página, juntos' });
-    }
-  } else {
+  {
     const precio = precioApego(ahora);
 
     // 3') Un precio mensual que no es el vigente hoy.
+    //
+    // ⚠️ Se mide SOLO contra cifras en dólares. Desde que Paula convierte a
+    // moneda local, un mensaje correcto dice "20 dólares al mes, unos 80.000
+    // pesos" — y sin el filtro de moneda, esos 80.000 se marcaban como precio
+    // falso en cada cierre, quemando el reintento en algo que estaba bien.
     for (const m of out.matchAll(PRECIO_MENSUAL)) {
-      const valor = Number(m[1].replace(',', '.'));
+      // Dos alternativas en el patrón ("$20 al mes" / "20 dólares al mes"),
+      // así que la cifra cae en el grupo 1 o en el 2.
+      const valor = Number((m[1] ?? m[2] ?? '').replace(',', '.'));
       if (Number.isFinite(valor) && Math.abs(valor - precio.monto) > 0.005) {
         hallazgos.push({ tipo: 'precio_falso', detalle: m[0].trim() });
       }
@@ -437,6 +364,12 @@ export function auditarRespuesta(
     // 4') Suscripción vendida como pago único.
     const unico = out.match(PAGO_UNICO);
     if (unico) hallazgos.push({ tipo: 'pago_unico', detalle: unico[0] });
+
+    // 4b') LA CLASE RETIRADA. El historial de las conversaciones vivas está
+    //      lleno de mensajes donde Paula la vendía, y el modelo copia lo que ve
+    //      arriba: sin este candado seguiría ofreciéndola durante semanas.
+    const retirado = out.match(CLASE_RETIRADA) ?? out.match(NEQUI);
+    if (retirado) hallazgos.push({ tipo: 'producto_retirado', detalle: retirado[0] });
 
     // 5') Un día de encuentro que no existe.
     const dia = diaDeEncuentroInventado(out);
@@ -507,49 +440,33 @@ export function auditarRespuesta(
 /** Instrucción de corrección que se le manda al modelo en el segundo intento. */
 export function instruccionCorreccion(
   hallazgos: Hallazgo[],
-  modo: ModoVenta = MODO_VENTA,
+  _modo: ModoVenta = MODO_VENTA,
   ahora: Date = new Date(),
 ): string {
-  const clase = fechaDeLaClase(ahora);
-  const fechaOk = `${clase.diaSemana} ${clase.numero} de ${clase.mes}`;
   const precio = precioApego(ahora);
 
   const lineas = hallazgos.map((h) => {
     switch (h.tipo) {
       case 'link_inventado':
-        return modo === 'clase'
-          ? `- Enviaste un link que NO existe (${h.detalle}). Los únicos links de la clase son la página (${CLASE_JUEVES.landing}), el pago (${CLASE_JUEVES.checkout}) y el WhatsApp de Javier.`
-          : `- Enviaste un link que NO existe (${h.detalle}). Los únicos links son la página (${APEGO_DETOX.landing}), el pago en Skool (${APEGO_DETOX.checkout}) y el WhatsApp de Javier (${APEGO_DETOX.whatsappJavier}).`;
+        return `- Enviaste un link que NO existe (${h.detalle}). Los únicos links son el de Skool, que es donde se entra y se paga (${APEGO_DETOX.checkout}), la página (${APEGO_DETOX.landing}) y el WhatsApp de Javier (${APEGO_DETOX.whatsappJavier}).`;
       case 'plataforma_cruzada':
-        return modo === 'clase'
-          ? `- Mandaste un link de Skool (${h.detalle}). Skool es SOLO para Apego Detox. La clase se paga en Hotmart: ${CLASE_JUEVES.checkout}`
-          : `- Mandaste un link de Hotmart (${h.detalle}). Apego Detox se paga SOLO en Skool: ${APEGO_DETOX.checkout} — con ese link ella no puede entrar al programa.`;
-      case 'dia_equivocado':
-        return `- Escribiste "${h.detalle}". La próxima clase es el ${fechaOk}.`;
-      case 'fecha_inventada':
-        return `- Escribiste la fecha "${h.detalle}", que no es la de la clase. La única fecha es ${fechaOk}.`;
-      case 'mensualidad_en_clase':
-        return `- Escribiste "${h.detalle}". La clase es un PAGO ÚNICO de ${CLASE_JUEVES.precios.USD}, no una mensualidad. Quítalo: si ella cree que le van a cobrar todos los meses por una clase, no paga.`;
+        return `- Mandaste un link de Hotmart (${h.detalle}). ${APEGO_DETOX.nombre} se paga SOLO en Skool: ${APEGO_DETOX.checkout} — con ese link ella no puede entrar al programa.`;
+      case 'producto_retirado':
+        return `- Escribiste "${h.detalle}", y eso ya NO se vende. La clase suelta del jueves se retiró: ahora los talleres en vivo son parte del programa, dos por semana. Tampoco existe el pago por Nequi — se paga con tarjeta dentro de Skool. Quítalo y ofrécele ${APEGO_DETOX.nombre}, que se entra HOY: ${APEGO_DETOX.checkout}`;
       case 'urgencia_falsa':
-        return `- Usaste "${h.detalle}". Prohibido inventar escasez. No hay cupos que se acaben.`;
+        return `- Usaste "${h.detalle}". Prohibido inventar escasez. No hay cupos que se acaben: la única fecha real es el 15 de agosto, cuando sube el precio.`;
       case 'psicoeducacion':
-        return `- Escribiste "${h.detalle}": te pusiste a explicarle lo que le pasa por dentro, y eso NO lo haces por chat. Quita esa explicación. En su lugar: una frase humana y corta de que la escuchaste, y le abres la puerta.`;
+        return `- Escribiste "${h.detalle}": te pusiste a explicarle lo que le pasa por dentro, y eso NO lo haces por chat. Quita esa explicación. En su lugar, las tres piezas de siempre: la escuchaste, eso se trabaja adentro, y ahí hay más mujeres pasando por lo mismo.`;
       case 'vinetas':
         return `- Le mandaste una LISTA, y eso está prohibido en todos los mensajes sin excepción. Nada de •, guiones, números ni frases cortas en renglones seguidos: eso se ve como un folleto en cadena y es justo lo que la hace irse. Escoge UNA sola de esas líneas —la que más se parezca a lo que ELLA te contó— y escríbela como una frase normal, pegada a lo que ella dijo. Las demás se borran.`;
-      case 'dos_vias_de_pago':
-        return `- Mandaste ${h.detalle}. Va UNA sola vía por mensaje: si ella es de Colombia, el WhatsApp de Javier Vieira para el comprobante; si no, la página. Ofrecerle las dos la deja escogiendo en vez de pagando, y encima te come los dos globos que necesitas para el texto. Quita el link que sobre.`;
       case 'demasiado_largo':
-        return `- Te pasaste de largo: ${h.detalle}. El tope son **${MAX_CHARS_TURNO} caracteres de texto** repartidos en **${MAX_GLOBOS} globos como mucho, y el del link es uno de los tres** — o sea DOS globos de texto, de ${MAX_CHARS_GLOBO} caracteres cada uno como máximo, separados por una línea en blanco. Escoge los DOS datos que ella necesita ahora mismo y borra los demás: si preguntó el precio, el precio y el link; si va a pagar, los pasos del pago. El día, la hora, la duración, lo que incluye y cómo se paga NO caben todos en el mismo mensaje, y lo primero que sobra es la frase de despedida.`;
-      case 'contenido_de_otro_producto':
-        return `- Mencionaste "${h.detalle}", que es del programa Apego Detox y NO viene con esta clase. Quítalo. Solo prometes lo que pasa en las ${CLASE_JUEVES.duracionHoras} horas de la clase y lo que se lleva de ahí.`;
-      case 'grabacion_inexistente':
-        return `- Escribiste "${h.detalle}": no está confirmado que la clase quede grabada, así que NO lo prometas. Si ella dijo que a esa hora no puede, díselo de frente en vez de prometerle verla después.`;
+        return `- Te pasaste de largo: ${h.detalle}. El tope son **${MAX_CHARS_TURNO} caracteres de texto** repartidos en **${MAX_GLOBOS} globos como mucho, y el del link es uno de los tres** — o sea DOS globos de texto, de ${MAX_CHARS_GLOBO} caracteres cada uno como máximo, separados por una línea en blanco. Escoge los DOS datos que ella necesita ahora mismo y borra los demás: si preguntó el precio, el precio y el link. Lo que incluye, los talleres, la comunidad y la garantía NO caben todos en el mismo mensaje, y lo primero que sobra es la frase de despedida.`;
       case 'precio_falso':
-        return `- Escribiste "${h.detalle}", y ese NO es el precio de hoy. ${APEGO_DETOX.nombre} son ${precio.frase}, suscripción mensual con ${APEGO_DETOX.garantiaDias} días de garantía. No inventes otra cifra.`;
+        return `- Escribiste "${h.detalle}", y ese NO es el precio de hoy. ${APEGO_DETOX.nombre} son ${precio.frase}, suscripción mensual con ${APEGO_DETOX.garantiaDias} días de garantía. No inventes otra cifra en dólares. (La equivalencia en su moneda sí es aproximada: esa va con "unos" y te la da el bloque del reloj, ya calculada.)`;
       case 'pago_unico':
         return `- Escribiste "${h.detalle}". ${APEGO_DETOX.nombre} es una SUSCRIPCIÓN mensual (${precio.frase}) que ella cancela cuando quiera, no un pago único. Corrígelo: al pagar lo descubriría y perderías su confianza.`;
       case 'dia_encuentro_equivocado':
-        return `- Nombraste el día "${h.detalle}" hablando de los encuentros en vivo. Son SIEMPRE ${APEGO_DETOX.encuentros.diasTexto}, ${APEGO_DETOX.encuentros.horaTexto} hora Colombia. Usa la fecha del próximo que está en el bloque del reloj.`;
+        return `- Nombraste el día "${h.detalle}" hablando de los talleres en vivo. Son SIEMPRE ${APEGO_DETOX.encuentros.diasTexto}, ${APEGO_DETOX.encuentros.horaTexto} hora Colombia, ${APEGO_DETOX.encuentros.horasSemana} horas por semana entre los dos.`;
       case 'promesa_gratis':
         return `- Escribiste "${h.detalle}". En este canal no se regala nada: no hay clase, libro, curso ni prueba gratis. Quita esa promesa.`;
       case 'modulos_inventados':
@@ -639,10 +556,14 @@ const HABLA_DE_PLATA =
 export function quitarVentaEnCrisis(texto: string): string {
   const sinEsquema = (url: string) => url.replace(/^https?:\/\//, '').replace(/\?.*$/, '');
   const productos = [
-    CLASE_JUEVES.landing,
-    CLASE_JUEVES.checkout,
     APEGO_DETOX.landing,
     APEGO_DETOX.checkout,
+    // Los links de los productos RETIRADOS también. En crisis no puede
+    // sobrevivir ningún link de venta, y el modelo tiene el de la clase en el
+    // historial de la conversación: es exactamente el sitio donde podría
+    // repetirlo por inercia. Aquí equivocarse no cuesta una venta.
+    'historiasdelamente.com/volver-a-mi',
+    'pay.hotmart.com',
   ].map(sinEsquema);
 
   return (texto || '')
@@ -685,17 +606,17 @@ export function motivoHandoff(mensaje: string): MotivoHandoff {
 /** Bloque que se añade al prompt cuando toca escalar. */
 export function instruccionHandoff(
   motivo: Exclude<MotivoHandoff, null>,
-  modo: ModoVenta = MODO_VENTA,
+  _modo: ModoVenta = MODO_VENTA,
 ): string {
-  const link = linkJavier(modo);
-  const landing = modo === 'clase' ? CLASE_JUEVES.landing : APEGO_DETOX.landing;
+  const link = linkJavier();
+  const landing = APEGO_DETOX.landing;
 
   switch (motivo) {
     case 'crisis':
       return `# 🛑 ELLA DIJO ALGO GRAVE — SE ACABÓ LA VENTA EN ESTE TURNO
 Acaba de nombrar violencia física, amenazas o que se quiere morir. **Nada de lo que dice el resto del prompt aplica aquí.**
 
-PROHIBIDO en este mensaje, sin excepción: el link de la clase, el precio, la lista de viñetas, la fecha, invitarla a nada, preguntarle si viene.
+PROHIBIDO en este mensaje, sin excepción: el link del programa, el precio, la lista de viñetas, invitarla a entrar, preguntarle si quiere.
 
 Lo único que haces:
 1. UNA frase que le diga que la leíste y que eso que está viviendo es serio. Sin dramatizar y sin "todo va a estar bien".

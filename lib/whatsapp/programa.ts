@@ -1,8 +1,6 @@
 // ============================================================================
-// PROGRAMA — LOS DOS PRODUCTOS Y TODO LO QUE SE CALCULA
+// PROGRAMA — EL ÚNICO PRODUCTO Y TODO LO QUE SE CALCULA
 //
-// Reemplaza a `apego-detox.ts` + `contexto-clase.ts` como fuente de datos duros
-// (de ese último ya solo queda `paises.ts`: la tabla de países y el formato).
 // Aquí vive SOLO lo que el modelo no puede deducir: precios, links, y las fechas
 // que cambian solas. Lo que Paula *dice* vive en content/PAULA-CONOCIMIENTO.md.
 //
@@ -10,171 +8,68 @@
 // El modelo no sabe qué día es hoy, ni desde dónde escribe ella, ni si el
 // lanzamiento sigue vivo. Cada vez que se lo dejamos deducir, inventa.
 //
-// EL ORDEN DE VENTA (la escalera): primero la clase del jueves, y solo se sube
-// a Apego Detox cuando ELLA lo pide.
+// ╔═══════════════════════════════════════════════════════════════════════════╗
+// ║  📌 CAMBIO DE MODELO DE VENTA — 2026-08-05, decidido por Javier.          ║
+// ║                                                                           ║
+// ║  ANTES: Paula vendía LA CLASE DEL JUEVES (evento, pago único, Hotmart) y  ║
+// ║  solo subía a Apego Detox si ELLA lo pedía. Eso era la "escalera".        ║
+// ║                                                                           ║
+// ║  AHORA: Paula vende SOLO Apego Detox en Skool. Un producto, un link.      ║
+// ║                                                                           ║
+// ║  POR QUÉ SE FUE LA CLASE (el diagnóstico de por qué no vendía):           ║
+// ║  la clase le pedía a una mujer que escribe a las 11 de la noche encerrada ║
+// ║  en el baño que (1) esperara al jueves, (2) tuviera tres horas libres a   ║
+// ║  las 8 con él en la casa, y (3) si se la perdía, perdía la plata — porque ║
+// ║  no quedaba grabada. Ese "no queda grabada" estaba escrito aquí como "la  ║
+// ║  única urgencia real"; en el chat real era una fábrica de objeciones: al  ║
+// ║  "no puedo a esa hora" no había nada más que ofrecerle y el lead moría.   ║
+// ║                                                                           ║
+// ║  El programa no tiene ninguna de esas tres fricciones: entra HOY, desde   ║
+// ║  el celular, a la hora que sea. Su momento de dolor son las 3 de la       ║
+// ║  mañana, y a esa hora una clase del jueves no le sirve — la comunidad sí. ║
+// ║                                                                           ║
+// ║  Y de paso arregla un choque real de agenda: la clase era jueves 8 PM     ║
+// ║  (3 h) y los encuentros del programa son martes y jueves 8 PM (2 h). Era  ║
+// ║  la misma franja: Javier no podía dar las dos cosas.                      ║
+// ║                                                                           ║
+// ║  La clase NO se borró del mundo: sigue existiendo como taller en vivo,    ║
+// ║  pero ahora vive DENTRO del programa (es uno de los dos de la semana).    ║
+// ║  Paula no la ofrece suelta nunca, y si ella pregunta por la clase, la     ║
+// ║  respuesta está en PAULA-CONOCIMIENTO.md, bloque 11.                      ║
+// ╚═══════════════════════════════════════════════════════════════════════════╝
 // ============================================================================
 
-import { PAISES, TZ_COLOMBIA, detectarPais, diasDeCalendario, fechaISO, fechaLarga, hora12 } from './paises';
-import type { Escalon } from './escalera';
+import {
+  PAISES,
+  TZ_COLOMBIA,
+  detectarPais,
+  diasDeCalendario,
+  fechaISO,
+  fechaLarga,
+  hora12,
+  paisPorIso,
+  type Pais,
+} from './paises';
+import { precioLocal } from './moneda';
 
 /** Colombia no tiene horario de verano: -05:00 vale todo el año. */
 const OFFSET_COLOMBIA = '-05:00';
 
 // ---------------------------------------------------------------------------
-// 1. ESCALÓN 1 — LA CLASE DEL JUEVES
+// 1. EL PRODUCTO — APEGO DETOX
 //
 // ╔═══════════════════════════════════════════════════════════════════════════╗
-// ║  📌 SI VIENES A CAMBIAR LA CLASE DE LA SEMANA, ES AQUÍ Y SOLO AQUÍ.       ║
+// ║  📌 SI VIENES A CAMBIAR LA OFERTA, ES AQUÍ Y SOLO AQUÍ.                   ║
 // ║                                                                           ║
-// ║  LA FECHA NO SE TOCA NUNCA. `proximaClase()` calcula sola el próximo      ║
-// ║  jueves y salta al siguiente cuando la clase de esta noche TERMINA (no a  ║
-// ║  medianoche: el jueves de día es el que más vende). Paula dice "este      ║
-// ║  jueves" y acierta sin que nadie haga nada.                              ║
+// ║  Todo lo de aquí tiene que coincidir CLAVADO con lo que ella lee al abrir ║
+// ║  el link de Skool. Si Paula le promete una cosa y la página dice otra,    ║
+// ║  ella cree que se equivocó de link y cierra sin pagar. Verificado contra  ║
+// ║  skool.com/historias-de-la-mente-4978/about el 2026-08-05.                ║
 // ║                                                                           ║
-// ║  LO QUE SÍ SE CAMBIA, cuando cambie de verdad:                           ║
-// ║    · `nombre`      → el título. Se cambia A LA VEZ que                    ║
-// ║                      desing_web/src/config/claseEnVivo.ts → NOMBRE.       ║
-// ║                      Si no coinciden, ella abre el link, lee otro título  ║
-// ║                      y cree que se equivocó de página.                    ║
-// ║    · `angulo`      → de qué va, en un párrafo. Tiene que ser el MISMO     ║
-// ║                      ángulo de la landing.                                ║
-// ║    · `contenido`   → qué pasa esa noche.                                  ║
-// ║    · `precios`     → los tres, o ninguno. Valen lo mismo en todo país.    ║
-// ║    · `nequi`       → solo si cambia la cuenta que recibe.                 ║
-// ║                                                                           ║
-// ║  ⚠️ EL ÚNICO RITUAL MANUAL QUE QUEDA: la landing lleva la fecha escrita   ║
-// ║  a mano y hay que correrla al jueves siguiente cada semana. Si se pasa,   ║
-// ║  Paula vende "este jueves" contra una página con la fecha vieja y el      ║
-// ║  contador en cero, y ahí no compra nadie.                                 ║
+// ║  LO QUE NO SE TOCA A MANO NUNCA: la fecha del próximo encuentro (la       ║
+// ║  calcula `proximoEncuentro()`) y el precio vigente (lo calcula            ║
+// ║  `precioApego()`, que cambia solo el 15 de agosto).                       ║
 // ╚═══════════════════════════════════════════════════════════════════════════╝
-// ---------------------------------------------------------------------------
-
-export const CLASE_JUEVES = {
-  /**
-   * CONFIRMADO por Javier el 2026-08-02. Es el nombre que ella va a ver en la
-   * página al llegar (`desing_web/src/config/claseEnVivo.ts` → NOMBRE): si aquí
-   * dice una cosa y la página otra, ella cree que se equivocó de link y cierra
-   * sin pagar. Los dos se cambian juntos o no se cambia ninguno.
-   *
-   * OJO: "Volver a mí" NO es la clase, es el libro-regalo que viene con ella.
-   * La ruta pública sigue siendo /volver-a-mi porque ahí apuntan los anuncios.
-   */
-  nombre: 'Recuperando mi ser',
-
-  /**
-   * Todos los jueves. 4 = jueves. La fecha NUNCA se escribe a mano: la calcula
-   * `proximaClase()`, así que Paula siempre dice "este jueves" y acierta sola.
-   *
-   * ⚠️ EL RITUAL DE CADA JUEVES (dicho por Javier el 2026-08-02): la landing
-   * `desing_web/src/config/claseEnVivo.ts` SÍ lleva la fecha a mano, y él la
-   * corre al jueves siguiente cada semana mientras la clase se siga vendiendo.
-   * Si una semana se le pasa, Paula seguirá vendiendo "este jueves" contra una
-   * página que muestra la fecha vieja y el contador en cero — y ahí no compra
-   * nadie. Es el único punto del embudo que depende de que alguien se acuerde.
-   */
-  diaSemana: 4,
-  hora24: 20,
-  horaTexto: '8:00 PM',
-  /** ⚠️ PENDIENTE CONFIRMAR: la config dice 3, Javier dijo 2. */
-  duracionHoras: 3,
-
-  landing: 'https://historiasdelamente.com/volver-a-mi',
-  /** La clase SÍ se cobra por Hotmart. Apego Detox NO. */
-  checkout: 'https://pay.hotmart.com/H106712135H',
-
-  /**
-   * LA PRIVACIDAD. Es el primer miedo de la que todavía vive con él, y no
-   * estaba dicho en ninguna parte.
-   *
-   * De un panel de mujeres que leyó los mensajes reales: la que lleva 9 años
-   * adentro escribe a las once de la noche encerrada en el baño para que él no
-   * vea. Textual: "mi primer miedo no es si sirve, mi primer miedo es que se
-   * den cuenta". Con esa duda sin responder, los 25.000 ni los piensa.
-   *
-   * Solo va aquí lo que es cierto por cómo funciona una clase por video. Lo que
-   * NO está confirmado no se pone: ver `pendientes` abajo.
-   */
-  privacidad: {
-    camaraApagada: true,
-    microfonoApagado: true,
-    tieneQueHablar: false,
-    /** ⚠️ PENDIENTE CONFIRMAR con Javier — Paula NO puede afirmarlos todavía. */
-    pendientes: [
-      'si las demás alcanzan a ver su nombre en la lista de participantes',
-      'si le reponen el lugar en la clase del jueves siguiente cuando le toca salirse a medias',
-      'con qué nombre le aparece el cobro en el extracto de Nequi o de la tarjeta',
-    ],
-  },
-
-  /** Mismo peso en cada país. */
-  precios: { COP: '25.000 COP', USD: '7 USD', MXN: '120 MXN' },
-  /**
-   * Solo Colombia. El `titular` lo confirmó Javier el 2026-08-02 y NO es un
-   * adorno: es lo que ella va a leer en la pantalla de confirmación de Nequi
-   * antes de darle enviar. Si ahí sale un nombre que nadie le anunció, cancela.
-   * Si algún día la cuenta cambia de dueño, esto se cambia el mismo día.
-   */
-  nequi: { numero: '3116329202', monto: '25.000 COP', titular: 'Javier Vieira' },
-
-  libro: { nombre: 'Volver a mí', detalle: 'cartilla de 16 páginas con ejercicios' },
-
-  /**
-   * QUÉ PASA ESA NOCHE. Copiado de la landing (sección "Lo que vas a encontrar
-   * en la clase"), porque tiene que ser lo mismo que ella lee al abrir el link.
-   *
-   * ⚠️ ESTO ES LO QUE MÁS FALTABA. Paula decía "hay una clase donde se trabaja
-   * cómo dejar al narcisista" y remataba con "¿te espero?" — invitándola a algo
-   * de lo que no le había contado nada. Nadie dice que sí a eso.
-   */
-  contenido: [
-    'entrenamiento para salir del apego emocional que la borró',
-    'meditación y relajación guiada',
-    'testimonios reales de otras mujeres',
-    'ayuda terapéutica en vivo con Javier Vieira',
-  ],
-
-  /**
-   * EL ÁNGULO. También es el de la landing, y no es "cómo dejar al narcisista":
-   * es que ella se fue borrando de a poquitos dentro de la relación y la clase
-   * va a buscar a la mujer que era. Si Paula vende un ángulo y la página otro,
-   * ella llega, lee algo que no le suena a lo que le contaron, y se va.
-   */
-  angulo:
-    'No desapareció de golpe: se fue borrando de a poquitos. Dejó de ver a la amiga, cambió de ropa, dejó de opinar en la mesa. Cada renuncia fue chiquita y ninguna le pareció grave, hasta que un día abrió el clóset y no reconoció nada. Esa mujer no se murió: está esperando. La clase son tres horas para ir a buscarla.',
-
-  /**
-   * WhatsApp de Javier con el mensaje ya escrito. Sin texto precargado, ella
-   * abre el chat, no sabe qué poner y se va: ese silencio es donde se cae la
-   * mitad de los pagos por Nequi.
-   *
-   * El texto es NEUTRO a propósito: `blindaje.repararLinks` normaliza TODOS los
-   * wa.me del escalón a este único link, y por él entran cosas muy distintas
-   * —el comprobante de Nequi, la que quiere hablar con él, la que pregunta por
-   * terapia individual, la que tuvo un problema de pago—. Un texto específico
-   * ("aquí va mi comprobante") sonaría absurdo en tres de esos cuatro casos.
-   * Lo concreto se lo dice Paula en el globo de al lado.
-   */
-  whatsappJavier:
-    'https://wa.me/573001681053?text=Hola%20Javier%2C%20te%20escribo%20desde%20el%20WhatsApp%20de%20Paula',
-
-  /**
-   * NO queda grabada. Confirmado por Javier el 2026-08-02 (ya lo había dicho el
-   * 2026-07-27). Es en vivo, una sola vez.
-   *
-   * `false` en vez de `null` cambia una cosa importante: con `null` Paula no
-   * podía ni afirmarlo ni negarlo, así que ante "¿y si a esa hora no puedo?"
-   * se quedaba muda. Ahora se lo dice de frente — que es lo honesto y además
-   * lo que crea la urgencia real: si no entra esa noche, no la ve.
-   *
-   * ⚠️ La landing PROMETE la grabación y el área de miembros ("La grabación de
-   * la conferencia — para volver a verla cuando quieras"). Eso hay que quitarlo
-   * de la página: le está prometiendo a la compradora algo que no va a recibir.
-   */
-  quedaGrabada: false as boolean | null,
-} as const;
-
-// ---------------------------------------------------------------------------
-// 2. ESCALÓN 2 — APEGO DETOX
 // ---------------------------------------------------------------------------
 
 export const APEGO_DETOX = {
@@ -199,6 +94,60 @@ export const APEGO_DETOX = {
     precioNormal: 40,
   },
 
+  /**
+   * CUÁNTOS MÓDULOS HAY. 17, verificado contra la página de Skool el
+   * 2026-08-05 ("17 módulos de terapia guiada").
+   *
+   * ⚠️ El blindaje marca como invento cualquier otro número, así que este es el
+   * único sitio donde se cambia. Si algún día el aula tiene 18, se cambia aquí
+   * y en PAULA-CONOCIMIENTO.md a la vez — nunca en uno solo.
+   */
+  modulos: 17,
+
+  /**
+   * LOS CUATRO PILARES, en el orden en que los lee ella en la página.
+   *
+   * ⚠️ EL ORDEN NO ES DECORATIVO Y NO ES EL DE LA PÁGINA POR CASUALIDAD: el
+   * primero de la lista es el que Paula nombra por defecto, y el que más vende
+   * NO son los módulos. Es la comunidad. La mujer que escribe a las tres de la
+   * mañana con el dedo temblando sobre el chat de él no está comprando 17
+   * videos: está comprando que alguien conteste a esa hora. Los módulos son lo
+   * que se lleva; la sala llena a las 3 AM es lo que compra.
+   *
+   * Paula nombra UNO, el que le sirva a lo que ella acabó de contar. Nunca los
+   * cuatro, y nunca en lista (`formato.ts` mata las listas de todos modos).
+   */
+  pilares: [
+    'una comunidad activa 24/7, para esas 3 de la mañana en que el dedo le tiembla sobre el chat de él',
+    'talleres terapéuticos en vivo con Javier Vieira: 4 horas de acompañamiento cada semana',
+    '17 módulos de terapia guiada, paso a paso, desde su casa',
+    'meditaciones y ejercicios para ese cuerpo que lleva años en alerta',
+  ],
+
+  /**
+   * LO QUE VA A SABER HACER. Son los cuatro resultados de la página, y valen
+   * más que los pilares para vender: describen a la mujer que sale, no la caja
+   * que entra.
+   */
+  resultados: [
+    'entender de dónde nació la herida — que casi nunca empieza con él',
+    'reconocer la manipulación mientras está ocurriendo, no tres días después',
+    'bajarle el volumen a la obsesión',
+    'sostenerse afuera sin volver',
+  ],
+
+  /**
+   * EL ÁNGULO — el mismo de la página, y es el que hace que se reconozca.
+   *
+   * Tiene DOS entradas a propósito, porque las dos mujeres que escriben están
+   * en sitios opuestos y una sola frase expulsa a la otra. La que sigue adentro
+   * no se reconoce en "él sigue viviendo en tu cabeza" (él está en la cocina);
+   * la que ya salió no se reconoce en "vuelves aunque te esté destruyendo".
+   * `paula.ts` elige el banco de dolores por esta misma partición.
+   */
+  angulo:
+    'Siga con él o ya se haya ido, la cabeza todavía la tiene ocupada por él. Si está adentro: revisa su última conexión, justifica lo injustificable, vuelve aunque la esté destruyendo. Si ya salió: durmió sola meses y él sigue viviendo en su cabeza, preguntándose si con la otra sí cambió, si el problema fue ella. No es debilidad, y es lo que se trabaja adentro.',
+
   /** Los dos encuentros en vivo con Javier. 2 = martes, 4 = jueves. */
   encuentros: {
     dias: [2, 4] as const,
@@ -206,6 +155,8 @@ export const APEGO_DETOX = {
     hora24: 20,
     horaTexto: '8:00 PM',
     duracionHoras: 2,
+    /** 2 encuentros × 2 h. Es el "4 horas cada semana" de la página. */
+    horasSemana: 4,
     plataforma: 'Google Meet',
   },
 
@@ -278,12 +229,6 @@ export function proximaOcurrencia(
   return { inicio, enVivo: false, fecha: fechaLarga(inicio, TZ_COLOMBIA), frase: 'es esta semana' };
 }
 
-/** La clase de ESTE jueves (o la del siguiente, si la de hoy ya terminó). */
-export function proximaClase(ahora: Date): Ocurrencia {
-  const { diaSemana, hora24, duracionHoras } = CLASE_JUEVES;
-  return proximaOcurrencia(ahora, [diaSemana], hora24, duracionHoras);
-}
-
 /** El próximo encuentro en vivo de Apego Detox (martes o jueves). */
 export function proximoEncuentro(ahora: Date): Ocurrencia {
   const { dias, hora24, duracionHoras } = APEGO_DETOX.encuentros;
@@ -331,38 +276,70 @@ export function precioApego(ahora: Date): PrecioVigente {
 // ---------------------------------------------------------------------------
 
 /**
- * Los países desde los que más escriben. La hora ya resuelta en cada uno.
+ * De qué país es ELLA. Lo que dijo por texto MANDA sobre su indicativo.
  *
- * POR QUÉ EXISTE: el país se deduce del indicativo del teléfono, pero muchas
- * lo DICEN por texto ("soy de México") con un número de otro país, o escriben
- * desde Instagram sin número. Sin esta tabla el modelo se pone a calcular la
- * diferencia horaria — y la calcula mal. Aquí la lee.
+ * Muchas viven en un país distinto del que tienen la línea —la colombiana en
+ * Madrid, la venezolana en Santiago— y a esas el número las manda a la moneda
+ * y la hora equivocadas. Por eso `paisIso` (lo que ella contó, guardado en la
+ * base) gana siempre que exista.
  */
-const PAISES_TABLA = ['MX', 'CO', 'US', 'PE', 'EC', 'CL', 'AR', 'ES', 'VE'];
+function paisDeElla(telefono: string | null | undefined, paisIso?: string | null): Pais | null {
+  return paisPorIso(paisIso) ?? detectarPais(telefono);
+}
 
-function tablaHorarios(inicio: Date): string {
-  const diaEnColombia = fechaISO(inicio, TZ_COLOMBIA);
+/**
+ * EL PRECIO EN LO QUE ELLA USA PARA CONTAR EL DINERO.
+ *
+ * "20 dólares al mes" no es una cifra para una mujer en Bogotá: es una
+ * incógnita. Puede ser 40.000 pesos o 400.000, y mientras no lo sepa, abrir el
+ * link se siente como firmar en blanco. Traducírselo es lo que convierte el
+ * precio en una decisión que puede tomar sin miedo.
+ *
+ * ⚠️ SIEMPRE "UNOS", Y EL DÓLAR SIEMPRE DELANTE. Lo que su banco le cobre
+ * depende de la tasa del día y del recargo de su tarjeta. Una cifra exacta que
+ * después no cuadra en el extracto es justo la sorpresa que hace pedir la
+ * devolución — y el número que ella va a ver en Skool es el dólar, no el peso.
+ */
+function bloqueMoneda(
+  montoUSD: number,
+  telefono: string | null | undefined,
+  tasasUSD: Record<string, number> | undefined,
+  paisIso: string | null | undefined,
+): string {
+  const pais = paisDeElla(telefono, paisIso);
 
-  return PAISES.filter((p) => PAISES_TABLA.includes(p.iso))
-    .map((p) => {
-      // En España la clase de las 8 PM del jueves cae a las 3 de la MADRUGADA
-      // del viernes. Sin el día, ella la anota para el jueves y se la pierde.
-      const otroDia = fechaISO(inicio, p.tz) !== diaEnColombia;
-      const dia = otroDia
-        ? ` (${new Intl.DateTimeFormat('es-CO', { timeZone: p.tz, weekday: 'long' }).format(inicio)})`
-        : '';
-      return `${p.nombre} ${hora12(inicio, p.tz)}${dia}`;
-    })
-    .join(' · ');
+  if (!pais || !tasasUSD) {
+    return `💵 EN SU MONEDA: no sabes de qué país es (o no hay tasa a mano), así que **no conviertas nada**. Di $${montoUSD} USD y ya. En cuanto ella te diga de dónde escribe, se lo puedes traducir.`;
+  }
+
+  const local = precioLocal(montoUSD, pais.moneda, tasasUSD);
+
+  if (local.esDolar) {
+    return `💵 EN SU MONEDA: en ${pais.nombre} se cuenta en dólares, así que $${montoUSD} USD ya es su cifra. **No la conviertas ni la repitas dos veces.**`;
+  }
+
+  if (!local.frase) {
+    return `💵 EN SU MONEDA: no hay tasa fiable para ${local.codigo} en este momento. Di $${montoUSD} USD y no inventes la equivalencia.`;
+  }
+
+  return `💵 EN SU MONEDA (${pais.nombre}): $${montoUSD} USD son **${local.frase} al mes**, a la tasa de hoy.
+👉 Se lo dices así de natural, con las dos cifras juntas: *"son $${montoUSD} al mes, ${local.frase}"*. Es lo que le quita la incógnita y la deja decidir.
+⛔ SIEMPRE "unos", nunca la cifra exacta ni "son exactamente": lo que le cobre su banco depende de la tasa del día y del recargo de su tarjeta. Y el dólar va SIEMPRE, porque es lo que ella va a ver en la pantalla de Skool: si solo le dices pesos, al llegar al pago ve otra cosa y se cae.`;
 }
 
 /** Su país y su hora, o la advertencia de que no lo sabemos. */
-function bloqueSuPais(telefono: string | null | undefined, cuando: Ocurrencia | null, ahora: Date): string {
-  const pais = detectarPais(telefono);
+function bloqueSuPais(
+  telefono: string | null | undefined,
+  cuando: Ocurrencia | null,
+  ahora: Date,
+  paisIso?: string | null,
+): string {
+  const pais = paisDeElla(telefono, paisIso);
 
   if (!pais) {
-    return `## 📱 NO SABES DE QUÉ PAÍS TE ESCRIBE
-No llegó su número (pasa en Instagram), así que no sabes dónde está. Nunca asumas Colombia ni des una hora "local" que no puedes calcular: di siempre "8:00 PM hora Colombia", explícito. Solo le preguntas el país si ELLA pregunta a qué hora le queda a ella.`;
+    return `## 📱 TODAVÍA NO SABES DE QUÉ PAÍS TE ESCRIBE
+No llegó su número (pasa en Instagram) y ella no te lo ha dicho. Nunca asumas Colombia ni des una hora "local" que no puedes calcular.
+👉 **Pregúntaselo, en media línea y pegado a otra cosa** — nunca como interrogatorio: *"¿de dónde me escribes?"*. Con eso le puedes dar el precio en su moneda, que es justo lo que la hace decidirse.`;
   }
 
   const enSuHora = cuando
@@ -375,8 +352,7 @@ Su hora local en este momento son las ${hora12(ahora, pais.tz)}.${enSuHora} Cuan
 }
 
 /**
- * Reloj y datos duros del escalón en el que va la conversación. Se recalcula en
- * CADA mensaje y va PRIMERO en el prompt.
+ * Reloj y datos duros. Se recalcula en CADA mensaje y va PRIMERO en el prompt.
  *
  * El modelo no sabe qué día es hoy ni desde dónde le escriben. Todo lo que se
  * puede calcular se calcula aquí y se le entrega resuelto: lee y repite.
@@ -384,7 +360,6 @@ Su hora local en este momento son las ${hora12(ahora, pais.tz)}.${enSuHora} Cuan
 export function bloqueContexto(
   ahora: Date,
   telefono: string | null | undefined,
-  escalon: Escalon,
   /**
    * ¿Ya está adentro de Apego Detox? Cambia lo que se le puede decir:
    * la FECHA del próximo encuentro en vivo es información de miembro. A una
@@ -392,6 +367,13 @@ export function bloqueContexto(
    * encuentro es el martes 4" la cita a algo a lo que no puede entrar.
    */
   esMiembro = false,
+  /**
+   * Tasas de cambio del día (de `moneda.ts`). Opcional: sin ellas Paula sigue
+   * dando el precio en dólares y no se rompe nada — solo pierde la conversión.
+   */
+  tasasUSD?: Record<string, number>,
+  /** El país que ELLA dijo por texto, si lo dijo. Manda sobre el indicativo. */
+  paisIso?: string | null,
 ): string {
   const anio = new Intl.DateTimeFormat('es-CO', { timeZone: TZ_COLOMBIA, year: 'numeric' }).format(ahora);
   const hoy = `- Hoy es ${fechaLarga(ahora, TZ_COLOMBIA)} de ${anio}. En Colombia son las ${hora12(ahora, TZ_COLOMBIA)}.`;
@@ -401,81 +383,17 @@ export function bloqueContexto(
   const cuando = (o: Ocurrencia) =>
     o.frase.includes(o.fecha) ? o.frase.toUpperCase() : `${o.frase.toUpperCase()} (${o.fecha})`;
 
-  if (escalon === 'clase') {
-    const clase = proximaClase(ahora);
-    const { nombre, precios, nequi, horaTexto, duracionHoras, landing, libro, whatsappJavier, contenido, angulo } =
-      CLASE_JUEVES;
-
-    // Colombia paga por Nequi. Es transferencia directa: sin comisión de
-    // pasarela y sin tarjeta de por medio, que es justo lo que frena a muchas.
-    // Si su número es colombiano ya lo sabemos; si lo dice ella, manda lo que dice.
-    const esColombiana = detectarPais(telefono)?.iso === 'CO';
-    // Ella tiene que teclear este número en Nequi: se le da agrupado, no pegado.
-    const nequiLegible = nequi.numero.replace(/(\d{3})(\d{3})(\d{4})/, '$1 $2 $3');
-    const titularNequi = nequi.titular;
-    // Los tres pasos van SIEMPRE juntos y en este orden. Dar el número sin decir
-    // qué hacer después es donde se caía el pago: ella transfiere, no manda el
-    // comprobante, nadie le da el acceso y se queda creyendo que la estafaron.
-    // El titular va SIEMPRE, y va ANTES de que ella abra Nequi (confirmado por
-    // Javier el 2026-08-02). Si ve un nombre que no esperaba en la pantalla de
-    // confirmación, cancela ahí mismo — y ese susto no se recupera.
-    // ⚠️ DOS NÚMEROS DISTINTOS = OLOR A ESTAFA. El Nequi y el WhatsApp de
-    // Javier no son el mismo número, y a una mujer de Bucaramanga eso le suena
-    // exactamente a lo que sale en las noticias. Si no se lo explicas tú, lo
-    // explica su desconfianza. Textual de un panel de mujeres reales: "dos
-    // números distintos para una misma plata, yo ahí cierro".
-    const pasosNequi = `⏳ **LOS PASOS DE PAGO NO VAN TODAVÍA si ella solo preguntó el precio o de qué se trata.** Ahí le das el número y el link, y ya. El paso a paso de Nequi es para cuando dice que quiere entrar o pregunta cómo paga — soltárselo antes es el mensaje-ladrillo que la hace irse.
-Cuando SÍ toca, los DOS pasos van juntos en el mismo mensaje: **(1)** manda ${nequi.monto} por Nequi al **${nequiLegible}**, a nombre de **${titularNequi}**; **(2)** le manda el comprobante Y su correo por WhatsApp al número personal de él, ${whatsappJavier}, y él le da el acceso. Dar el número sin el segundo paso es donde se cae el pago: ella transfiere, nadie le entrega nada y cree que la estafaron.
-⚠️ SON DOS NÚMEROS DISTINTOS Y DICES POR QUÉ, sin que lo pregunte — dos números para una misma plata es la señal clásica de estafa y ella cierra el chat. Así de simple: *"El primero es la cuenta de Nequi, el segundo es su WhatsApp — uno recibe el pago y en el otro te atiende él."* Nunca digas "para que no te sorprenda el nombre": avisar de una sorpresa es admitir que hay algo raro.
-🛡️ SI DUDA o pregunta si es seguro: esos mismos pasos están escritos en la página oficial (${landing}), después del pago habla directo con Javier Vieira y nadie le va a pedir nunca claves ni datos de su tarjeta, solo el comprobante y el correo.`;
-    // ⚠️ A la que NO es colombiana no se le puede nombrar Nequi por su cuenta:
-    // "si eres de Colombia mandas a Nequi, si no pagas con tarjeta" la obliga a
-    // escoger entre dos caminos y alarga el mensaje hasta que se corta el link.
-    // Una sola vía por mujer.
-    const nequiLinea = esColombiana
-      ? `👉 ELLA ES DE COLOMBIA: su vía de pago es NEQUI, antes que la página. ${pasosNequi}
-Solo si te dice que prefiere pagar con tarjeta le mandas la página.`
-      : `⛔ ELLA NO ES DE COLOMBIA: **no le nombres Nequi.** Su vía es la página, y punto. Nada de "si eres de Colombia…": dos caminos la dejan escogiendo en vez de pagando.
-🇨🇴 Solo si ELLA misma te dice que está en Colombia (pasa: número de otro país, viviendo allá), ahí sí cambias a Nequi. ${pasosNequi}`;
-
-    return `# ⏰ RELOJ Y DATOS DUROS — LO CALCULÓ EL SISTEMA, ES LA VERDAD
-No lo deduzcas ni lo calcules: ya viene resuelto. Léelo y úsalo tal cual.
-
-${hoy}
-LA CLASE: **"${nombre}"** — así se llama en la página, y así se lo dices. En vivo con Javier Vieira, ${cuando(clase)}, ${horaTexto} hora Colombia, ${duracionHoras} horas. Es TODOS LOS JUEVES a la misma hora; nunca nombres otro día.
-SE LLEVA: la clase en vivo y el libro "${libro.nombre}" (${libro.detalle}).
-PRECIO: ${precios.COP} / ${precios.USD} / ${precios.MXN}. PAGO ÚNICO, no es suscripción.
-⛔ NO QUEDA GRABADA. Es en vivo, una sola vez. Si te dice que a esa hora no puede, se lo dices de frente: no hay grabación ni repetición, y nunca le prometas "la ves después". Esa verdad es la única urgencia real que tienes — úsala, no la escondas.
-
-## 🔒 NADIE LA VE NI LA OYE — DÍSELO ANTES DE QUE PREGUNTE
-Muchas te escriben encerradas en el baño para que él no vea: su primer miedo no es si la clase sirve, es que se den cuenta. Con esa duda sin responder no paga, y casi ninguna se atreve a preguntarlo. Entra con la cámara y el micrófono apagados, nadie le ve la cara, y no tiene que hablar ni contar nada delante de nadie. Se lo sueltas tú en cuanto notes que sigue viviendo con él, en una línea: *"Entras con la cámara apagada, nadie te ve ni te oye, y no tienes que hablar."*
-⛔ Lo que NO sabes y por lo tanto no afirmas: si las demás le ven el nombre, si le reponen el lugar cuando le toca salirse a medias, y con qué nombre le sale el cobro en el extracto. Si pregunta eso: *"eso te lo confirmo con Javier Vieira y te digo"*.
-
-## 🎯 DE QUÉ VA — CUÉNTASELO ANTES DE INVITARLA
-Esa noche hay ${contenido.join('; ')}. **Nombras UNA, la que le sirva a lo que ella te contó** — nunca las cuatro, y nunca en lista. Si dijo que no duerme, la meditación guiada; si dijo que ya intentó de todo, que él va resolviendo en vivo.
-
-EL ÁNGULO: ${angulo}
-⛔ La clase NO se resume como "cómo dejar al narcisista": no es el ángulo de la página y suena a titular. Es que ella se fue borrando de a poquitos y esa noche van a ir a buscarla. Cuéntaselo con SUS palabras: si dijo que ya no sale con nadie, le hablas de la amiga que dejó de ver; si dijo que no opina, le hablas de la voz.
-
-## 🔗 EL LINK
-👉 Le mandas LA PÁGINA: ${landing} — ahí ve todo y aparta su lugar sola, el botón de pago está adentro. NUNCA le mandes un link de pago suelto de entrada: pedirle la tarjeta antes de contarle a qué la invitas la espanta.
-🔁 Se lo vuelves a mandar cada vez que le sirva (si pregunta cómo pagar, si dice que sí, si vuelve al día siguiente, si se le perdió). Un link que hay que buscar hacia arriba en el chat es una venta perdida.
-${nequiLinea}
-
-## 🕗 A QUÉ HORA LE QUEDA — YA CALCULADO
-${tablaHorarios(clase.inicio)}
-Si ELLA te dice de qué país es, eso manda sobre lo que diga su número: muchas viven en otro país del que tienen la línea. Si su país no está en la lista, dile "8:00 PM hora Colombia" explícito y pregúntale desde qué ciudad — no le inventes una diferencia horaria.
-
-${bloqueSuPais(telefono, clase, ahora)}
-`;
-  }
-
   const encuentro = proximoEncuentro(ahora);
   const precio = precioApego(ahora);
-  const { encuentros, garantiaDias, checkout, landing } = APEGO_DETOX;
+  const { encuentros, garantiaDias, checkout, landing, modulos, pilares, resultados, angulo } = APEGO_DETOX;
 
+  // LA URGENCIA REAL. Es una fecha de calendario, no una frase de venta — y a
+  // diferencia de la que tenía la clase ("no queda grabada"), perdérsela no le
+  // quita el producto: le sube el precio. Eso empuja sin castigar, que es justo
+  // lo que hacía falta.
+  const normal = precio.antes ?? APEGO_DETOX.lanzamiento.precioNormal;
   const lanzamiento = precio.enLanzamiento
-    ? `🔥 LANZAMIENTO VIVO: ${precio.frase} (antes $${precio.antes}). Le quedan ${precio.diasRestantes} días — el 15 de agosto sube a $${precio.antes} y no vuelve a bajar. El precio le queda BLOQUEADO: mientras no cancele, sigue pagando $${precio.monto} aunque suba.`
+    ? `🔥 LANZAMIENTO VIVO: ${precio.frase} (antes $${normal}). Le quedan ${precio.diasRestantes} días — el 15 de agosto sube a $${normal} y no vuelve a bajar. El precio le queda BLOQUEADO: mientras no cancele, sigue pagando $${precio.monto} aunque suba. Entrar hoy o entrar el 16 son $${normal - precio.monto} de diferencia CADA MES, para siempre.`
     : `PRECIO: ${precio.frase}. El lanzamiento ya terminó — no lo nombres ni prometas que puede alcanzarlo.`;
 
   // La FECHA del próximo encuentro solo se le da a quien ya está adentro. A las
@@ -483,19 +401,41 @@ ${bloqueSuPais(telefono, clase, ahora)}
   // cuándo es el próximo: eso las citaría a algo a lo que no pueden entrar.
   const bloqueEncuentros = esMiembro
     ? `👉 SU PRÓXIMO ENCUENTRO EN VIVO CON JAVIER ${cuando(encuentro)}, ${encuentros.horaTexto} hora Colombia. Son SIEMPRE ${encuentros.diasTexto}, ${encuentros.horaTexto} hora Colombia, ${encuentros.duracionHoras} horas, por ${encuentros.plataforma}. Nunca nombres otro día.`
-    : `EL PROGRAMA incluye DOS encuentros en vivo con Javier cada semana (${encuentros.diasTexto}, ${encuentros.horaTexto} hora Colombia, ${encuentros.duracionHoras} horas, por ${encuentros.plataforma}). Eso es lo que le cuentas: que los tiene todas las semanas.
-⛔ NO le des la fecha del próximo encuentro: esos son para las que YA están adentro. Citarla a una fecha a la que todavía no puede entrar es prometerle algo que no tiene.`;
+    : `LOS TALLERES EN VIVO: ${encuentros.horasSemana} horas de acompañamiento cada semana con Javier Vieira (son dos, ${encuentros.diasTexto}, ${encuentros.horaTexto} hora Colombia, ${encuentros.duracionHoras} horas cada uno, por ${encuentros.plataforma}). Eso es lo que le cuentas: que los tiene TODAS las semanas.
+⛔ NO le des la fecha del próximo taller: esos son para las que YA están adentro. Citarla a una fecha a la que todavía no puede entrar es prometerle algo que no tiene.`;
 
   return `# ⏰ RELOJ Y DATOS DUROS — LO CALCULÓ EL SISTEMA, ES LA VERDAD
 No lo deduzcas ni lo calcules: ya viene resuelto. Léelo y úsalo tal cual.
 
 ${hoy}
+
+## 🚪 LO QUE VENDES: UNA PUERTA QUE YA ESTÁ ABIERTA
+**${APEGO_DETOX.nombre} no es un evento: es un lugar donde se entra HOY.** No hay que esperar a ningún día, no hay hora a la que conectarse, no hay nada que se pierda si esta noche no puede. Paga y entra, desde el celular, a la hora que sea.
+👉 **Esa es tu mejor arma y va temprano en la conversación.** Ella te escribe a las once de la noche o a las tres de la mañana, encerrada, con poco tiempo y poca privacidad. "Entras hoy mismo" le resuelve el problema que tiene AHORA; cualquier cosa que la obligue a esperar o a estar libre a cierta hora es donde se te cae.
+⛔ Nunca la cites a un día ni le preguntes si "te espera" en una fecha. Aquí no se espera a nada.
+
+## 🎁 QUÉ HAY ADENTRO
+Adentro tiene ${pilares.join('; ')}.
+**Nombras UNO, el que le sirva a lo que ella te acabó de contar** — nunca los cuatro, y nunca en lista.
+💛 **El que más vende NO son los módulos: es la comunidad.** Si te escribió de noche, si te dijo que está sola, que nadie la entiende, que le da pena contarlo — ese es el que le nombras. Los ${modulos} módulos son lo que se lleva; que alguien le conteste a las 3 de la mañana es lo que compra.
+
+## 🎯 LO QUE VA A SABER HACER
+Adentro aprende a ${resultados.join('; ')}.
+Esto vende más que la lista de lo que incluye: describe a la mujer que sale, no la caja que entra. Escoge el que responda a lo que ella te contó y díselo en una frase suya.
+
+EL ÁNGULO: ${angulo}
+
 ${bloqueEncuentros}
 ${lanzamiento}
-Es SUSCRIPCIÓN mensual y cancela cuando quiera: NUNCA digas "pago único". Si pregunta cuánto es en su moneda, se lo muestra Skool al pagar — tú solo afirmas los $${precio.monto} USD. Garantía de ${garantiaDias} días, devolución total y sin preguntas.
-SE PAGA SOLO AQUÍ (Skool): ${checkout}
-LA PÁGINA para verlo por dentro: ${landing}
+${bloqueMoneda(precio.monto, telefono, tasasUSD, paisIso)}
+Es SUSCRIPCIÓN mensual y cancela cuando quiera: NUNCA digas "pago único". Garantía de ${garantiaDias} días, devolución total y sin preguntas. La garantía va SIEMPRE pegada al precio: es lo que le quita el miedo a poner la tarjeta.
 
-${bloqueSuPais(telefono, esMiembro ? encuentro : null, ahora)}
+## 🔗 EL LINK
+👉 **Le mandas el de Skool: ${checkout}** — ahí ve todo por dentro Y entra, en la misma página. Es el único sitio donde se paga.
+🔁 Se lo vuelves a mandar cada vez que le sirva (si pregunta cómo paga, si dice que sí, si vuelve al día siguiente, si se le perdió). Un link que hay que buscar hacia arriba en el chat es una venta perdida.
+📄 La página ${landing} es solo por si ella pide "verlo en español antes de decidir". Nunca las dos en el mismo mensaje.
+💳 Se paga con tarjeta, dentro de Skool. **Si te dice que no tiene tarjeta, no le inventes otra forma de pagar**: eso lo resuelve Javier Vieira y se la pasas.
+
+${bloqueSuPais(telefono, esMiembro ? encuentro : null, ahora, paisIso)}
 `;
 }
