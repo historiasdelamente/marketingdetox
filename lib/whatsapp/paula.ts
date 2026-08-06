@@ -23,7 +23,7 @@ import {
   type TablaTasas,
 } from './programa';
 import { normalizarCanal, normalizarNegritas } from './manychat';
-import { PAISES, detectarPais, paisPorIso } from './paises';
+import { PAISES, detectarPais, esTelefonoReal, paisPorIso } from './paises';
 import { precioLocal, tasas } from './moneda';
 
 // ============================================================================
@@ -1328,7 +1328,9 @@ export async function processPaulaMessage(
   // los recordatorios también sepan su país, su hora y su moneda.
   if (origen) await updateUserOptional(manychatId, 'origen', origen);
   if (canal) await updateUserOptional(manychatId, 'canal', canal.toLowerCase() === 'instagram' ? 'instagram' : 'whatsapp');
-  if (telefono) await updateUserOptional(manychatId, 'phone', telefono);
+  // Solo si es un número de verdad: ManyChat manda "{{phone}}" sin resolver
+  // cuando la Solicitud externa está mal configurada, y eso no es un teléfono.
+  if (esTelefonoReal(telefono)) await updateUserOptional(manychatId, 'phone', telefono);
   // El escalón, que hoy es siempre 'apego'. Se sigue guardando para que el
   // histórico quede coherente y para no romper nada que todavía lo lea.
   await updateUserOptional(manychatId, 'escalon', escalon);

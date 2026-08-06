@@ -95,6 +95,22 @@ const PREFIJOS_ORDENADOS: Array<{ prefijo: string; pais: Pais }> = PAISES
   .sort((a, b) => b.prefijo.length - a.prefijo.length);
 
 /**
+ * ¿Esto es un teléfono de verdad?
+ *
+ * ⚠️ NACIÓ DE UN FALLO EN PRODUCCIÓN (2026-08-06). En `wa_users.phone` había
+ * guardadas decenas de filas con el texto literal **"{{phone}}"**: ManyChat
+ * estaba enviando el marcador sin resolver en vez del número. `detectarPais`
+ * ya lo trataba bien —no tiene dígitos, así que devuelve null y Paula no
+ * inventa un país—, pero el valor se guardaba igual y ensuciaba la base.
+ *
+ * Se exigen 8 dígitos: por debajo de eso no hay indicativo + número posible, y
+ * cualquier resto de plantilla ("{{phone}}", "null", "-") se cae solo.
+ */
+export function esTelefonoReal(telefono?: string | null): boolean {
+  return String(telefono ?? '').replace(/\D/g, '').length >= 8;
+}
+
+/**
  * Deduce el país por el indicativo del teléfono.
  *
  * ManyChat manda el número en formato internacional (WhatsApp siempre lo es),
@@ -104,7 +120,12 @@ const PREFIJOS_ORDENADOS: Array<{ prefijo: string; pais: Pais }> = PAISES
  * confundirlos le daría a ella la hora y la moneda equivocadas.
  */
 export function detectarPais(telefono?: string | null): Pais | null {
-  if (!telefono) return null;
+  // ⛔ PRIMERO, ¿ES UN TELÉFONO? Sin esta puerta, "123" devolvía **Estados
+  // Unidos** —porque empieza por 1, que es su indicativo— y a esa mujer se le
+  // daba el precio en dólares y la hora de Miami. Cualquier valor corto o
+  // malformado caía en el país con el indicativo más corto. Se vio al blindar
+  // el "{{phone}}" que ManyChat mandaba sin resolver.
+  if (!esTelefonoReal(telefono)) return null;
   // Deja solo dígitos y quita el prefijo internacional de marcación (00).
   let n = String(telefono).replace(/\D/g, '');
   if (n.startsWith('00')) n = n.slice(2);

@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   TZ_COLOMBIA,
   detectarPais,
+  esTelefonoReal,
   diasDeCalendario,
   fechaISO,
   fechaLarga,
@@ -77,5 +78,23 @@ describe("formato de fechas y horas", () => {
     expect(diasDeCalendario(vispera, CLASE, TZ_COLOMBIA)).toBe(1);
     expect(diasDeCalendario(CLASE, CLASE, TZ_COLOMBIA)).toBe(0);
     expect(diasDeCalendario(CLASE, vispera, TZ_COLOMBIA)).toBe(-1);
+  });
+});
+
+describe('un telefono de verdad, no un marcador de plantilla', () => {
+  it('rechaza el "{{phone}}" que ManyChat manda sin resolver', () => {
+    // FALLO REAL VISTO EN PRODUCCION el 2026-08-06: `wa_users.phone` tenia
+    // decenas de filas con el texto literal "{{phone}}". La Solicitud externa
+    // de ManyChat enviaba el marcador en vez del numero, asi que Paula no sabia
+    // de que pais era NINGUNA mujer y casi nunca daba el precio en su moneda.
+    for (const basura of ['{{phone}}', '', 'null', '-', '123']) {
+      expect(esTelefonoReal(basura), basura + ' no es un telefono').toBe(false);
+      // Lo importante: de la basura nunca sale un pais inventado.
+      expect(detectarPais(basura)).toBeNull();
+    }
+
+    for (const bueno of ['+573001112233', '573001112233', '+52 55 1234 5678']) {
+      expect(esTelefonoReal(bueno), bueno + ' si es un telefono').toBe(true);
+    }
   });
 });
