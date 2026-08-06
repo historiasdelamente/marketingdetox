@@ -210,7 +210,7 @@ const PROMESA_GRATIS = /(?:te\s+(?:lo\s+)?(?:regalo|env[íi]o\s+gratis)|(?:clase
 // no nombra lo que va a mandar. Se exige el signo de apertura y el cierre
 // pegado para no marcar preguntas legítimas ("¿quieres entrar el jueves?").
 const PIDE_PERMISO =
-  /(?:quieres|te\s+gustar[íi]a|deseas)\s+que\s+te\s+(?:cuente|comparta|mande|env[íi]e|pase|explique|diga|deje)|¿\s*te\s+(?:cuento|comparto|mando|env[íi]o|paso|dejo)\b|¿\s*(?:quieres|te\s+parece|te\s+sirve|lo\s+quieres)\s*\?/i;
+  /(?:quieres|te\s+gustar[íi]a|deseas)\s+que\s+te\s+(?:cuente|comparta|mande|env[íi]e|pase|explique|diga|deje)|¿\s*te\s+(?:cuento|comparto|mando|env[íi]o|paso|dejo)\b|¿\s*(?:quieres|te\s+parece|te\s+sirve|lo\s+quieres)\s*\?|\bsi\s+(?:quieres|gustas|deseas|te\s+parece)\s*,?\s*(?:te\s+)?(?:lo\s+|la\s+)?(?:paso|mando|env[íi]o|comparto|dejo|cuento)\b/i;
 
 // Paula acompaña y vende; NO psicoeduca. Explicarle el mecanismo por chat la
 // deja satisfecha con la explicación y sin entrar al proceso — y además suena

@@ -502,7 +502,21 @@ export function bloqueContexto(
   const suPais = paisDeElla(telefono, paisIso);
   const suyo = suPais ? horarioParaElla(encuentro.inicio, suPais.tz) : null;
 
-  const horarioTexto = suyo
+  // ⛔ PAÍSES CON VARIAS ZONAS HORARIAS: no se afirma una hora.
+  //
+  // Vanesa escribió desde Phoenix el 2026-08-06 y Paula le dijo "9:00 PM": la
+  // hora de Nueva York, que es la zona por defecto de Estados Unidos en la
+  // tabla de países. En Phoenix eran las 6. Habría llegado TRES HORAS TARDE a
+  // cada taller, todas las semanas, hasta darse de baja pensando que el
+  // programa era un desastre.
+  //
+  // Con varias zonas, la única respuesta honesta es preguntarle la ciudad. Es
+  // la regla de esta casa: mejor no saber que afirmar mal.
+  const variasZonas = Boolean(suPais?.zonaAmbigua);
+
+  const horarioTexto = variasZonas
+    ? `⚠️ **EN ${(suPais?.nombre ?? '').toUpperCase()} HAY VARIAS ZONAS HORARIAS Y NO SABES EN CUÁL ESTÁ ELLA — NO le des una hora suya.** Los talleres son ${encuentros.diasTexto} a las ${encuentros.horaTexto} **hora de Colombia**: se lo dices así, explícito. Y le preguntas la ciudad para poder decírsela: *"¿en qué ciudad estás? así te digo a qué hora te queda"*. Darle una hora sin saber su ciudad la hace llegar tarde a todo.`
+    : suyo
     ? `**${suyo.dias}, ${suyo.hora} — ESA ES LA HORA DE ELLA, ya convertida.** Dísela así, sin nombrar la de Colombia.${
         suyo.cambiaDia
           ? `\n⚠️ OJO: en Colombia son ${encuentros.diasTexto}, pero por la diferencia horaria a ELLA le caen en ${suyo.dias}. El día que le dices es el SUYO — si le dices el de Colombia, se conecta el día equivocado.`

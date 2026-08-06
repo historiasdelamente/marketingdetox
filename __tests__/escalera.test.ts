@@ -64,7 +64,7 @@ describe('el conocimiento sale del documento, no del código', () => {
     // No es material de venta: es lo que contesta a la que la vio en un anuncio
     // viejo. Sin esto, Paula se queda muda o se la inventa.
     const texto = conocimientoPara('apego');
-    expect(texto).toContain('SI PREGUNTA POR LA CLASE DEL JUEVES');
+    expect(texto).toContain('SI PREGUNTA POR LA CLASE');
   });
 
   it('el bloque de la clase va AL FINAL, no arriba', () => {

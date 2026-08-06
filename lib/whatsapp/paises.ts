@@ -47,6 +47,20 @@ export type Pais = {
   moneda: string;
   /** Países con más de una zona horaria. */
   zonasExtra?: Array<{ etiqueta: string; tz: string }>;
+  /**
+   * NO se puede afirmar una hora local sin saber su ciudad.
+   *
+   * Solo para países donde la población está REPARTIDA de verdad entre husos.
+   * México también tiene tres, pero la enorme mayoría vive en la hora de Ciudad
+   * de México, así que ahí se afirma y se corrige si ella nombra Cancún o
+   * Tijuana; preguntarle la ciudad a cada mexicana sería fricción en el mercado
+   * más grande. En Estados Unidos no hay zona dominante: Phoenix, Los Ángeles,
+   * Miami y Chicago son cuatro horas distintas y todas son comunes.
+   *
+   * Nació de un fallo real: a Vanesa, desde Phoenix, Paula le dijo las 9 PM
+   * (hora de Nueva York) cuando para ella eran las 6.
+   */
+  zonaAmbigua?: boolean;
 };
 
 export const PAISES: Pais[] = [
@@ -55,7 +69,7 @@ export const PAISES: Pais[] = [
     zonasExtra: [{ etiqueta: 'Cancún', tz: 'America/Cancun' }, { etiqueta: 'Tijuana', tz: 'America/Tijuana' }] },
   // +1 = Estados Unidos y Canadá. No se puede separar por el indicativo, así
   // que se dan las cuatro zonas y Paula pregunta la ciudad si necesita precisión.
-  { iso: 'US', nombre: 'Estados Unidos o Canadá', prefijos: ['1'], tz: 'America/New_York', ciudad: 'Miami / Nueva York', moneda: 'USD',
+  { iso: 'US', nombre: 'Estados Unidos o Canadá', prefijos: ['1'], tz: 'America/New_York', ciudad: 'Miami / Nueva York', moneda: 'USD', zonaAmbigua: true,
     zonasExtra: [
       { etiqueta: 'Chicago / Houston', tz: 'America/Chicago' },
       { etiqueta: 'Denver', tz: 'America/Denver' },
