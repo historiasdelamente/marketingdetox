@@ -10,6 +10,7 @@ import {
   type MotivoHandoff,
 } from './blindaje';
 import { conocimientoPara } from './conocimiento';
+import { analizarConversacion, bloqueGuion, type Turno } from './guion';
 import { escalonDe, instruccionEscalon, type Escalon } from './escalera';
 import { aplicarFormato } from './formato';
 import {
@@ -38,6 +39,13 @@ import { precioLocal, tasas } from './moneda';
 //   no_molestar   -> pidió no recibir más mensajes (sin recordatorios)
 // El valor legacy 'libro_enviado' (embudo viejo) se trata como new_lead.
 // ============================================================================
+
+/** Separador entre bloques del prompt. Saltos reales, sin escapes. */
+const GUION_SEP = `
+
+---
+
+`;
 
 const PROMPTS_DIR = path.join(process.cwd(), 'agents-source', 'prompts', 'whatsapp');
 
@@ -328,6 +336,26 @@ function estilo(
   montoUSD = 20,
   /** "unos 65.000 COP" — vacío si no sabemos de qué país es. */
   precioLocalFrase = '',
+  /**
+   * Cuántos mensajes lleva la conversación. Entra en la semilla del dolor.
+   *
+   * ⚠️ SIN ESTO EL DOLOR ERA EL MISMO EN TODA LA CONVERSACIÓN. La semilla era
+   * solo su manychat_id —estable para ella a propósito, para que dos mujeres no
+   * recibieran la misma frase—, y el efecto secundario fue que a ELLA le tocaba
+   * la misma frase en el turno 2, en el 5 y en el 9. Es la mitad de lo que
+   * Javier vio como "parece dando el mismo guion".
+   */
+  turnos = 0,
+  /**
+   * Ella YA recibio el link y ya sabe que hay adentro.
+   *
+   * Cambia el bloque del medio entero. Con la receta de "tres globos y el
+   * link" delante en CADA turno, Paula volvia a soltar la oferta y el link
+   * una y otra vez aunque el guion de arriba le dijera que no: son dos
+   * ordenes en el mismo prompt y gana la mas concreta. Es la otra mitad de
+   * lo que Javier vio como "parece dando el mismo guion".
+   */
+  yaTieneLink = false,
 ): string {
   // La misma pregunta en los tres sitios donde aparece (el bloque de entrada,
   // el ejemplo y la lista de antes de enviar). Si el ejemplo enseñara una
@@ -428,7 +456,22 @@ Escribe cortito, con errores, en varios mensajes seguidos. Contéstale igual. Lo
 
 ---
 
-${esPrimerTurno ? entrada(pregunta, paisConocido) : `# 🎯 YA TE CONTESTÓ — AHORA LE CUENTAS QUÉ ES, Y AHÍ VA EL LINK
+${esPrimerTurno ? entrada(pregunta, paisConocido) : yaTieneLink ? `# 🎯 YA TIENE EL LINK Y YA SABE QUÉ ES — NO SE LO CUENTES OTRA VEZ
+
+Ella ya recibió el link y ya sabe qué hay adentro. **Volver a describirle el programa ahora es lo que la hace dejar de contestar**: siente que le estás dando un discurso en vez de hablar con ella.
+
+Lo que haces en este mensaje:
+
+**1. CONTESTAR EXACTAMENTE LO QUE ELLA ACABA DE DECIR.** Si preguntó algo, eso y nada más. Si te contó algo nuevo, lo recoges con sus palabras.
+
+**2. UNA SOLA COSA NUEVA**, si aporta: un detalle de adentro que no le hayas nombrado todavía, o una pregunta corta que destape qué la frena. Si no tienes nada nuevo que decir, mejor un mensaje corto que uno relleno.
+
+⛔ **NO vuelvas a listar lo que incluye.** Ya se lo dijiste.
+⛔ **El link solo si ella lo pide o lo perdió**, o si acaba de decir que sí. No en cada mensaje: repetido pierde fuerza y parece automático.
+⛔ Uno o dos globos. Aquí casi nunca hacen falta tres.
+
+---
+` : `# 🎯 YA TE CONTESTÓ — AHORA LE CUENTAS QUÉ ES, Y AHÍ VA EL LINK
 
 ⛔ **EL LINK NUNCA VA SOLO NI ANTES DE TIEMPO.** Va en el MISMO mensaje en el que le has contado qué es Apego Detox y qué se lleva. Mandarle un link a alguien que todavía no sabe a dónde la lleva ni qué está comprando es la forma más rápida de que no lo abra: no sabe dónde está haciendo clic.
 
@@ -436,8 +479,8 @@ Tres globos, en este orden:
 
 **1. UNA FRASE QUE RECOJA LO QUE ACABA DE DECIR, con SUS palabras.** Si te dijo "llevamos nueve años", tu frase lleva los nueve años dentro. Nombra ahí UNO de lo que ella vive — en prosa, nunca en lista. El que le toca hoy:
 
-*${elegirEvitando(semilla, DOLORES_DENTRO, pregunta)}* ← si TODAVÍA está con él
-*${elegirEvitando(semilla, DOLORES_FUERA, pregunta)}* ← si YA lo dejó
+*${elegirEvitando(semilla + ':' + turnos, DOLORES_DENTRO, pregunta)}* ← si TODAVÍA está con él
+*${elegirEvitando(semilla + ':' + turnos, DOLORES_FUERA, pregunta)}* ← si YA lo dejó
 
 Escoge el que corresponda y **reescríbelo con tus palabras**. No mandes los dos: a la que vive con él, "revisas su última conexión" no le dice nada porque él duerme al lado.
 
@@ -761,6 +804,12 @@ export function buildSystemPrompt(
     esPrimerTurno?: boolean;
     /** Tasas del día (de `moneda.ts`). Sin ellas, Paula solo dice dólares. */
     tasas?: TablaTasas;
+    /**
+     * La conversación hasta ahora. De aquí sale el GUION: qué le dijo ya y qué
+     * toca ahora. Sin esto el prompt es idéntico en el turno 2 y en el 9, que
+     * es exactamente por lo que Paula se repetía.
+     */
+    historial?: Turno[];
   } = {},
 ): string {
   const ahora = opciones.ahora ?? new Date();
@@ -811,11 +860,18 @@ export function buildSystemPrompt(
   // Escalado a Javier: va antes que todo, para que no lo tape la venta.
   const handoff = opciones.handoff ? instruccionHandoff(opciones.handoff, escalon) + '\n\n---\n\n' : '';
 
-  return `${handoff}${contextoVivo}${instruccionEscalon()}
+  // EL GUION va ARRIBA DEL TODO, pegado al reloj: es lo primero que tiene que
+  // leer, porque decide qué mensaje escribe. Si fuera al final, competiría con
+  // la receta de tres globos y perdería.
+  const historial = opciones.historial ?? [];
+  const guion = bloqueGuion(historial);
+  const venta = analizarConversacion(historial);
+
+  return `${handoff}${contextoVivo}${guion ? guion + GUION_SEP : ""}${instruccionEscalon()}
 
 ---
 
-${estilo(semilla, paisConocido, opciones.esPrimerTurno ?? false, user.name, montoUSD, local)}
+${estilo(semilla, paisConocido, opciones.esPrimerTurno ?? false, user.name, montoUSD, local, historial.length, venta.tieneLink && venta.sabeQueEs)}
 # 📚 LO QUE PUEDES AFIRMAR — FUENTE ÚNICA
 Todo lo que Paula puede decir está aquí abajo. Si un dato no está, no existe: no lo afirmes, dile que lo confirmas con Javier.
 
@@ -1158,6 +1214,8 @@ export async function processPaulaMessage(
     escalon,
     esPrimerTurno,
     tasas: tasasHoy,
+    // De aqui sale el guion: que le conto ya y que toca ahora.
+    historial: history as Turno[],
   });
 
   // 4. Modelo principal

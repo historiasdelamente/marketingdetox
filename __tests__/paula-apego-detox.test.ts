@@ -655,6 +655,52 @@ describe('el prompt que se arma en cada turno', () => {
     });
   });
 
+  it('una vez que ella tiene el link, el prompt DEJA de pedir la oferta entera', () => {
+    // ⚠️ Es la mitad de "parece dando el mismo guion" (Javier, 2026-08-05). El
+    // guion de arriba decía "no repitas la oferta" y este bloque seguía
+    // ordenando "tres globos y el link" en cada turno: dos órdenes en el mismo
+    // prompt, y gana la más concreta.
+    const conLink = [
+      { role: 'user' as const, content: 'cuéntame' },
+      { role: 'assistant' as const, content: `Adentro hay talleres en vivo y comunidad.\n\n${APEGO_DETOX.checkout}` },
+    ];
+    const p = buildSystemPrompt(usuaria, '', '+573001112233', {
+      ahora: VIERNES_31,
+      historial: conLink,
+    });
+
+    expect(p).toContain('YA TIENE EL LINK Y YA SABE QUÉ ES');
+    expect(p).toMatch(/NO vuelvas a listar lo que incluye/);
+    expect(p).not.toContain('AHORA LE CUENTAS QUÉ ES, Y AHÍ VA EL LINK');
+  });
+
+  it('antes del link sí le pide la oferta completa', () => {
+    const p = buildSystemPrompt(usuaria, '', '+573001112233', {
+      ahora: VIERNES_31,
+      historial: [
+        { role: 'user' as const, content: 'hola' },
+        { role: 'assistant' as const, content: 'Hola, soy Paula. ¿Cómo te llamas?' },
+      ],
+    });
+    expect(p).toContain('AHORA LE CUENTAS QUÉ ES, Y AHÍ VA EL LINK');
+    expect(p).not.toContain('YA TIENE EL LINK Y YA SABE QUÉ ES');
+  });
+
+  it('el dolor cambia de un turno a otro, no se le repite el mismo', () => {
+    // La semilla era solo su manychat_id —estable para ELLA a propósito— y el
+    // efecto era que le tocaba la misma frase en el turno 2, en el 5 y en el 9.
+    const dolorDelTurno = (n: number) => {
+      const historial = Array.from({ length: n }, (_, i) => ({
+        role: (i % 2 === 0 ? 'user' : 'assistant') as 'user' | 'assistant',
+        content: `m${i}`,
+      }));
+      const p = buildSystemPrompt(usuaria, '', '', { ahora: VIERNES_31, historial });
+      return p.split('\n').filter((l) => /← si TODAVÍA/.test(l)).join('');
+    };
+    const vistos = new Set([dolorDelTurno(2), dolorDelTurno(4), dolorDelTurno(6)]);
+    expect(vistos.size).toBeGreaterThan(1);
+  });
+
   it('la regla de forma va escrita con números, no como una sugerencia', () => {
     const p = prompt();
     expect(p).toContain('Máximo TRES mensajes');
@@ -667,11 +713,16 @@ describe('el prompt que se arma en cada turno', () => {
     expect(p).toContain('si TODAVÍA está con él');
     expect(p).toContain('si YA lo dejó');
     expect(p).toContain('nunca en lista');
-    // Exactamente uno de cada banco: si aparecieran dos, vuelve la columna.
-    const dentro = DOLORES_DENTRO.filter((d) => p.includes(d));
-    const fuera = DOLORES_FUERA.filter((d) => p.includes(d));
-    expect(dentro).toHaveLength(1);
-    expect(fuera).toHaveLength(1);
+    // Exactamente DOS dolores en todo el prompt —uno por carril— y ni uno más:
+    // si aparecieran tres, vuelve la columna que Javier mandó quitar.
+    //
+    // Se cuentan las LÍNEAS marcadas y no las frases del banco, porque los dos
+    // bancos comparten varias ("te han dicho tantas veces que exageras…" está
+    // en los dos): contando frases, una coincidencia parecía un dolor de más.
+    const marcados = p.split('\n').filter((l) => /← si (TODAVÍA|YA)/.test(l));
+    expect(marcados).toHaveLength(2);
+    expect(marcados.some((l) => DOLORES_DENTRO.some((d) => l.includes(d)))).toBe(true);
+    expect(marcados.some((l) => DOLORES_FUERA.some((d) => l.includes(d)))).toBe(true);
   });
 
   it('si no sabe el país lo pregunta, y dice que es para darle su moneda', () => {

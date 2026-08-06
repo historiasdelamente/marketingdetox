@@ -118,6 +118,7 @@ describe('conversación manual con Paula', () => {
       escalon,
       esPrimerTurno,
       tasas: tabla,
+      historial: estado.historial,
     });
 
     const mensajes = [...estado.historial, { role: 'user', content: mensaje }];
