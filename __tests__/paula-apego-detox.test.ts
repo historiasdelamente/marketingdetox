@@ -295,7 +295,15 @@ describe('handoff a Javier — los cinco casos', () => {
   it('no tiene tarjeta', () => {
     expect(motivoHandoff('no tengo tarjeta de crédito')).toBe('sin_tarjeta');
     expect(motivoHandoff('puedo pagar de otra forma?')).toBe('sin_tarjeta');
-    expect(instruccionHandoff('sin_tarjeta', 'apego')).toContain('No inventes formas de pago');
+
+    const orden = instruccionHandoff('sin_tarjeta', 'apego');
+    // Nunca se inventa un método de pago ni se recibe plata por WhatsApp.
+    expect(orden).toMatch(/inventes formas de pago/);
+    expect(orden).toMatch(/recibas dinero por WhatsApp/);
+    // Y lo que costó la venta de Nedith: que aquí NO se pregunta nada ni se
+    // trata un problema de banco como si fuera una herida que sanar.
+    expect(orden).toMatch(/qué la frena/);
+    expect(orden).toMatch(/se trabaja adentro/);
   });
 
   it('un fallo de pago pesa más que un "ya pagué"', () => {

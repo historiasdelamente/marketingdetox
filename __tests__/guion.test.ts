@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { analizarConversacion, bloqueGuion, pideElLink, type Turno } from '@/lib/whatsapp/guion';
+import { motivoHandoff, quitarPreguntaDeFreno } from '@/lib/whatsapp/blindaje';
 
 const ella = (content: string): Turno => ({ role: 'user', content });
 const paula = (content: string): Turno => ({ role: 'assistant', content });
@@ -110,5 +111,147 @@ describe('el guion de venta — para que Paula deje de repetirse', () => {
       ella('además no tengo tiempo'),
     ]);
     expect(e.objeciones).toEqual(['dinero', 'tiempo']);
+  });
+});
+
+// ===========================================================================
+// LA CONVERSACIÓN DE NEDITH — 2026-08-06, Perú
+//
+// Todo lo que sigue son frases TEXTUALES de producción. Nedith quería entrar,
+// dijo cuatro veces que no tenía cómo pagar y una vez que el lunes estaría en
+// su ciudad. Paula le preguntó cuatro veces qué la frenaba y le repitió un
+// mensaje palabra por palabra. Se perdió.
+// ===========================================================================
+
+describe('la conversación de Nedith: leerla de verdad', () => {
+  // LAS CUATRO VECES QUE LO DIJO. Ninguna hizo saltar el handoff, y ese handoff
+  // —pasarla con Javier— es exactamente la salida que existe para su caso.
+  const LAS_CUATRO = [
+    'Es que estoy en distrito y no puedo realizar pagos',
+    'Si quisiera pero no hay un lugar para poder realizar el pago',
+    'Esto es un pueblito',
+    'Lo que pasa que tengo que recargar mi tarjeta solo tengo enefect8vo',
+  ];
+
+  it('escala a Javier las cuatro veces, aunque nunca diga "no tengo tarjeta"', () => {
+    for (const frase of LAS_CUATRO) {
+      expect(motivoHandoff(frase), frase).toBe('sin_tarjeta');
+    }
+  });
+
+  it('no escala a quien simplemente no tiene el dinero: eso es objeción, no logística', () => {
+    // La diferencia importa: si escaláramos toda duda de plata, Javier
+    // recibiría a todas las que dudan y el handoff dejaría de servir.
+    for (const frase of ['está muy caro para mí', 'no tengo plata ahora', 'llevo año y medio sin trabajo']) {
+      expect(motivoHandoff(frase), frase).not.toBe('sin_tarjeta');
+    }
+  });
+
+  it('el guion también lee su bloqueo de pago cuando lo nombra', () => {
+    for (const frase of LAS_CUATRO.filter((f) => f !== 'Esto es un pueblito')) {
+      const e = analizarConversacion([paula('Te espero adentro. ' + SKOOL), ella(frase)]);
+      expect(e.objeciones, frase).toContain('no tiene cómo pagar');
+    }
+  });
+
+  it('registra la fecha que ella dio en vez de seguir vendiendo', () => {
+    const e = analizarConversacion([
+      paula('Los talleres son martes y jueves. ' + SKOOL),
+      ella('El dia lunes estaré en mi ciudad'),
+    ]);
+    expect(e.citaFutura).toContain('lunes');
+
+    const guion = bloqueGuion([
+      paula('Los talleres son martes y jueves. ' + SKOOL),
+      ella('El dia lunes estaré en mi ciudad'),
+    ]);
+    // Se le confirma la fecha y se deja de empujar.
+    expect(guion).toContain('DEJA DE VENDER');
+    expect(guion).toContain('lunes');
+  });
+
+  it('cuenta las veces que ya le preguntó qué la frena', () => {
+    const e = analizarConversacion([
+      paula('¿Hay algo que te esté haciendo dudar?'),
+      ella('No para nada'),
+      paula('¿Qué te está frenando para entrar hoy?'),
+      ella('Es que estoy en distrito'),
+      paula('¿Es solo eso lo que te detiene para entrar?'),
+      ella('El dia lunes estaré en mi ciudad'),
+    ]);
+    expect(e.vecesQuePregunto).toBe(3);
+  });
+
+  it('a la tercera pregunta le prohíbe volver a preguntar', () => {
+    const historial: Turno[] = [
+      paula('Apego Detox tiene talleres en vivo. ' + SKOOL),
+      ella('ya vi'),
+      paula('¿Qué te está frenando?'),
+      ella('nada en especial'),
+      paula('¿Es solo eso lo que te detiene?'),
+      ella('pues no sé'),
+    ];
+    const guion = bloqueGuion(historial);
+    expect(guion).toContain('DEJA DE PREGUNTARLE');
+    expect(guion).toContain('NO puede terminar');
+  });
+
+  it('con handoff activo el guion se calla, para no dar dos órdenes', () => {
+    const historial: Turno[] = [
+      paula('Apego Detox tiene talleres en vivo. ' + SKOOL),
+      ella('solo tengo efectivo'),
+    ];
+    expect(bloqueGuion(historial)).not.toBe('');
+    expect(bloqueGuion(historial, true)).toBe('');
+  });
+});
+
+describe('la conversación de Marcela: lo que ella puso sobre la mesa', () => {
+  it('lee las objeciones que antes pasaban de largo', () => {
+    const casos: Array<[string, string]> = [
+      ['yo llevo año y medio sin trabajo, inestabilidad economica', 'dinero'],
+      ['No quiero tener otra pareja, y a mi edad no quiero volver a conseguir otra persona', 'no quiere rehacer su vida'],
+      ['pienso que le digo a mi hijo', 'los hijos'],
+      ['El miedo a perderlo', 'miedo a perderlo'],
+      ['Porque me siento muy desesperada', 'desesperación'],
+    ];
+    for (const [frase, clave] of casos) {
+      const e = analizarConversacion([paula('Te espero adentro. ' + SKOOL), ella(frase)]);
+      expect(e.objeciones, frase).toContain(clave);
+    }
+  });
+});
+
+describe('el candado: la pregunta que ya le hizo no sale', () => {
+  // LAS DOS FRASES SON REALES, del A/B del 2026-08-06 con la rama de la fecha
+  // ACTIVA — o sea con la prohibición delante, en negrita, y aun así salieron.
+  it('borra la pregunta y deja lo que sí sirve', () => {
+    const deHaiku = [
+      'Dale, Nedith.',
+      '',
+      '¿Y eso qué cambia para ti — es que recién ahí vas a tener tiempo, o hay algo más que te frena?',
+    ].join('\n');
+    const limpio = quitarPreguntaDeFreno(deHaiku);
+    expect(limpio).toContain('Dale, Nedith.');
+    expect(limpio).not.toMatch(/algo más que te frena/);
+
+    expect(quitarPreguntaDeFreno('Entiendo. ¿Es solo eso lo que te detiene?')).toBe('Entiendo.');
+    expect(quitarPreguntaDeFreno('Claro. ¿Qué te está frenando para entrar hoy?')).toBe('Claro.');
+  });
+
+  it('no toca las preguntas que sí puede hacer', () => {
+    const buenas = [
+      '¿Ya lo dejaste o todavía estás con él?',
+      '¿Desde qué país me escribes?',
+      '¿Cómo te llamas?',
+    ];
+    for (const q of buenas) expect(quitarPreguntaDeFreno(q), q).toBe(q);
+  });
+
+  it('si al quitarla no queda nada, devuelve el original', () => {
+    // Un mensaje repetido es malo; uno vacío es peor.
+    const solo = '¿Qué te está frenando?';
+    expect(quitarPreguntaDeFreno(solo)).toBe(solo);
+    expect(quitarPreguntaDeFreno('')).toBe('');
   });
 });

@@ -36,6 +36,10 @@ export type EstadoVenta = {
   sabeQueEsHoy: boolean;
   /** Objeciones que ELLA ha puesto, en el orden en que salieron. */
   objeciones: string[];
+  /** Veces que Paula ya le preguntó qué la frena. A la tercera, es acoso. */
+  vecesQuePregunto: number;
+  /** Ella nombró un momento futuro ("el lunes", "cuando cobre"). Textual. */
+  citaFutura: string | null;
 };
 
 const SABE_QUE_ES = /taller|comunidad|m[óo]dulo|meditaci|en vivo|acompa[ñn]am/i;
@@ -49,22 +53,56 @@ const ES_HOY = /hoy mismo|entras hoy|sin esperar|no hay que esperar|apenas entra
  * no vuelva a rebatir la misma dos veces con otras palabras — que es la forma
  * de repetirse que peor sienta: ella siente que no la están leyendo.
  */
+// ⚠️ ESTOS PATRONES ERAN DEMASIADO LITERALES Y CAUSARON EL BUCLE. Ninguna
+// mujer escribe "no tengo tarjeta"; escribe «tengo que recargar mi tarjeta solo
+// tengo enefect8vo». Con cero objeciones detectadas, `bloqueGuion` caía siempre
+// en la misma rama y le ordenaba a Paula preguntar «¿qué te está frenando?» —
+// turno tras turno. **La repetición la fabricaba este archivo, no el modelo.**
+// Al ampliarlos hay que asumir faltas de ortografía y frases a medias.
 const OBJECIONES: Array<{ clave: string; patron: RegExp }> = [
   // "está MUY caro", "me sale carito": la queja del precio viene con adverbios
   // y diminutivos, casi nunca pelada.
-  { clave: 'dinero', patron: /no tengo (plata|dinero|c[óo]mo)|\bcar[oa]\b|carit[oa]|no me alcanza|sin trabajo|no puedo pagar|no me da (para|el presupuesto)/i },
-  { clave: 'duda de que le sirva', patron: /no s[ée] si (me )?(sirva|funcione|vaya a servir)|y si no me funciona|ya intent[ée]|no me sirvi[óo]/i },
-  { clave: 'tiempo', patron: /no tengo tiempo|no me da el tiempo|trabajo todo el d[íi]a/i },
-  { clave: 'lo va a pensar', patron: /lo voy a pensar|lo pienso|d[ée]jame pensarlo|despu[ée]s te (digo|escribo)/i },
-  { clave: 'miedo a que él se entere', patron: /se entere|que no sepa|revisa mi (celular|tel[ée]fono)|me lo revisa/i },
-  { clave: 'no tiene tarjeta', patron: /no tengo tarjeta|sin tarjeta|no manejo tarjeta/i },
-  { clave: 'vergüenza del grupo', patron: /pena|verg[üu]enza|hablar delante|no quiero contar/i },
+  { clave: 'dinero', patron: /no tengo (plata|dinero|c[óo]mo)|\bcar[oa]\b|carit[oa]|no me alcanza|sin trabajo|estoy sin (trabajo|empleo)|no puedo pagar|no me da (para|el presupuesto)|no tengo (para|con qu[ée])|estoy mal (de|econ)|situaci[óo]n econ[óo]mica|inestabilidad econ[óo]mica/i },
+  { clave: 'duda de que le sirva', patron: /no s[ée] si (me )?(sirva|funcione|vaya a servir|funcionar[áa])|y si no me funciona|ya intent[ée]|no me sirvi[óo]|ya prob[ée]|\bfuncionar[áa]\b|ser[áa] que (me )?(sirve|funciona)/i },
+  { clave: 'tiempo', patron: /no tengo tiempo|no me da el tiempo|trabajo todo el d[íi]a|estoy muy ocupad|no voy a poder (conectarme|asistir)/i },
+  { clave: 'lo va a pensar', patron: /lo (voy a |vo?y? )?pensar|lo pienso|d[ée]jame pensarlo|despu[ée]s te (digo|escribo|aviso)|te (digo|aviso|escribo) (luego|despu[ée]s|m[áa]s tarde)|ah[íi] te (digo|aviso)/i },
+  { clave: 'miedo a que él se entere', patron: /se entere|que no sepa|revisa mi (celular|tel[ée]fono)|me lo revisa|me revisa el/i },
+  // OJO: aquí solo va la duda; el "no puedo pagar" de logística es un handoff a
+  // Javier (SIN_TARJETA_RE en blindaje.ts), no una objeción que Paula rebata.
+  { clave: 'no tiene cómo pagar', patron: /no tengo tarjeta|sin tarjeta|no manejo tarjeta|solo tengo efectivo|no hay (banco|cajero)|recargar (la|mi) tarjeta|no puedo realizar (el )?pagos?|no hay (d[óo]nde|un lugar|forma|manera|c[óo]mo).{0,40}pag/i },
+  { clave: 'vergüenza del grupo', patron: /pena|verg[üu]enza|hablar delante|no quiero contar|me da cosa|soy muy t[íi]mida/i },
+  { clave: 'miedo a perderlo', patron: /perderlo|lo voy a perder|miedo a perder|si lo dejo|no quiero perderlo|volver[áa] conmigo/i },
+  { clave: 'no quiere rehacer su vida', patron: /no quiero (tener )?otra pareja|a mi edad|no quiero volver a (conseguir|empezar)|pens[ée] (una|mi) vejez/i },
+  { clave: 'los hijos', patron: /mi hijo|mis hijos|mi ni[ñn][oa]|le digo a mi hijo|por los ni[ñn]os/i },
+  { clave: 'desesperación', patron: /desesperad|no aguanto m[áa]s|ya no puedo m[áa]s|estoy fatal|no s[ée] qu[ée] hacer/i },
 ];
+
+/**
+ * ¿PAULA YA LE PREGUNTÓ QUÉ LA FRENA?
+ *
+ * A Nedith se lo preguntó cuatro veces seguidas —«¿es solo eso lo que te
+ * detiene?», «¿qué te está frenando?»— después de que ella ya hubiera contestado
+ * dos veces que no tenía cómo pagar. Preguntar lo mismo que ya te contestaron es
+ * la señal más clara de que no la estás leyendo.
+ */
+export const PREGUNTA_FRENO =
+  /qu[ée] (m[áa]s )?te (est[áa] )?(frena|detiene|frenando|deteniendo|impide|impidiendo|hace dudar|est[áa] haciendo dudar)|es solo eso|solo eso lo que te|algo (m[áa]s )?que te est[ée] (frenando|haciendo dudar)|qu[ée] te detiene|hay algo (m[áa]s )?que te fren|algo m[áa]s que te frena/i;
+
+/**
+ * ELLA NOMBRÓ UN MOMENTO. Es lo más valioso que puede decir una mujer que no
+ * compra hoy, y el sistema no lo veía: Nedith dijo «el día lunes estaré en mi
+ * ciudad» y Paula siguió vendiendo ocho turnos más como si no lo hubiera leído.
+ */
+const CITA_FUTURA =
+  /\b(el |este |pr[óo]ximo )?(lunes|martes|mi[ée]rcoles|jueves|viernes|s[áa]bado|domingo)\b|\bma[ñn]ana\b|pasado ma[ñn]ana|la (otra|pr[óo]xima) semana|fin de semana|cuando (cobre|me paguen|reciba|llegue|est[ée]|pueda|tenga|vuelva|regrese)|\bel (d[íi]a )?\d{1,2}\b|a fin de mes|quincena/i;
 
 export function analizarConversacion(historial: Turno[]): EstadoVenta {
   const dePaula = historial.filter((m) => m.role === 'assistant').map((m) => m.content);
   const deElla = historial.filter((m) => m.role === 'user').map((m) => m.content);
   const todoPaula = dePaula.join('\n');
+
+  // La cita se busca de atrás hacia delante: vale la última que dijo.
+  const conCita = [...deElla].reverse().find((m) => CITA_FUTURA.test(m)) ?? null;
 
   return {
     turnos: dePaula.length,
@@ -74,6 +112,8 @@ export function analizarConversacion(historial: Turno[]): EstadoVenta {
     sabeGarantia: SABE_GARANTIA.test(todoPaula),
     sabeQueEsHoy: ES_HOY.test(todoPaula),
     objeciones: OBJECIONES.filter((o) => deElla.some((m) => o.patron.test(m))).map((o) => o.clave),
+    vecesQuePregunto: dePaula.filter((m) => PREGUNTA_FRENO.test(m)).length,
+    citaFutura: conCita ? conCita.trim().slice(0, 120) : null,
   };
 }
 
@@ -97,11 +137,19 @@ ${ultimos.map((m) => `— «${m.content.replace(/\s*\n+\s*/g, ' / ').slice(0, 24
  * EL SIGUIENTE PASO, calculado. Es lo que sustituye a "manda tres globos y el
  * link" repetido hasta el infinito.
  */
-export function bloqueGuion(historial: Turno[]): string {
+export function bloqueGuion(historial: Turno[], hayHandoff = false): string {
   const e = analizarConversacion(historial);
 
   // Primer turno: manda el bloque de entrada, aquí no hay guion que dar.
   if (e.turnos === 0) return '';
+
+  // UNA SOLA VOZ POR TURNO. Si hay handoff, ese bloque YA dice qué hacer, y es
+  // lo contrario de vender: pasarla con Javier, parar por riesgo, felicitarla.
+  // Añadirle encima "trabaja su objeción y cierra" son dos órdenes que se
+  // pelean, y con `gpt-4.1-mini` gana la que esté más abajo. Con Nedith se vio
+  // al revés —nunca saltó el handoff—, pero al ampliarlo ahora sí salta, y el
+  // guion tiene que callarse.
+  if (hayHandoff) return '';
 
   const cubierto = [
     e.sabeQueEs && 'qué hay adentro',
@@ -115,12 +163,40 @@ export function bloqueGuion(historial: Turno[]): string {
   // avanzando. Solo se le da UN paso — con dos, los mezcla y sale el ladrillo.
   let paso: string;
 
+  // El tope de preguntas va ARRIBA de casi todo: da igual en qué punto de la
+  // venta esté, si ya le preguntaste dos veces qué la frena, no se lo vuelves a
+  // preguntar. A Nedith se lo preguntaron cuatro veces seguidas.
+  const yaPregunteDemasiado = e.vecesQuePregunto >= 2;
+
   if (!e.sabeQueEs) {
     paso = `**CONTARLE QUÉ ES.** Todavía no sabe qué está mirando. Qué hay adentro y qué va a lograr, en una o dos frases, y el link en su propio globo.`;
   } else if (!e.tieneLink) {
     paso = `**DARLE EL LINK.** Ya sabe qué es; lo que falta es la puerta. Una frase corta que la empuje y el link en su propio globo.`;
+  } else if (e.citaFutura) {
+    paso = `**ELLA YA TE DIO UNA FECHA — CIERRA CON ESA FECHA Y DEJA DE VENDER.**
+Te dijo: «${e.citaFutura}». Eso no es un "no", es un **sí con fecha**, y es lo mejor que te ha dicho.
+
+Lo que haces AHORA, en dos frases como mucho:
+1. Se lo confirmas **con sus palabras**, para que vea que la leíste. Nada de "mientras tanto puedes ir preparándote": eso es relleno.
+2. Le dices que ese día te escriba y entran juntas, y ahí te callas.
+
+⚠️ NO le prometas que TÚ le escribes ese día. No hay nada que mande un mensaje en una fecha que ella dijo, y prometérselo es prometerle algo que no existe.
+
+⛔ En este mensaje NO va: el precio otra vez, el link otra vez, ni una sola pregunta sobre qué la frena. Ya te lo dijo — la fecha ES la respuesta. Si sigues empujando después de que te dio fecha, la pierdes.`;
+  } else if (yaPregunteDemasiado) {
+    paso = `**DEJA DE PREGUNTARLE QUÉ LA FRENA. Ya se lo preguntaste ${e.vecesQuePregunto} veces y ya te contestó.**
+Volver a preguntarlo le demuestra que no la estás leyendo, y es la forma más rápida de que deje de contestar.
+
+Elige UNA de estas tres, la que encaje con lo último que ella dijo:
+— Si lo que la frena tiene arreglo, se lo resuelves con algo concreto. Sin preguntas.
+— Si es miedo o duda, le dices UNA cosa nueva —un ángulo que no hayas usado— y cierras.
+— Si ya dijo que no puede o que no ahora, la sueltas con cariño, le dejas la puerta abierta y no vuelves a vender en este mensaje.
+
+Tu mensaje NO puede terminar en «¿qué te frena?», «¿es solo eso?» ni ninguna variante.`;
   } else if (e.objeciones.length > 0) {
-    paso = `**TRABAJAR SU OBJECIÓN: ${e.objeciones[e.objeciones.length - 1]}.** Es lo único que la separa de entrar. Validas en una frase, reencuadras con un ángulo que NO hayas usado, y cierras. Si ya rebatiste esa misma, no la repitas: pregúntale qué más la frena.`;
+    paso = `**TRABAJAR SU OBJECIÓN: ${e.objeciones[e.objeciones.length - 1]}.** Es lo único que la separa de entrar. Validas en una frase, reencuadras con un ángulo que NO hayas usado, y cierras.
+
+⛔ Si esa objeción es de logística —no tiene cómo pagar, no hay banco, solo efectivo— **no la rebatas y no le digas que "eso se trabaja adentro"**: no es una herida, es un banco. Eso se le pasa a Javier.`;
   } else if (!e.sabePrecio) {
     paso = `**ESPERAR SU PREGUNTA, NO EMPUJAR.** Ya tiene el link y sabe qué es. No le repitas la oferta: contéstale lo que te pregunte. Si no pregunta nada concreto, una sola pregunta corta que destape qué la frena — *"¿qué te está haciendo dudar?"* — y te callas.`;
   } else {

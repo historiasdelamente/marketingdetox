@@ -33,6 +33,7 @@ import {
 // tres, así que contando con ella un mensaje de cinco globos parecía de tres y
 // el reintento no se disparaba nunca.
 import { globosDe } from './manychat';
+import { PREGUNTA_FRENO } from './guion';
 import { APEGO_DETOX, precioApego } from './programa';
 
 /** En qué está vendiendo Paula. Hoy solo hay una cosa. */
@@ -612,7 +613,50 @@ const COMPRA_CERRADA_RE = /\b(ya\s+(pagu[eé]|compr[eé]|me\s+inscrib[ií]|entr[
 const RECIBO_RE = /\b(comprobante|recibo|pantallazo|captura\s+del?\s+pago|soporte\s+de(l)?\s+pago|voucher|le\s+mand[oé]\s+el\s+pago|te\s+mando\s+el\s+pago)\b/i;
 
 // 5) No tiene cómo pagar por el medio normal. La salida la resuelve Javier.
-const SIN_TARJETA_RE = /\bno\s+(tengo|manejo|cuento\s+con|poseo)\s+(una\s+)?tarjeta|sin\s+tarjeta\s+(de\s+)?(cr[ée]dito|d[ée]bito)|no\s+tengo\s+(cr[ée]dito|c[óo]mo\s+pagar)|(?:puedo|hay\s+forma\s+de)\s+pagar\s+(de\s+)?otra\s+(forma|manera)|otro\s+m[ée]todo\s+de\s+pago/i;
+//
+// ⚠️ ESTE PATRÓN SE QUEDÓ CORTO Y COSTÓ UNA VENTA. Nedith, de un pueblo de
+// Perú, lo dijo CUATRO veces el 2026-08-06 y ninguna hizo saltar el handoff:
+//
+//   «estoy en distrito y no puedo realizar pagos»
+//   «no hay un lugar para poder realizar el pago» · «esto es un pueblito»
+//   «tengo que recargar mi tarjeta solo tengo enefect8vo»
+//
+// Ninguna dice "no tengo tarjeta". El patrón viejo pedía esa frase exacta, así
+// que Paula la dejó en bucle preguntándole qué la frenaba —ya se lo había
+// dicho— en vez de pasarla con Javier, que es justo para lo que existe esta
+// salida. Una mujer que no puede pagar no es una objeción emocional: es un
+// problema de logística, y el único que lo resuelve hoy es Javier a mano.
+//
+// La regla al ampliarlo: aquí solo entra "TENGO la plata pero no puedo
+// meterla". La falta de dinero es otra cosa —eso sí es objeción— y se queda
+// fuera a propósito: escalarla sería mandarle a Javier a todo el que dude.
+const SIN_TARJETA_RE = new RegExp(
+  [
+    // El original, que sigue valiendo.
+    String.raw`\bno\s+(tengo|manejo|cuento\s+con|poseo)\s+(una\s+)?tarjeta`,
+    String.raw`sin\s+tarjeta\s+(de\s+)?(cr[ée]dito|d[ée]bito)`,
+    String.raw`no\s+tengo\s+(cr[ée]dito|c[óo]mo\s+pagar)`,
+    String.raw`(?:puedo|hay\s+forma\s+de)\s+pagar\s+(de\s+)?otra\s+(forma|manera)`,
+    String.raw`otro\s+m[ée]todo\s+de\s+pago`,
+    // "no puedo pagar / no puedo hacer el pago / no puedo realizar pagos"
+    String.raw`no\s+pued[oe]\s+\w*\s*(pagar|hacer\s+el\s+pago|realizar\s+(el\s+)?pagos?)`,
+    // "no hay dónde pagar", "no hay un lugar para el pago", "no hay banco"
+    String.raw`no\s+hay\s+(d[óo]nde|un\s+lugar|forma|manera|c[óo]mo|banco|cajero)[^.!?\n]{0,40}(pag|dep[óo]sit)`,
+    String.raw`no\s+hay\s+(banco|cajero|corresponsal)`,
+    // Solo tiene efectivo — el caso de Nedith, y el más común fuera de ciudad.
+    String.raw`solo\s+tengo\s+(efectivo|efect\w*|plata\s+en\s+mano|billetes)`,
+    String.raw`(en|con)\s+efectivo\b`,
+    String.raw`recargar\s+(la|mi)\s+tarjeta`,
+    // No tiene cuenta ni con qué: distinto de no tener plata.
+    String.raw`no\s+tengo\s+(cuenta|banco|c[óo]mo\s+(hacer|meter)\s+el\s+pago)`,
+    // Pregunta explícita por otra vía de pago local.
+    String.raw`\b(nequi|daviplata|yape|plin|pago\s+m[óo]vil|transferencia|dep[óo]sito|western\s+union|giro)\b`,
+    // Está fuera de su ciudad / en zona sin servicios.
+    String.raw`(estoy|vivo)\s+en\s+(un\s+)?(pueblo|pueblito|vereda|distrito|campo|zona\s+rural)`,
+    String.raw`\bes\s+un\s+pueblito\b`,
+  ].join('|'),
+  'i',
+);
 
 // 0) RIESGO. Va antes que todo y no es un handoff a Javier: es parar la venta.
 //
@@ -757,6 +801,47 @@ export function quitarLinkRepetido(texto: string): string {
     .trim();
 }
 
+/**
+ * LA PREGUNTA QUE YA LE HIZO — FUERA.
+ *
+ * ⚠️ ESTE CANDADO NACIÓ DE VER QUE EL PROMPT NO BASTA. El guion ya le dice, en
+ * negrita y arriba del todo, que cuando ella dio una fecha o cuando ya se lo
+ * preguntaron dos veces **no vuelva a preguntar qué la frena**. Se probó con dos
+ * modelos el 2026-08-06 y LOS DOS la hicieron igual:
+ *
+ *   gpt-4.1-mini → «¿Eso te hace sentir más cerca o más lejos de decidir?»
+ *   haiku-4.5    → «¿…o hay algo más que te frena?»
+ *
+ * Es la regla de oro del proyecto otra vez: el prompt lo pide, el código lo
+ * hace cierto. A Nedith se lo preguntaron cuatro veces seguidas después de que
+ * ya hubiera contestado, y ahí es donde una mujer deja de escribir.
+ *
+ * Se borra por frases, no por globos: la pregunta suele ir pegada al final de
+ * una frase que sí sirve. Y si al quitarla no queda nada, se devuelve el texto
+ * original — un mensaje repetido es malo, un mensaje vacío es peor.
+ */
+export function quitarPreguntaDeFreno(texto: string): string {
+  const original = texto || '';
+  if (!original.trim()) return original;
+
+  const limpio = original
+    .split(SALTO)
+    .map((linea) =>
+      linea
+        // Corta por final de frase conservando el signo, para no pegar dos
+        // frases al borrar la de en medio.
+        .split(/(?<=[.!?…])\s+/)
+        .filter((frase) => !PREGUNTA_FRENO.test(frase))
+        .join(' ')
+        .trim(),
+    )
+    .join(SALTO)
+    .replace(/\n{3,}/g, SALTO + SALTO)
+    .trim();
+
+  return limpio.length > 0 ? limpio : original;
+}
+
 export type MotivoHandoff =
   | 'crisis'
   | 'pide_humano'
@@ -842,12 +927,16 @@ ${link}
 Le dices exactamente qué hacer: "mándale ahí tu comprobante y tu correo, y él te da el acceso".`;
 
     case 'sin_tarjeta':
-      return `# 💳 NO TIENE TARJETA — LO RESUELVE JAVIER — PRIORIDAD ALTA
-No inventes formas de pago, no le prometas otro método y NUNCA recibas dinero por WhatsApp. Le dices que sí hay salida y le mandas este link completo, solo, en su propio globo:
+      return `# 💳 NO TIENE CÓMO PAGAR — LO RESUELVE JAVIER — PRIORIDAD ALTA
+Esto NO es una objeción: **ella quiere entrar y no puede meter la plata.** Sin tarjeta, solo con efectivo, en un pueblo sin banco, o fuera de su ciudad. Es un problema de logística, y el único que lo resuelve hoy es Javier.
+
+⛔ PROHIBIDO en este mensaje: preguntarle qué la frena o si es solo eso lo que la detiene —ya te lo dijo—, decirle que "eso se trabaja adentro" —no es una herida, es un banco—, y decirle que espere a poder pagar. Tampoco inventes formas de pago, ni le prometas otro método, ni recibas dinero por WhatsApp.
+
+Le dices que sí hay salida y le mandas este link completo, solo, en su propio globo:
 
 ${link}
 
-Le dices qué escribirle: que no tiene tarjeta y que quiere entrar. Javier lo resuelve con ella.`;
+Le dices qué escribirle: cómo puede pagar desde donde está, y que quiere entrar. Javier lo resuelve con ella.`;
 
     case 'pregunta_clase':
       return `# 🗓️ PREGUNTA POR LA CLASE DEL JUEVES — SE LA PASAS A JAVIER

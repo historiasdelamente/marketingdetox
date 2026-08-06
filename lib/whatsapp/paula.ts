@@ -5,6 +5,7 @@ import {
   dejarSoloJavier,
   instruccionCorreccion,
   quitarLinkRepetido,
+  quitarPreguntaDeFreno,
   instruccionHandoff,
   motivoHandoff,
   quitarVentaEnCrisis,
@@ -880,7 +881,9 @@ export function buildSystemPrompt(
   // leer, porque decide qué mensaje escribe. Si fuera al final, competiría con
   // la receta de tres globos y perdería.
   const historial = opciones.historial ?? [];
-  const guion = bloqueGuion(historial);
+  // Con handoff el guion se calla: el bloque de arriba ya dice qué hacer, y es
+  // lo contrario de vender. Dos órdenes peleándose es cómo se pierde una mujer.
+  const guion = bloqueGuion(historial, opciones.handoff != null);
   const venta = analizarConversacion(historial);
 
   // EL GUION VA PRIMERO, ANTES DEL RELOJ.
@@ -1326,6 +1329,19 @@ export async function processPaulaMessage(
   const ventaAhora = analizarConversacion(history as Turno[]);
   if (ventaAhora.tieneLink && !pideElLink(userMessage) && handoff === null) {
     paulaResponse = aplicarFormato(quitarLinkRepetido(paulaResponse));
+  }
+
+  // NO LE VUELVE A PREGUNTAR QUE LA FRENA. Dos casos, los dos vistos en
+  // produccion con Nedith: ella ya dio una fecha —«el dia lunes estare en mi
+  // ciudad»—, o ya se lo preguntaron dos veces y ya contesto. El guion lo
+  // prohibe en negrita y arriba del todo; se probo con dos modelos y los dos lo
+  // preguntaron igual. Por eso va aqui, donde no es negociable.
+  const ventaConEsteTurno = analizarConversacion([
+    ...(history as Turno[]),
+    { role: 'user', content: userMessage },
+  ]);
+  if (handoff === null && (ventaConEsteTurno.citaFutura || ventaAhora.vecesQuePregunto >= 2)) {
+    paulaResponse = aplicarFormato(quitarPreguntaDeFreno(paulaResponse));
   }
 
   if (handoff === 'pregunta_clase') {

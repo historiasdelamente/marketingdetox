@@ -24,8 +24,11 @@ import {
   dejarSoloJavier,
   instruccionCorreccion,
   motivoHandoff,
+  quitarLinkRepetido,
+  quitarPreguntaDeFreno,
   quitarVentaEnCrisis,
 } from '@/lib/whatsapp/blindaje';
+import { analizarConversacion, pideElLink, type Turno } from '@/lib/whatsapp/guion';
 import { escalonDe } from '@/lib/whatsapp/escalera';
 import { aplicarFormato } from '@/lib/whatsapp/formato';
 import { normalizarNegritas, partirEnGlobos } from '@/lib/whatsapp/manychat';
@@ -157,7 +160,25 @@ describe('conversación manual con Paula', () => {
       }
     }
 
+    // Igual que produccion: se mide sobre el historial ANTERIOR a este turno.
+    const venta = analizarConversacion(estado.historial as Turno[]);
+
     let final = aplicarFormato(normalizarNegritas(auditoria.texto, 'whatsapp'));
+    // EL LINK REPETIDO. Faltaba aquí, y el simulador enseñaba un link que
+    // producción sí borra — o sea que mentía a favor del bot. Es el mismo
+    // candado y en el mismo orden que `paula.ts`: si ya lo tiene y no lo está
+    // pidiendo, fuera.
+    if (venta.tieneLink && !pideElLink(mensaje) && handoff === null) {
+      final = aplicarFormato(quitarLinkRepetido(final));
+    }
+    // La pregunta que ya le hizo — mismo candado y mismo orden que produccion.
+    const ventaConEsteTurno = analizarConversacion([
+      ...(estado.historial as Turno[]),
+      { role: 'user', content: mensaje },
+    ]);
+    if (handoff === null && (ventaConEsteTurno.citaFutura || venta.vecesQuePregunto >= 2)) {
+      final = aplicarFormato(quitarPreguntaDeFreno(final));
+    }
     if (handoff === 'pregunta_clase') final = aplicarFormato(dejarSoloJavier(final));
     if (handoff === 'crisis') final = quitarVentaEnCrisis(final);
 
