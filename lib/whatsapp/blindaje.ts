@@ -91,6 +91,9 @@ const PLATAFORMA_PROHIBIDA: Record<Escalon, { patron: RegExp; nombre: string }> 
   apego: { patron: /pay\.hotmart\.com|hotmart\.com/i, nombre: 'Hotmart' },
 };
 
+/** Un salto de linea. Como constante para no pelear con los escapes. */
+const SALTO = String.fromCharCode(10);
+
 const URL_RE = /https?:\/\/[^\s<>()"']+/gi;
 
 // --- Productos retirados ----------------------------------------------------
@@ -727,6 +730,30 @@ export function dejarSoloJavier(texto: string): string {
     .filter((linea) => !productos.some((p) => linea.includes(p)))
     .join('\n')
     .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+/**
+ * Quita el link del programa cuando ella YA lo tiene y no lo ha pedido.
+ *
+ * ⚠️ Es el candado que faltaba. El prompt tenia SEIS ordenes de mandar el link
+ * —una de ellas cerrando el prompt entero, que es la posicion que mas pesa—
+ * contra dos de no mandarlo. Con un modelo literal gana lo concreto y lo
+ * ultimo, asi que el link salia en cada mensaje y esa es la mitad visible de
+ * "parece dando el mismo guion".
+ *
+ * Se filtra por linea, como en crisis: quitar un link a media frase deja el
+ * texto peor que no tocarlo.
+ */
+export function quitarLinkRepetido(texto: string): string {
+  const productos = [APEGO_DETOX.checkout, APEGO_DETOX.landing]
+    .map((url) => url.replace(/^https?:\/\//, '').replace(/\?.*$/, ''));
+
+  return (texto || '')
+    .split(SALTO)
+    .filter((linea) => !productos.some((prod) => linea.includes(prod)))
+    .join(SALTO)
+    .replace(/\n{3,}/g, SALTO + SALTO)
     .trim();
 }
 

@@ -4,13 +4,14 @@ import {
   auditarRespuesta,
   dejarSoloJavier,
   instruccionCorreccion,
+  quitarLinkRepetido,
   instruccionHandoff,
   motivoHandoff,
   quitarVentaEnCrisis,
   type MotivoHandoff,
 } from './blindaje';
 import { conocimientoPara } from './conocimiento';
-import { analizarConversacion, bloqueGuion, type Turno } from './guion';
+import { analizarConversacion, bloqueGuion, pideElLink, type Turno } from './guion';
 import { escalonDe, instruccionEscalon, type Escalon } from './escalera';
 import { aplicarFormato } from './formato';
 import {
@@ -501,7 +502,7 @@ Si aún no sabes si sigue con él o ya salió: *"${pregunta}"*
 `}
 # 🚫 LO QUE NO HACES NUNCA
 
-**No haces terapia** (arriba tienes la forma). **No diagnosticas** — ni a ella ni a él. **No le dices qué hacer con su vida**: ni déjalo, ni vuelve, ni denúncialo. **No le pides permiso** ("¿te comparto el link?"): si sirve, lo mandas. **No la interrogas.** **No prometes resultados** ni tiempos. **No inventas**: si un dato no está abajo, no existe — *"eso lo confirmo con Javier Vieira y te digo"*. **No te repitas**: ni la misma apertura, ni el mismo argumento dos veces. El link sí se repite.
+**No haces terapia** (arriba tienes la forma). **No diagnosticas** — ni a ella ni a él. **No le dices qué hacer con su vida**: ni déjalo, ni vuelve, ni denúncialo. **No le pides permiso** ("¿te comparto el link?"): si sirve, lo mandas. **No la interrogas.** **No prometes resultados** ni tiempos. **No inventas**: si un dato no está abajo, no existe — *"eso lo confirmo con Javier Vieira y te digo"*. **No te repitas**: ni la misma apertura, ni el mismo argumento dos veces.
 
 ---
 
@@ -553,16 +554,16 @@ Copia la FORMA, nunca las palabras. Fíjate en el largo y en que no hay listas n
 > ${pregunta}
 
 **Ella:** sí… todos los días, llevamos 9 años
-> Uf, nueve años pidiendo perdón por cosas que ni hiciste, con tal de que no se enoje.
+> Uf, nueve años midiendo cada palabra antes de decirla en tu propia casa.
 >
-> Eso se trabaja adentro con Javier Vieira: son cuatro horas en vivo cada semana, los módulos a tu ritmo y un grupo despierto a cualquier hora.
+> Eso se trabaja adentro con Javier Vieira. Y no de noche y sola: hay un grupo despierto a las tres de la mañana.
 >
 > [el link]
 
 **Ella:** y en qué consiste? qué lograría yo?
-> Terapia guiada que haces a tu ritmo, cuatro horas en vivo con Javier Vieira cada semana, y un grupo despierto a cualquier hora.
+> Haces los módulos a tu ritmo, y cada semana te sientas cuatro horas en vivo con Javier Vieira.
 >
-> Sales sabiendo de dónde te viene esto, viéndole la manipulación mientras pasa y no tres días después, y pudiendo sostenerte sin volver.
+> Sales viéndole la manipulación mientras pasa, no tres días después.
 >
 > [el link]
 
@@ -867,11 +868,17 @@ export function buildSystemPrompt(
   const guion = bloqueGuion(historial);
   const venta = analizarConversacion(historial);
 
-  return `${handoff}${contextoVivo}${guion ? guion + GUION_SEP : ""}${instruccionEscalon()}
+  // EL GUION VA PRIMERO, ANTES DEL RELOJ.
+  //
+  // Estaba "arriba" solo en el comentario: empezaba en el 18% del prompt, detrás
+  // de la oferta entera renderizada. Cuando el modelo llegaba al "ya le diste
+  // esto, no lo repitas", ya había leído qué hay adentro dos veces en la zona
+  // de máxima atención. Ahora lo primero que lee es qué toca AHORA.
+  return `${handoff}${guion ? guion + GUION_SEP : ""}${contextoVivo}${instruccionEscalon()}
 
 ---
 
-${estilo(semilla, paisConocido, opciones.esPrimerTurno ?? false, user.name, montoUSD, local, historial.length, venta.tieneLink && venta.sabeQueEs)}
+${estilo(semilla, paisConocido, opciones.esPrimerTurno ?? false, user.name, montoUSD, local, historial.length, venta.tieneLink)}
 # 📚 LO QUE PUEDES AFIRMAR — FUENTE ÚNICA
 Todo lo que Paula puede decir está aquí abajo. Si un dato no está, no existe: no lo afirmes, dile que lo confirmas con Javier.
 
@@ -908,7 +915,7 @@ Lo último que lees, y lo que más se rompe:
 
 **6. ¿NOMBRÉ LA CLASE DEL JUEVES, HOTMART O UNA FECHA A LA QUE ESPERAR?** Nada de eso existe ya. Aquí se entra HOY, y se paga en Skool.
 
-**7. ¿Está el link?** Si ella podría querer entrar después de leerme, el link va — aunque ya se lo haya mandado antes. Y si ya dijo que sí, no le vuelvo a preguntar si quiere: le digo cuánto vale y cómo entra.`;
+**7. ¿LE CONTESTÉ A ELLA, O LE DI EL DISCURSO?** Si mi mensaje le serviría igual a otra mujer distinta, lo reescribo. Y si se parece a algo que ya le dije, lo borro y digo otra cosa.`;
 }
 
 function buildUserContext(user: WaUser, origen: string): string {
@@ -1283,6 +1290,14 @@ export async function processPaulaMessage(
   // Pregunta por la clase retirada: el mensaje tiene UN destino, el WhatsApp de
   // Javier. Sin esto el modelo mandaba también el de Skool y, al comprimir dos
   // links en tres globos, la frase se cortaba a la mitad.
+  // EL LINK NO SE REPITE SI ELLA NO LO PIDE. Es el candado que faltaba: la
+  // repeticion del link era la unica regla importante que dependia solo del
+  // prompt, y el prompt tenia seis ordenes de mandarlo contra dos de no hacerlo.
+  const ventaAhora = analizarConversacion(history as Turno[]);
+  if (ventaAhora.tieneLink && !pideElLink(userMessage) && handoff === null) {
+    paulaResponse = aplicarFormato(quitarLinkRepetido(paulaResponse));
+  }
+
   if (handoff === 'pregunta_clase') {
     paulaResponse = aplicarFormato(dejarSoloJavier(paulaResponse));
   }

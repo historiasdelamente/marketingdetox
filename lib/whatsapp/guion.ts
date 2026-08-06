@@ -136,3 +136,17 @@ ${e.objeciones.length ? `LO QUE ELLA HA PUESTO COMO FRENO: ${e.objeciones.join('
 👉 LO QUE TOCA AHORA: ${paso}
 ${yaDicho(historial)}`;
 }
+
+/**
+ * ¿ELLA pide el link en este turno?
+ *
+ * Sirve para el candado de `paula.ts`: si ya lo tiene y no lo está pidiendo, el
+ * link se le quita a la respuesta. Es el mismo patrón que el resto del sistema
+ * —el prompt lo pide, el código lo hace cierto—, y la repetición del link era la
+ * única regla importante que seguía dependiendo solo del prompt.
+ */
+const PIDE_LINK = /link|enlace|p[áa]gina|d[óo]nde (entro|me inscribo|pago|compro)|c[óo]mo (entro|me inscribo|pago|compro|hago)|m[áa]ndamelo|p[áa]samelo|se me perdi[óo]|no lo encuentro|quiero entrar|me interesa|s[íi] quiero|c[óo]mo es el pago|cu[áa]nto (vale|cuesta)|precio/i;
+
+export function pideElLink(mensaje: string): boolean {
+  return PIDE_LINK.test(mensaje || '');
+}

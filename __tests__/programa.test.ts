@@ -39,19 +39,32 @@ describe('lo que vende es una puerta abierta, no un evento', () => {
     // Es el argumento que sustituye a toda la urgencia de la clase: ella escribe
     // de noche, encerrada y con poco tiempo. "Entras hoy" le resuelve el
     // problema que tiene AHORA.
-    expect(bloque).toMatch(/entra\s+HOY/i);
-    expect(bloque).toMatch(/no hay que esperar|no hay hora a la que conectarse/i);
+    expect(bloque).toMatch(/SE ENTRA HOY/i);
+    expect(bloque).toMatch(/nada que esperar/i);
   });
 
   it('le prohíbe citarla a una fecha', () => {
     expect(bloque).toMatch(/Nunca la cites a un día/i);
   });
 
-  it('pone la comunidad por delante de los módulos', () => {
-    // El orden de `pilares` no es decorativo: el primero es el que Paula nombra
-    // por defecto, y la sala llena a las 3 AM vende más que 17 videos.
+  it('el reloj trae DATOS, no el argumentario de venta', () => {
+    // ⚠️ Auditoría del 2026-08-05: aquí estaban escritos los cuatro pilares y
+    // los cuatro resultados, que también viven en PAULA-CONOCIMIENTO.md. Con la
+    // oferta entera renderizada en la zona más leída del prompt, la orden de
+    // "no repitas lo que ya le dijiste" no tenía ninguna posibilidad.
+    expect(bloque).not.toMatch(/QUÉ HAY ADENTRO/i);
+    expect(bloque).not.toMatch(/LO QUE VA A SABER HACER/i);
+    expect(bloque).not.toMatch(/EL ÁNGULO:/);
+    // Lo que sí tiene que seguir estando: el precio, el horario y el link.
+    expect(bloque).toContain(APEGO_DETOX.checkout);
+    expect(bloque).toMatch(/LOS TALLERES EN VIVO/);
+  });
+
+  it('la comunidad va primero en los pilares', () => {
+    // El orden no es decorativo: el primero es el que Paula nombra por defecto,
+    // y la sala llena a las 3 AM vende más que 17 videos. La instrucción de
+    // usarlo vive ahora en PAULA-CONOCIMIENTO.md, no aquí.
     expect(APEGO_DETOX.pilares[0]).toMatch(/comunidad/i);
-    expect(bloque).toMatch(/El que más vende NO son los módulos/i);
   });
 
   it('no nombra la clase del jueves ni Hotmart por ninguna parte', () => {

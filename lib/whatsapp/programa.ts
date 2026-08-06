@@ -522,22 +522,7 @@ export function bloqueContexto(
 No lo deduzcas ni lo calcules: ya viene resuelto. Léelo y úsalo tal cual.
 
 ${hoy}
-
-## 🚪 LO QUE VENDES: UNA PUERTA QUE YA ESTÁ ABIERTA
-**${APEGO_DETOX.nombre} no es un evento: es un lugar donde se entra HOY.** No hay que esperar a ningún día, no hay hora a la que conectarse, no hay nada que se pierda si esta noche no puede. Paga y entra, desde el celular, a la hora que sea.
-👉 **Esa es tu mejor arma y va temprano en la conversación.** Ella te escribe a las once de la noche o a las tres de la mañana, encerrada, con poco tiempo y poca privacidad. "Entras hoy mismo" le resuelve el problema que tiene AHORA; cualquier cosa que la obligue a esperar o a estar libre a cierta hora es donde se te cae.
-⛔ Nunca la cites a un día ni le preguntes si "te espera" en una fecha. Aquí no se espera a nada.
-
-## 🎁 QUÉ HAY ADENTRO
-Adentro tiene ${pilares.join('; ')}.
-**Nombras UNO, el que le sirva a lo que ella te acabó de contar** — nunca los cuatro, y nunca en lista.
-💛 **El que más vende NO son los módulos: es la comunidad.** Si te escribió de noche, si te dijo que está sola, que nadie la entiende, que le da pena contarlo — ese es el que le nombras. Los ${modulos} módulos son lo que se lleva; que alguien le conteste a las 3 de la mañana es lo que compra.
-
-## 🎯 LO QUE VA A SABER HACER
-Adentro aprende a ${resultados.join('; ')}.
-Esto vende más que la lista de lo que incluye: describe a la mujer que sale, no la caja que entra. Escoge el que responda a lo que ella te contó y díselo en una frase suya.
-
-EL ÁNGULO: ${angulo}
+SE ENTRA HOY, desde el celular y a cualquier hora: no hay fecha de inicio ni nada que esperar. Nunca la cites a un día ni le preguntes si "te espera".
 
 ${bloqueEncuentros}
 ${lanzamiento}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { analizarConversacion, bloqueGuion, type Turno } from '@/lib/whatsapp/guion';
+import { analizarConversacion, bloqueGuion, pideElLink, type Turno } from '@/lib/whatsapp/guion';
 
 const ella = (content: string): Turno => ({ role: 'user', content });
 const paula = (content: string): Turno => ({ role: 'assistant', content });
@@ -78,6 +78,29 @@ describe('el guion de venta — para que Paula deje de repetirse', () => {
   it('cuenta los turnos de PAULA, no los de ella', () => {
     const g = bloqueGuion([ella('a'), paula('b'), ella('c'), paula('d'), ella('e')]);
     expect(g).toMatch(/Llevas \*\*2 mensajes\*\*/);
+  });
+
+  it('sabe cuándo ELLA está pidiendo el link', () => {
+    // De esto depende el candado por código: si ya lo tiene y no lo pide, el
+    // link se le quita a la respuesta.
+    for (const pide of [
+      'mándame el link',
+      'y dónde me inscribo?',
+      'cómo pago?',
+      'se me perdió el enlace',
+      'sí quiero entrar',
+      'cuánto vale?',
+    ]) {
+      expect(pideElLink(pide), `«${pide}» sí lo pide`).toBe(true);
+    }
+    for (const noPide of [
+      'sigo pensando en él todo el día',
+      'llevo 9 años así',
+      'no sé si voy a poder',
+      'gracias',
+    ]) {
+      expect(pideElLink(noPide), `«${noPide}» no lo pide`).toBe(false);
+    }
   });
 
   it('acumula las objeciones que ella fue poniendo, y trabaja la última', () => {
