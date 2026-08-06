@@ -85,8 +85,15 @@ el del insomnio; si dijo que su mamá vivió lo mismo, el de la familia.
 - **Bajarle el volumen a la obsesión.**
 - **Sostenerse afuera sin volver.**
 
-Nombra el que responda a lo que ella contó. Esto vende más que la lista de lo que incluye:
+Nombra el que responda a lo que ella contó. **Esto va SIEMPRE antes que lo que incluye**:
 describe a la mujer que sale, no la caja que entra.
+
+**Y se dice quitándole la culpa.** Ella llega convencida de que le pasó por débil, por boba
+o por haberse quedado. Que entienda que no: que lo que le pasó tiene explicación y tiene
+salida, y que aguantar todo esto fue fuerza, no debilidad.
+
+⛔ Nada de lástima —"pobrecita", "qué horror", "no mereces eso"—: eso la deja en el suelo.
+Se le habla como a alguien que va a salir.
 
 ---
 
