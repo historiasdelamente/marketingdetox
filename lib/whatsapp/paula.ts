@@ -23,7 +23,7 @@ import {
   type TablaTasas,
 } from './programa';
 import { normalizarCanal, normalizarNegritas, telefonoDeManyChat } from './manychat';
-import { PAISES, detectarPais, esTelefonoReal, paisPorIso } from './paises';
+import { PAISES, detectarPais, esTelefonoReal, paisDeElla, paisPorIso } from './paises';
 import { precioLocal, tasas } from './moneda';
 
 // ============================================================================
@@ -1189,6 +1189,11 @@ export async function processPaulaMessage(
     if (datos.pais) paisDicho = datos.pais;
     if (datos.resumen) updates.situacion_resumen = datos.resumen;
   }
+
+  // SI NADIE DIJO EL PAIS, LO DICE SU NUMERO. Va DESPUES de `datos` a
+  // proposito: lo que ella dice manda sobre su indicativo. El porque completo
+  // esta en `paisDeElla`.
+  paisDicho = paisDeElla(paisDicho, telefono);
 
   // Confirmación de compra dicha por ella.
   if (user.funnel_stage !== 'compradora' && COMPRA_USER_RE.test(userMessage)) {

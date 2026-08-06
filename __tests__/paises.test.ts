@@ -3,6 +3,7 @@ import {
   TZ_COLOMBIA,
   detectarPais,
   esTelefonoReal,
+  paisDeElla,
   diasDeCalendario,
   fechaISO,
   fechaLarga,
@@ -96,5 +97,37 @@ describe('un telefono de verdad, no un marcador de plantilla', () => {
     for (const bueno of ['+573001112233', '573001112233', '+52 55 1234 5678']) {
       expect(esTelefonoReal(bueno), bueno + ' si es un telefono').toBe(true);
     }
+  });
+});
+
+describe('el pais que se guarda en su ficha', () => {
+  // FALLO REAL VISTO EN PRODUCCION el 2026-08-06: 877 de 878 filas de
+  // `wa_users` tenian `pais` en null, y 565 de ellas SI tenian un telefono
+  // bueno guardado. El pais se derivaba del telefono para hablarle en el
+  // turno, pero solo se persistia cuando ella lo decia en voz alta. Sin pais
+  // en la fila, los recordatorios no saben ni su moneda ni su hora.
+  it('lo saca del telefono cuando ella no lo ha dicho', () => {
+    expect(paisDeElla(null, '+573023499113')).toBe('CO');
+    expect(paisDeElla(null, '+5215512345678')).toBe('MX');
+    expect(paisDeElla('', '+34612345678')).toBe('ES');
+  });
+
+  it('lo que ella dice manda sobre su indicativo', () => {
+    // Una mexicana con numero de Estados Unidos es mexicana.
+    expect(paisDeElla('MX', '+13055551234')).toBe('MX');
+    expect(paisDeElla('CO', '+34612345678')).toBe('CO');
+  });
+
+  it('no inventa pais a partir de basura', () => {
+    for (const basura of ['{{phone}}', '', 'null', '-', '123']) {
+      expect(paisDeElla(null, basura), basura).toBeNull();
+    }
+    // Ni de un ISO que el modelo se saque de la manga.
+    expect(paisDeElla('LATAM', null)).toBeNull();
+    expect(paisDeElla('Sudamerica', '')).toBeNull();
+  });
+
+  it('un ISO inventado no tapa el telefono bueno', () => {
+    expect(paisDeElla('LATAM', '+573023499113')).toBe('CO');
   });
 });

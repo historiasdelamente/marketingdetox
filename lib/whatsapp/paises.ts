@@ -148,6 +148,27 @@ export function detectarPais(telefono?: string | null): Pais | null {
   return hit ? hit.pais : null;
 }
 
+/**
+ * DE QUE PAIS ES ELLA — el ISO que se guarda en `wa_users.pais`.
+ *
+ * POR QUE EXISTE. El pais se derivaba del telefono para hablarle en el turno,
+ * pero solo se GUARDABA cuando ella lo decia en voz alta. Resultado en
+ * produccion el 2026-08-06: 877 de 878 filas con `pais` en null, teniendo 565
+ * de ellas un telefono bueno. Todo lo que no fuera la conversacion en vivo
+ * —recordatorios, difusiones, cualquier consulta a la base— se quedaba sin
+ * saber su moneda y sin saber su hora.
+ *
+ * EL ORDEN IMPORTA. Lo que ella dice manda sobre su indicativo: una mexicana
+ * con numero de Estados Unidos es mexicana, y el numero solo habla cuando no
+ * hay nadie que la contradiga. Basura como "{{phone}}" no dice nada: eso ya lo
+ * corta `detectarPais`.
+ */
+export function paisDeElla(dicho?: string | null, telefono?: string | null): string | null {
+  const validado = paisPorIso(dicho)?.iso;
+  if (validado) return validado;
+  return detectarPais(telefono)?.iso ?? null;
+}
+
 // ---------------------------------------------------------------------------
 // 2. FORMATO DE FECHAS Y HORAS
 // ---------------------------------------------------------------------------

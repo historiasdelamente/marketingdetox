@@ -55,3 +55,6 @@ auditoria-paula.txt
 # Simulador de conversación con Paula (__tests__/_chat-manual.test.ts)
 chat-estado.json
 chat-salida.txt
+
+# Informe del backfill de país (__tests__/_backfill-pais-manual.test.ts)
+backfill-pais.txt

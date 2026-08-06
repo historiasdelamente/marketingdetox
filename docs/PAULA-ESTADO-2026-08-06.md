@@ -109,19 +109,63 @@ pregúntate si el modelo lo va a copiar.** Hay un test que bloquea las cifras lo
 Skool exige tarjeta y Colombia es el mercado más grande. Hoy eso cae a mano en el WhatsApp
 de Javier. **Es el cuello de botella más caro que queda.**
 
-### 5.2 El teléfono no llega, y para TikTok no se puede arreglar 🔴
+### 5.2 El teléfono no llega — RESUELTO, y no era lo que creíamos ✅
 
-`wa_users.phone` guarda el texto literal `{{phone}}`. **Verificado el 2026-08-06:** el flujo
-de WhatsApp (`whatssap histoiras copy copy`, 5.091 envíos) **está bien configurado** — su
-cuerpo usa la variable `[Teléfono]` de verdad, no texto a mano.
+**Confirmado contra la API de ManyChat el 2026-08-06.** La hipótesis de TikTok era falsa: las
+mujeres afectadas son contactos de **WhatsApp**, no de TikTok. La causa real es más simple y
+sí tiene arreglo en el origen:
 
-**Hipótesis pendiente de confirmar:** el literal viene del otro flujo,
-`TikTok Live → Paula WhatsApp (v2)` (2.874 ejecuciones). Un contacto de TikTok **no tiene
-teléfono**, así que ManyChat no puede resolver la variable. Si es eso, **no tiene arreglo en
-el origen** y la solución correcta es la que ya está: que Paula pregunte el país.
+> En un contacto de WhatsApp, el campo `phone` de ManyChat **viene vacío**. El número vive en
+> otro campo, **`whatsapp_phone`**.
 
-👉 **Siguiente paso:** abrir ese flujo en ManyChat → nodo *Acciones* → *Solicitud externa* →
-pestaña *Cuerpo*, y mirar si `phone` es una etiqueta azul (variable) o texto escrito a mano.
+Comprobado en cuatro contactos distintos, todos iguales:
+
+```
+1986512047 -> phone=None  whatsapp_phone='+573023499113'
+1850882371 -> phone=None  whatsapp_phone='+573152336805'
+1915391042 -> phone=None  whatsapp_phone='+573024476320'
+ 381965484 -> phone=None  whatsapp_phone='+14438571300'
+```
+
+Por eso el flujo *parecía* bien configurado: la variable `[Teléfono]` está bien puesta, pero
+`[Teléfono]` **es el campo equivocado** para WhatsApp. No estaba mal escrito; estaba mal
+elegido.
+
+**Ya no depende del panel.** `telefonoDeManyChat()` (commit `ac0fe49`) pregunta por
+`whatsapp_phone` primero, así que Paula lo rescata sola. Si alguien quiere arreglarlo también
+en el origen, es cambiar `[Teléfono]` por el campo *WhatsApp Phone* en el cuerpo de la
+*Solicitud externa* — pero es opcional, no urgente.
+
+### 5.2-bis El país no se guardaba nunca 🔴 → arreglado
+
+Lo que apareció al tirar de ese hilo, y era más caro que el teléfono:
+
+> De **878 mujeres, 877 tenían `pais` en null.** Y solo **1** tenía un teléfono de verdad
+> guardado: 564 filas en null y 313 con el literal `{{phone}}`.
+
+El país se derivaba del teléfono para hablarle **en el turno**, pero no se persistía: solo se
+guardaba el que ella dijera en voz alta. Nadie lo dice en voz alta.
+
+Consecuencia directa, en `app/api/cron/recordatorios-apego/route.ts:202`: el recordatorio
+hace `paisPorIso(user.pais) ?? detectarPais(user.phone)`. Con las dos columnas vacías, **cada
+recordatorio salió con el precio solo en dólares**, sin su equivalente local. Justo lo que
+`feedback_paula_precio_moneda_local` dice que no puede faltar.
+
+- **Arreglo:** `paisDeElla()` en `lib/whatsapp/paises.ts` — lo que ella dice manda sobre su
+  indicativo (una mexicana con número de Estados Unidos es mexicana), y el número habla
+  cuando ella no ha dicho nada. Con test que fija la precedencia.
+- **Fichas viejas:** `__tests__/_backfill-pais-manual.test.ts` las repara pidiéndole el
+  `whatsapp_phone` a ManyChat. Corre en seco por defecto; escribe con `APLICAR=1`.
+
+**Resultado del backfill, corrido el 2026-08-06:** se repararon **12 fichas de 878** — y están
+bien las 12: son **todas** las conversaciones vivas (Colombia 6, Estados Unidos 2, Argentina,
+Chile, Costa Rica, Honduras). Las otras 866 devuelven `"status":"deleted"` en ManyChat: el
+contacto ya no existe y su número no está en ninguna parte. Las 564 más antiguas no tienen ni
+`canal`, y su última interacción va de marzo a julio; ninguna ha escrito en agosto.
+
+> **No es una base de 878 mujeres.** Es una base de ~12 conversaciones vivas y 866 fantasmas.
+> A un contacto borrado en ManyChat no se le puede escribir, así que cualquier cuenta de
+> alcance que salga de `wa_users` sin filtrar está inflada ~70×.
 
 ### 5.3 El nodo `bot_response` sigue en el flujo de WhatsApp 🟡
 
@@ -165,6 +209,14 @@ Todos salieron de **mirar producción**, no de los tests:
    solo cazaba preguntas con "¿".
 6. **Repetía el mismo guion.** El prompt era idéntico en el turno 2 y en el 9.
 7. **`detectarPais('123')` devolvía Estados Unidos**, porque "123" empieza por 1.
+8. **El país no se guardaba en la ficha** (877 de 878 en null), así que los recordatorios
+   salían sin el precio en su moneda. Ver 5.2-bis.
+
+### La trampa de contar sin mirar
+
+Al reparar las fichas dimos por hecho que "878 total − 313 con `{{phone}}` = 565 con teléfono
+bueno". **Eran 1.** Las otras 564 tenían `phone` en null, que no es lo mismo que tener un
+número. Contar por resta inventa datos: si importa, se cuenta la columna de frente.
 
 ---
 
@@ -172,7 +224,7 @@ Todos salieron de **mirar producción**, no de los tests:
 
 ```bash
 npx tsc --noEmit          # sin errores
-npx vitest run            # 203 pasan, 2 saltados (los dos simuladores manuales)
+npx vitest run            # 207 pasan, 3 saltados (los manuales: 2 simuladores + el backfill)
 npx next build            # compila
 ```
 

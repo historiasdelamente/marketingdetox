@@ -30,6 +30,7 @@ import { escalonDe } from '@/lib/whatsapp/escalera';
 import { aplicarFormato } from '@/lib/whatsapp/formato';
 import { normalizarNegritas, partirEnGlobos } from '@/lib/whatsapp/manychat';
 import { tasas } from '@/lib/whatsapp/moneda';
+import { paisDeElla } from '@/lib/whatsapp/paises';
 import { cifrasLocalesValidas, diasTallerPara, precioApego } from '@/lib/whatsapp/programa';
 import { extraerDatosParaPrueba } from '@/lib/whatsapp/paula';
 import { buildSystemPrompt, callOpenRouter, type WaUser } from '@/lib/whatsapp/paula';
@@ -108,6 +109,14 @@ describe('conversación manual con Paula', () => {
       if (!estado.usuaria.name && datos.nombre) estado.usuaria.name = datos.nombre;
       if (datos.pais) estado.usuaria.pais = datos.pais;
       if (datos.resumen) estado.usuaria.situacion_resumen = datos.resumen;
+    }
+    // El país que ella no dijo, lo dice su número — igual que en producción.
+    // Este simulador copia a mano lo que hace `processPaulaMessage`, así que
+    // cada vez que allí se toca la memoria hay que tocarla aquí o el simulador
+    // vuelve a mentir. Sin esta línea mostraba "país=—" para una mujer con
+    // número colombiano.
+    estado.usuaria.pais = paisDeElla(estado.usuaria.pais, telefono);
+    if (datos) {
       out.push(`🧠 MEMORIA: nombre=${estado.usuaria.name ?? '—'} · país=${estado.usuaria.pais ?? '—'}`);
       if (estado.usuaria.situacion_resumen) out.push(`   resumen: ${estado.usuaria.situacion_resumen}\n`);
     }
