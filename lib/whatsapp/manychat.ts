@@ -312,3 +312,49 @@ export async function responderComoHumana(
 
   return globos.length;
 }
+
+/**
+ * EL TELEFONO DE ELLA, PREGUNTADO A MANYCHAT.
+ *
+ * POR QUE EXISTE. La Solicitud externa de ManyChat estaba enviando el marcador
+ * literal "{{phone}}" en vez del numero (visto en produccion el 2026-08-06:
+ * decenas de filas de wa_users con ese texto). Consecuencia: Paula no sabia de
+ * que pais era NINGUNA mujer, asi que no le daba la hora en su zona ni el
+ * precio en su moneda — que es medio embudo.
+ *
+ * Arreglarlo en el panel de ManyChat es un clic, pero deja el sistema colgando
+ * de que ese clic siga bien puesto para siempre. Esto lo hace robusto: el
+ * `subscriber_id` SI llega bien (sin el no habria conversacion), y con el se le
+ * pregunta el telefono a la API. Si algun dia alguien vuelve a romper la
+ * plantilla, Paula ni se entera.
+ *
+ * Ante cualquier fallo devuelve null y no rompe nada: se sigue sin saber el
+ * pais, que es exactamente donde estabamos.
+ */
+const INFO_URL = 'https://api.manychat.com/fb/subscriber/getInfo';
+
+export async function telefonoDeManyChat(subscriberId: string): Promise<string | null> {
+  const token = process.env.MANYCHAT_API_TOKEN;
+  if (!token || !subscriberId) return null;
+
+  try {
+    const r = await fetch(`${INFO_URL}?subscriber_id=${encodeURIComponent(subscriberId)}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(6000),
+    });
+    if (!r.ok) return null;
+
+    const data = (await r.json()) as { status?: string; data?: Record<string, unknown> };
+    if (data.status !== 'success' || !data.data) return null;
+
+    // ManyChat nombra el campo distinto segun el canal, asi que se prueban los
+    // tres y gana el primero que traiga digitos suficientes.
+    for (const campo of ['whatsapp_phone', 'phone', 'wa_id']) {
+      const v = data.data[campo];
+      if (typeof v === 'string' && v.replace(/\D/g, '').length >= 8) return v;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}

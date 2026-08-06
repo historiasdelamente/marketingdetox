@@ -22,7 +22,7 @@ import {
   precioApego,
   type TablaTasas,
 } from './programa';
-import { normalizarCanal, normalizarNegritas } from './manychat';
+import { normalizarCanal, normalizarNegritas, telefonoDeManyChat } from './manychat';
 import { PAISES, detectarPais, esTelefonoReal, paisPorIso } from './paises';
 import { precioLocal, tasas } from './moneda';
 
@@ -1159,6 +1159,16 @@ export async function processPaulaMessage(
   // 1. Usuaria + historial
   const user = await getOrCreateUser(manychatId);
   const history = await getConversationHistory(manychatId, 20);
+
+  // EL TELEFONO, SI ES QUE LLEGO DE VERDAD.
+  //
+  // ManyChat estaba mandando el marcador "{{phone}}" sin resolver, y sin
+  // numero Paula no sabe el pais: ni hora en su zona ni precio en su moneda.
+  // Se rescata en dos escalones: lo que ya teniamos guardado de ella, y si no,
+  // se le pregunta a la API de ManyChat con su subscriber_id, que ese si llega.
+  if (!esTelefonoReal(telefono)) {
+    telefono = esTelefonoReal(user.phone) ? String(user.phone) : (await telefonoDeManyChat(manychatId)) ?? '';
+  }
 
   const updates: Partial<Pick<WaUser, 'name' | 'funnel_stage' | 'situacion_resumen'>> = {};
   let paisDicho: string | null = user.pais ?? null;
