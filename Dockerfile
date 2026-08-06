@@ -9,7 +9,10 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 # Copy app code (bust cache on each deploy)
-ARG CACHE_BUST=2026-08-05-paula-auditoria-aplicada
+ARG CACHE_BUST=2026-08-06-paula-version-visible
+# Y ademas viaja al contenedor, para poder preguntarle en caliente que build corre.
+ENV CACHE_BUST=$CACHE_BUST
+
 COPY . .
 
 # Create data directory for SQLite

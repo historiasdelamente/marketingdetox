@@ -130,6 +130,11 @@ export async function GET() {
   return NextResponse.json({
     status: 'ok',
     agent: 'Paula - Historias de la Mente',
+    // QUE BUILD ESTA CORRIENDO. Sale del CACHE_BUST del Dockerfile, que ya se
+    // bumpea en cada despliegue. Sin esto, este endpoint devolvia lo mismo
+    // despues de ocho commits seguidos y no habia forma de saber, desde fuera,
+    // si un cambio habia entrado o el contenedor seguia con el codigo viejo.
+    version: process.env.CACHE_BUST ?? 'desconocida',
     modo: modoHumano() ? 'humano (buffer + globos)' : 'clasico (respuesta sincrona)',
     // Un solo producto desde el 2026-08-05: la clase del jueves se retiró y los
     // talleres en vivo pasaron a ser parte del programa (ver programa.ts).
