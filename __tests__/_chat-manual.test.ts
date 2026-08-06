@@ -28,7 +28,8 @@ import {
   quitarPreguntaDeFreno,
   quitarVentaEnCrisis,
 } from '@/lib/whatsapp/blindaje';
-import { analizarConversacion, pideElLink, type Turno } from '@/lib/whatsapp/guion';
+import { analizarConversacion, pideElLink, preguntaQueIncluye, type Turno } from '@/lib/whatsapp/guion';
+import { haySenalDeDuda, leerIntencion } from '@/lib/whatsapp/intencion';
 import { escalonDe } from '@/lib/whatsapp/escalera';
 import { aplicarFormato } from '@/lib/whatsapp/formato';
 import { normalizarNegritas, partirEnGlobos } from '@/lib/whatsapp/manychat';
@@ -131,6 +132,7 @@ describe('conversación manual con Paula', () => {
       esPrimerTurno,
       tasas: tabla,
       historial: estado.historial,
+      mensajeDeElla: mensaje,
     });
 
     const mensajes = [...estado.historial, { role: 'user', content: mensaje }];
@@ -139,9 +141,15 @@ describe('conversación manual con Paula', () => {
     // Blindaje + reintento, igual que en producción. Los días del taller van en
     // la zona de ELLA: sin esto el simulador audita con las reglas de Colombia y
     // marca como error el día que es correcto para una mujer de Madrid.
+    const explicandoElPrograma = preguntaQueIncluye(mensaje);
+    const ultimaDePaula = [...estado.historial].reverse().find((m) => m.role === 'assistant')?.content ?? '';
+    const queHizoElla = leerIntencion(mensaje, ultimaDePaula);
+    out.push(`🔎 LECTURA: ella esta -> ${queHizoElla}${explicandoElPrograma ? ' (pregunta que incluye -> vinetas OK)' : ''}
+`);
+
     const diasTaller = diasTallerPara(ahora, telefono, estado.usuaria.pais);
     const cifras = cifrasLocalesValidas(precioApego(ahora).monto, tabla);
-    let auditoria = auditarRespuesta(sinMarcas(respuesta), ahora, escalon, diasTaller, cifras, estado.usuaria.name);
+    let auditoria = auditarRespuesta(sinMarcas(respuesta), ahora, escalon, diasTaller, cifras, estado.usuaria.name, explicandoElPrograma);
     if (auditoria.hallazgos.length > 0) {
       out.push(`⚠️  BLINDAJE: ${auditoria.hallazgos.map((h) => `${h.tipo} («${h.detalle}»)`).join(', ')}`);
       out.push('   → se le pidió reescribir\n');
@@ -150,7 +158,7 @@ describe('conversación manual con Paula', () => {
         { role: 'assistant', content: respuesta },
         { role: 'user', content: instruccionCorreccion(auditoria.hallazgos, escalon, ahora, diasTaller, cifras) },
       ]);
-      const segunda = auditarRespuesta(sinMarcas(reintento), ahora, escalon, diasTaller, cifras, estado.usuaria.name);
+      const segunda = auditarRespuesta(sinMarcas(reintento), ahora, escalon, diasTaller, cifras, estado.usuaria.name, explicandoElPrograma);
       if (segunda.texto && segunda.hallazgos.length <= auditoria.hallazgos.length) {
         respuesta = reintento;
         auditoria = segunda;
@@ -163,23 +171,35 @@ describe('conversación manual con Paula', () => {
     // Igual que produccion: se mide sobre el historial ANTERIOR a este turno.
     const venta = analizarConversacion(estado.historial as Turno[]);
 
-    let final = aplicarFormato(normalizarNegritas(auditoria.texto, 'whatsapp'));
+    let final = aplicarFormato(normalizarNegritas(auditoria.texto, 'whatsapp'), explicandoElPrograma);
     // EL LINK REPETIDO. Faltaba aquí, y el simulador enseñaba un link que
     // producción sí borra — o sea que mentía a favor del bot. Es el mismo
     // candado y en el mismo orden que `paula.ts`: si ya lo tiene y no lo está
     // pidiendo, fuera.
-    if (venta.tieneLink && !pideElLink(mensaje) && handoff === null) {
-      final = aplicarFormato(quitarLinkRepetido(final));
+    // Un «Dale» tambien es pedir el link — si no, se le borra y llega vacio.
+    const loEstaPidiendo = pideElLink(mensaje) || queHizoElla === 'acepta';
+    if (venta.tieneLink && !loEstaPidiendo && handoff === null) {
+      final = aplicarFormato(quitarLinkRepetido(final), explicandoElPrograma);
     }
     // La pregunta que ya le hizo — mismo candado y mismo orden que produccion.
     const ventaConEsteTurno = analizarConversacion([
       ...(estado.historial as Turno[]),
       { role: 'user', content: mensaje },
     ]);
-    if (handoff === null && (ventaConEsteTurno.citaFutura || venta.vecesQuePregunto >= 2)) {
-      final = aplicarFormato(quitarPreguntaDeFreno(final));
+    const mensajesDeElla = [...estado.historial.filter((m) => m.role === 'user').map((m) => m.content), mensaje];
+    if (
+      handoff === null &&
+      (ventaConEsteTurno.citaFutura ||
+        venta.vecesQuePregunto >= 2 ||
+        !haySenalDeDuda(mensajesDeElla) ||
+        queHizoElla === 'se_despide' ||
+        queHizoElla === 'cuenta' ||
+        queHizoElla === 'pregunta' ||
+        queHizoElla === 'corrige')
+    ) {
+      final = aplicarFormato(quitarPreguntaDeFreno(final), explicandoElPrograma);
     }
-    if (handoff === 'pregunta_clase') final = aplicarFormato(dejarSoloJavier(final));
+    if (handoff === 'pregunta_clase') final = aplicarFormato(dejarSoloJavier(final), explicandoElPrograma);
     if (handoff === 'crisis') final = quitarVentaEnCrisis(final);
 
     if (handoff) out.push(`🔀 HANDOFF detectado: ${handoff}\n`);

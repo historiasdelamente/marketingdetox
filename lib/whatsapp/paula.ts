@@ -12,7 +12,8 @@ import {
   type MotivoHandoff,
 } from './blindaje';
 import { conocimientoPara } from './conocimiento';
-import { analizarConversacion, bloqueGuion, pideElLink, type Turno } from './guion';
+import { analizarConversacion, bloqueGuion, pideElLink, preguntaQueIncluye, type Turno } from './guion';
+import { bloqueIntencion, haySenalDeDuda, leerIntencion } from './intencion';
 import { escalonDe, instruccionEscalon, type Escalon } from './escalera';
 import { aplicarFormato } from './formato';
 import {
@@ -86,53 +87,31 @@ const MARCADORES: Record<Escalon, string[]> = {
 // ============================================================================
 
 /**
- * LOS DOLORES CON LOS QUE ELLA SE RECONOCE.
+ * ⚰️ AQUÍ VIVÍA EL BANCO DE DOLORES. SE BORRÓ EL 2026-08-06.
  *
- * Están en SU idioma, no en el clínico. "Refuerzo intermitente" no le dice
- * nada; "quieres dejarlo y a los tres días ya le estás contestando" la hace
- * parar de scrollear. Ninguno diagnostica a nadie ni la llama víctima:
- * describen lo que ella hace y lo que siente, que es lo único que se puede
- * afirmar sin haberla evaluado.
+ * Eran veinte frases —diez para la que sigue con él, diez para la que ya
+ * salió— y en cada mensaje se le entregaba UNA al modelo para que la
+ * "reescribiera con sus palabras". La idea era darle a Paula con qué reconocer
+ * a la mujer. Lo que hacía de verdad era ponerle en la boca un dolor que esa
+ * mujer nunca había contado.
  *
- * VAN SEGMENTADOS, y esa es la mitad del truco. Un panel de mujeres reales
- * leyó la lista única: a la que ya salió le pegó fuerte, y a las dos que
- * siguen viviendo con él las expulsó. Textual, la de nueve años adentro: *"yo
- * no le reviso el Instagram, él duerme al lado mío; mi problema es que está
- * aquí, no que se fue"*. Media lista le hablaba de una ruptura que no ha
- * tenido. Por eso el primer mensaje le pregunta si sigue con él: esa respuesta
- * decide de cuál de los dos bancos sale el dolor que se le nombra.
+ * Lo que se vio en producción ese día:
  *
- * ⚠️ YA NO SE LE ENTREGAN CUATRO: SE LE ENTREGA **UNO**. No es un ahorro de
- * espacio, es la garantía de fondo — con un solo dolor delante no hay lista
- * posible. Con cuatro, el modelo los pone en columna aunque se lo prohíbas
- * tres veces; con uno, lo único que puede hacer es escribir una frase.
+ *   PAULA: «Uf, Yeny, nueve años pidiendo perdón por cosas que ni hiciste…»
+ *   YENY:  «No tengo 9 años»   ← y lo repitió CUATRO veces
+ *
+ * Yeny no había dicho nada de nueve años ni de pedir perdón. Salió del banco.
+ * Y como el banco vuelve a repartir en cada turno, Paula no podía rectificar:
+ * a la corrección le contestaba con otro dolor inventado.
+ *
+ * Javier lo cortó de raíz: *"no es que tomes el banco de datos, es ELLA la que
+ * dice las cosas"*. El dolor ya no se reparte: se recoge de lo que ella
+ * escribió, y si no ha escrito nada se le pregunta.
+ *
+ * Las veinte frases siguen vivas en `__tests__/paula-apego-detox.test.ts` como
+ * LISTA NEGRA: si alguna reaparece en el prompt, el test falla. No se borran
+ * del todo para que nadie las reintroduzca sin darse cuenta.
  */
-export const DOLORES_DENTRO = [
-  'Pasas días sin que te dirijan la palabra en tu propia casa, y ni sabes bien qué hiciste',
-  'Te has prometido mil veces que esta vez sí, y al otro día vuelves a lo mismo',
-  'Ya no sabes qué te gusta a ti sin consultarlo con él',
-  'Pides perdón por cosas que no hiciste, con tal de que no se enoje',
-  'Te despiertas a las dos de la mañana con el corazón golpeando, y él ahí, durmiendo tranquilo',
-  'Te han dicho tantas veces que exageras que ya no sabes qué es verdad',
-  'Te fuiste alejando de tus amigas y ahora te da pena llamarlas',
-  'Tienes una angustia en el pecho que no se te quita con nada',
-  'Escribes un mensaje, lo lees tres veces y borras la mitad para que no suene mal',
-  'Lloras sin saber por qué, y después te da rabia haber llorado',
-];
-
-export const DOLORES_FUERA = [
-  'Lo dejaste, y a los tres días ya le estabas contestando',
-  'No duermes bien, y cuando duermes te despiertas pensando en él',
-  'Revisas su última conexión, sus estados, con quién habla',
-  'Sigues decidiendo cosas pensando en qué diría él, aunque ya ni esté para opinar',
-  'Te han dicho tantas veces que exageras que ya no sabes qué es verdad',
-  'Tienes una angustia en el pecho que no se te quita con nada',
-  'Te fuiste alejando de tus amigas y ahora te da pena llamarlas',
-  'Te da vergüenza contarle a alguien que todavía piensas en él',
-  'Lloras sin saber por qué, y después te da rabia haber llorado',
-  'Sabes lo que te hizo y aun así te duele que se haya ido',
-];
-
 /**
  * Una opción del banco para ESTA conversación, estable por mujer.
  *
@@ -194,17 +173,13 @@ function compartenImagen(a: string, b: string): boolean {
 /**
  * Elige del banco EVITANDO repetir la imagen de una frase que ella ya leyó.
  *
- * ⚠️ POR QUÉ HACE FALTA. La pregunta de entrada y el banco de dolores salen del
- * mismo material —son las mismas mujeres y las mismas escenas— y se chocan: la
- * entrada dice *"escribes el mensaje y borras la mitad para que no suene mal"* y
- * el banco tiene *"escribes un mensaje, lo lees tres veces y borras la mitad
- * para que no suene mal"*. Como las dos se eligen con la MISMA semilla, a una
- * misma mujer le tocan las dos y en el mensaje siguiente le llega calcada la
- * frase que acaba de leer. No hay nada que delate más rápido a un bot que
- * repetirle a alguien lo que le dijiste hace treinta segundos.
+ * Nació para que el dolor repartido no chocara con la pregunta de entrada. El
+ * banco de dolores ya no existe (ver la lápida de arriba), pero esto se queda
+ * porque el saludo de entrada SÍ se sigue eligiendo de un banco y necesita lo
+ * mismo: no repetirle a una mujer la imagen que acaba de leer. No hay nada que
+ * delate más rápido a un bot que decirle a alguien lo mismo dos veces seguidas.
  *
- * Si al filtrar no quedara nada, se usa el banco entero: es preferible una
- * repetición a quedarse sin dolor que nombrar.
+ * Si al filtrar no quedara nada, se usa el banco entero.
  */
 function elegirEvitando(semilla: string, banco: readonly string[], evitar: string): string {
   const libres = banco.filter((opcion) => !compartenImagen(opcion, evitar));
@@ -288,11 +263,19 @@ export const PREGUNTAS_ENTRADA_SIN_DIAGNOSTICO = [
  * es lo más concreto que tiene delante. Con un modelo barato, lo que está en el
  * prompt se usa. La forma de que no lo mande es que no lo vea.
  */
-const entrada = (pregunta: string, sabesPais: boolean) => `# 🚪 ES TU PRIMER MENSAJE
+const entrada = (pregunta: string, sabesPais: boolean, saludo: string) => `# 🚪 ES TU PRIMER MENSAJE
 
 Ella acaba de escribirte. Soltarle aquí el programa, el precio y el link la deja leyendo un volante. Una conversación empieza cuando ella contesta.
 
-Son **dos globos, y el segundo es una pregunta**. En el primero dices quién eres, en una línea corta y cálida. En el segundo, **le preguntas su nombre${sabesPais ? '' : ' y de qué país te escribe'}**, así de simple: *"¿Cómo te llamas${sabesPais ? '' : ' y desde qué país me escribes'}?"*
+Son **dos globos, y el segundo es una pregunta**.
+
+**GLOBO 1 — te presentas con ESTA frase, tal cual está escrita:**
+
+> ${saludo}
+
+Es la que le toca a ella. No la cambies, no la resumas y no le añadas nada: está medida para que suene a persona y no a ventanilla.
+
+**GLOBO 2 — le preguntas su nombre${sabesPais ? '' : ' y de qué país te escribe'}**, así de simple: *"¿Cómo te llamas${sabesPais ? '' : ' y desde qué país me escribes'}?"*
 
 **POR QUÉ ESO Y NO OTRA COSA.** Se contesta en tres palabras, así que casi todas contestan — y una conversación que arrancó es media venta. Su nombre te deja hablarle como una persona y no como un formulario${sabesPais ? '' : ', y su país te deja decirle el precio en la moneda con la que ella cuenta el dinero, que es lo que más la ayuda a decidirse'}.
 
@@ -312,6 +295,46 @@ Si ella se presenta sola, no se lo vuelvas a preguntar: úsalo.
 /** La pregunta de entrada que le toca a ELLA. Estable entre turnos. */
 export function preguntaEntradaPara(semilla: string): string {
   return elegirPara(semilla, PREGUNTAS_ENTRADA);
+}
+
+/**
+ * CÓMO SE PRESENTA PAULA — una distinta para cada mujer.
+ *
+ * ⚠️ POR QUÉ HACE FALTA. Javier, 2026-08-06: *"la frase inicial debe ser más
+ * incluyente en el programa, más sentida, no siempre la misma, como si se
+ * notara que fuera un robot"*. Y tenía razón: el prompt describía UNA forma y
+ * ponía UN ejemplo, así que a las 878 mujeres les llegó la misma línea calcada,
+ * palabra por palabra, durante meses.
+ *
+ * Se escriben a mano y se reparten por su `manychat_id` en vez de pedirle al
+ * modelo que improvise: una frase de apertura es lo primero que ella lee, y ahí
+ * `gpt-4.1-mini` improvisando suena peor que una frase curada. Aquí copiar es
+ * exactamente lo que queremos — por eso hay diez.
+ *
+ * LO QUE TIENE QUE HACER CADA UNA:
+ *   1. Decir quién es, con Javier Vieira y **"Psicólogo Especialista"** — nunca
+ *      "clínico", en ningún caso.
+ *   2. Meterla ya dentro: que se note que hay un sitio y otras mujeres, sin
+ *      vender nada, sin precio y sin link.
+ *   3. Una línea. Si ocupa dos renglones, sobra media.
+ *   4. Nada de "¿en qué te puedo ayudar?": eso es una ventanilla.
+ */
+export const SALUDOS_ENTRADA = [
+  'Hola 💛 Soy Paula, del equipo de Javier Vieira, Psicólogo Especialista. Aquí acompañamos a mujeres que están saliendo de una relación que las fue apagando.',
+  'Hola 💛 Soy Paula. Trabajo con Javier Vieira, Psicólogo Especialista, y este es un sitio donde ninguna tiene que explicar mucho para que la entiendan.',
+  'Hola 💛 Me llamo Paula y trabajo con Javier Vieira, Psicólogo Especialista. Que hayas escrito ya es algo: muchas se quedan mirando el chat sin atreverse.',
+  'Hola 💛 Soy Paula, del equipo de Javier Vieira, Psicólogo Especialista. Aquí adentro hay mujeres que llegaron justo como llegas tú hoy.',
+  'Hola 💛 Soy Paula y trabajo con Javier Vieira, Psicólogo Especialista. Este es un espacio de mujeres rearmándose, y nadie juzga por dónde va cada una.',
+  'Hola 💛 Soy Paula, del equipo de Javier Vieira, Psicólogo Especialista. Me alegra que estés aquí; escribir cuesta más de lo que parece.',
+  'Hola 💛 Soy Paula. Acompaño a Javier Vieira, Psicólogo Especialista, y algo que se dice mucho por aquí es que no hay que llegar entera para empezar.',
+  'Hola 💛 Soy Paula, del equipo de Javier Vieira, Psicólogo Especialista. Lo que traes lo están viviendo otras mujeres ahora mismo, aquí dentro.',
+  'Hola 💛 Soy Paula y trabajo con Javier Vieira, Psicólogo Especialista. Aquí se habla claro y sin rodeos, que es lo que a la mayoría le hacía falta.',
+  'Hola 💛 Soy Paula, del equipo de Javier Vieira, Psicólogo Especialista. Llegar hasta aquí ya es haber decidido algo, aunque todavía no sepas qué.',
+];
+
+/** El saludo que le toca a ELLA. Estable entre turnos, distinto por mujer. */
+export function saludoEntradaPara(semilla: string): string {
+  return elegirEvitando(semilla, SALUDOS_ENTRADA, preguntaEntradaPara(semilla));
 }
 
 /**
@@ -390,7 +413,9 @@ Le contestas el WhatsApp a mujeres que están con un hombre que las está borran
 
 **Cada globo, 90-160 caracteres.** Una o dos frases cortas.
 
-**Nunca una lista.** Ni viñetas, ni guiones, ni números, ni "primero… luego…". Lo que tengas que decir va en una frase, escogiendo lo que más le sirva. Una lista es la firma de un folleto.
+**Nunca una lista** — con UNA excepción, abajo. Ni viñetas, ni guiones, ni números, ni "primero… luego…". Lo que tengas que decir va en una frase, escogiendo lo que más le sirva. Una lista es la firma de un folleto.
+
+🔸 **La única excepción:** cuando ELLA pregunta qué incluye o en qué consiste el programa. Ahí van hasta tres viñetas cortas (ver el bloque 📦 más abajo). En cualquier otro mensaje, prosa.
 
 **Una pregunta por mensaje, o ninguna.** Dos seguidas son un interrogatorio.
 
@@ -438,10 +463,23 @@ La escuchaste → eso tiene dónde trabajarse → no va a estar sola. Nada más:
 
 *"¿En qué consiste?", "¿qué incluye?", "¿qué lograría con esto?"*
 
-Es la pregunta más cerca de la compra. Aquí SÍ das el cuadro completo — única excepción a "nombra una sola cosa". Dos globos, en prosa:
+Es la pregunta más cerca de la compra. Aquí SÍ das el cuadro completo — única excepción a "nombra una sola cosa".
 
-**1. Qué es:** terapia guiada a su ritmo, cuatro horas en vivo con Javier Vieira cada semana, una comunidad despierta a cualquier hora, y meditaciones para el cuerpo.
-**2. Qué le va a pasar a ELLA:** entender de dónde viene la herida, reconocer la manipulación mientras ocurre, bajarle el volumen a la obsesión, sostenerse sin volver. Empieza por el que responda a lo que te contó.
+**🔸 Y ES EL ÚNICO SITIO DONDE PUEDES USAR VIÑETAS.** Aquí ella está comparando y quiere ver qué se lleva: tres líneas se leen de un vistazo y un párrafo de corrido no. En cualquier OTRO mensaje las listas siguen prohibidas.
+
+Dos globos:
+
+**GLOBO 1 — qué se lleva. Máximo TRES viñetas, empezando por "• " y de MENOS DE 10 PALABRAS cada una:**
+
+> • 4 horas en vivo con Javier Vieira cada semana
+> • Comunidad de mujeres, despierta a cualquier hora
+> • El aula entera y las meditaciones, a tu ritmo
+
+Las tres van juntas, en el MISMO globo. Escoge las que respondan a lo que ELLA te contó.
+
+⛔ Una viñeta que no cabe en un renglón deja de ser una viñeta: es un párrafo con un punto delante. Ahí no van horarios, ni precios, ni explicaciones — eso va en prosa después.
+
+**GLOBO 2 — qué le va a pasar a ELLA, en prosa y sin viñetas:** entender de dónde viene la herida, reconocer la manipulación mientras ocurre, bajarle el volumen a la obsesión, sostenerse sin volver. Escoge UNA, la que responda a lo que te contó.
 
 ---
 
@@ -467,7 +505,7 @@ Escribe cortito, con errores, en varios mensajes seguidos. Contéstale igual. Lo
 
 ---
 
-${esPrimerTurno ? entrada(pregunta, paisConocido) : yaTieneLink ? `# 🎯 YA TIENE EL LINK Y YA SABE QUÉ ES — NO SE LO CUENTES OTRA VEZ
+${esPrimerTurno ? entrada(pregunta, paisConocido, saludoEntradaPara(semilla)) : yaTieneLink ? `# 🎯 YA TIENE EL LINK Y YA SABE QUÉ ES — NO SE LO CUENTES OTRA VEZ
 
 Ella ya recibió el link y ya sabe qué hay adentro. **Volver a describirle el programa ahora es lo que la hace dejar de contestar**: siente que le estás dando un discurso en vez de hablar con ella.
 
@@ -488,14 +526,17 @@ Lo que haces en este mensaje:
 
 Tres globos, en este orden:
 
-**1. UNA FRASE QUE RECOJA LO QUE ACABA DE DECIR, con SUS palabras.** Si te dijo "llevamos nueve años", tu frase lleva los nueve años dentro. Nombra ahí UNO de lo que ella vive — en prosa, nunca en lista. El que le toca hoy:
+**1. UNA FRASE CON LO QUE ELLA ACABA DE DECIR. Sus palabras, no las tuyas.**
 
-*${elegirEvitando(semilla + ':' + turnos, DOLORES_DENTRO, pregunta)}* ← si TODAVÍA está con él
-*${elegirEvitando(semilla + ':' + turnos, DOLORES_FUERA, pregunta)}* ← si YA lo dejó
+Busca en su mensaje un hecho concreto —una fecha, un número, una escena, una palabra que ella eligió— y constrúyele la frase con eso dentro. Si te dijo "en febrero lo eché de mi casa", en tu frase está febrero. Si te dijo "llevamos nueve años", están los nueve años.
 
-Escoge el que corresponda y **reescríbelo con tus palabras**. No mandes los dos: a la que vive con él, "revisas su última conexión" no le dice nada porque él duerme al lado.
+**La prueba:** si no puedes señalar con el dedo la palabra de SU mensaje que estás recogiendo, tu frase no vale y hay que rehacerla.
 
-Si aún no sabes si sigue con él o ya salió: *"${pregunta}"*
+⛔ **PROHIBIDO AFIRMARLE UN DOLOR QUE ELLA NO TE HA DICHO.** Ni cuántos años lleva, ni que no duerme, ni que pide perdón, ni que revisa su última conexión. Aunque le pase a nueve de cada diez, si esta no te lo ha dicho **te lo estás inventando**.
+
+⚠️ Esto costó una conversación entera el 2026-08-06: se le dijo a una mujer "nueve años pidiendo perdón por cosas que ni hiciste" y ella no había dicho nada de nueve años. Escribió cuatro veces "no tengo 9 años" y se fue.
+
+**Si todavía no te ha contado nada suyo**, no rellenes: le preguntas. *"${pregunta}"*
 
 **2. QUÉ VA A CAMBIAR EN ELLA — este globo es obligatorio, y es el que más se hace mal.** Aquí no le describes el producto: le describes **la mujer que va a salir**. Ella no está comprando horas de video ni sesiones; está comprando dejar de sentirse así.
 
@@ -558,7 +599,7 @@ Si confirma que ya pagó o entró: **[[COMPRA]]** al final. Si pide que no le es
 Copia la FORMA, nunca las palabras. Fíjate en el largo y en que no hay listas ni un emoji en cada globo.
 
 **Ella:** hola
-> Hola 💛 Soy Paula, trabajo con Javier Vieira, Psicólogo Especialista.
+> ${saludoEntradaPara(semilla)}
 >
 > ¿Cómo te llamas y desde qué país me escribes?
 
@@ -827,6 +868,12 @@ export function buildSystemPrompt(
      * es exactamente por lo que Paula se repetía.
      */
     historial?: Turno[];
+    /**
+     * EL MENSAJE QUE ELLA ACABA DE ESCRIBIR. De aquí sale la LECTURA: si está
+     * corrigiendo, si dijo que sí, si se despide, si te está contando lo suyo.
+     * Sin esto el prompt no sabe qué acaba de pasar y contesta la receta.
+     */
+    mensajeDeElla?: string;
   } = {},
 ): string {
   const ahora = opciones.ahora ?? new Date();
@@ -883,8 +930,39 @@ export function buildSystemPrompt(
   const historial = opciones.historial ?? [];
   // Con handoff el guion se calla: el bloque de arriba ya dice qué hacer, y es
   // lo contrario de vender. Dos órdenes peleándose es cómo se pierde una mujer.
-  const guion = bloqueGuion(historial, opciones.handoff != null);
   const venta = analizarConversacion(historial);
+
+  // 👂 QUÉ ACABA DE HACER ELLA — va ANTES que el guion de venta y antes que
+  // todo lo demás. Javier, 2026-08-06: *"necesitas leer y pensar sí o sí antes
+  // de responder"*. No sirve pedírselo al modelo: se calcula aquí y se le
+  // entrega ya resuelto, con la orden pegada.
+  //
+  // Se calla si hay handoff, por lo mismo que el guion: una sola voz por turno.
+  const ultimaDeElla = [...historial].reverse().find((m) => m.role === 'user')?.content ?? '';
+  const ultimaDePaula = [...historial].reverse().find((m) => m.role === 'assistant')?.content ?? '';
+  const intencion = opciones.mensajeDeElla
+    ? leerIntencion(opciones.mensajeDeElla, ultimaDePaula)
+    : null;
+  const lectura =
+    intencion && !opciones.handoff && !opciones.esPrimerTurno
+      ? bloqueIntencion(intencion, ultimaDePaula, preguntaEntradaPara(semilla)) + GUION_SEP
+      : '';
+
+  // UNA SOLA VOZ POR TURNO — la tercera vez que aparece esta regla.
+  //
+  // Hay cuatro cosas que ELLA puede hacer y que mandan sobre en qué punto de la
+  // venta estemos: corregirte, decirte que sí, preguntarte algo y despedirse.
+  // En esos cuatro casos el guion se calla, porque lo que tiene que pasar lo
+  // decide ella y no el embudo.
+  //
+  // ⚠️ VISTO PROBANDO EL 2026-08-06: Analia preguntó «¿en qué consiste? ¿qué
+  // incluye?» y Paula contestó *"ya te lo conté antes para no repetirte"*. El
+  // guion iba por la rama "ya tiene el link, no se lo cuentes otra vez" y le
+  // ganó a la orden de contestar. Negarse a responder una pregunta directa
+  // porque el embudo dice que ya se dijo es la peor cara de un bot.
+  const ellaManda =
+    intencion === 'corrige' || intencion === 'acepta' || intencion === 'pregunta' || intencion === 'se_despide';
+  const guion = bloqueGuion(historial, opciones.handoff != null || ellaManda);
 
   // EL GUION VA PRIMERO, ANTES DEL RELOJ.
   //
@@ -892,7 +970,7 @@ export function buildSystemPrompt(
   // de la oferta entera renderizada. Cuando el modelo llegaba al "ya le diste
   // esto, no lo repitas", ya había leído qué hay adentro dos veces en la zona
   // de máxima atención. Ahora lo primero que lee es qué toca AHORA.
-  return `${handoff}${guion ? guion + GUION_SEP : ""}${contextoVivo}${instruccionEscalon()}
+  return `${handoff}${lectura}${guion ? guion + GUION_SEP : ""}${contextoVivo}${instruccionEscalon()}
 
 ---
 
@@ -1256,6 +1334,8 @@ export async function processPaulaMessage(
     tasas: tasasHoy,
     // De aqui sale el guion: que le conto ya y que toca ahora.
     historial: history as Turno[],
+    // Y de aqui la LECTURA: que acaba de hacer ella en este mensaje.
+    mensajeDeElla: userMessage,
   });
 
   // 4. Modelo principal
@@ -1273,7 +1353,11 @@ export async function processPaulaMessage(
   // Las conversiones ciertas de hoy: si Paula dice otra, se la inventó.
   const cifras = cifrasLocalesValidas(precioApego(ahora).monto, tasasHoy);
 
-  let auditoria = auditarRespuesta(stripHiddenTags(paulaResponse), ahora, escalon, diasTaller, cifras, userParaPrompt.name);
+  // ¿Está ella preguntando qué hay adentro? Es el ÚNICO caso en el que se le
+  // permiten viñetas (Javier, 2026-08-06). En todo lo demás, prosa.
+  const explicandoElPrograma = preguntaQueIncluye(userMessage);
+
+  let auditoria = auditarRespuesta(stripHiddenTags(paulaResponse), ahora, escalon, diasTaller, cifras, userParaPrompt.name, explicandoElPrograma);
   if (auditoria.hallazgos.length > 0) {
     console.warn('[Paula blindaje]', manychatId, auditoria.hallazgos.map((h) => h.tipo).join(', '));
     try {
@@ -1282,7 +1366,7 @@ export async function processPaulaMessage(
         { role: 'assistant', content: paulaResponse },
         { role: 'user', content: instruccionCorreccion(auditoria.hallazgos, escalon, ahora, diasTaller, cifras) },
       ]);
-      const auditoria2 = auditarRespuesta(stripHiddenTags(reintento), ahora, escalon, diasTaller, cifras, userParaPrompt.name);
+      const auditoria2 = auditarRespuesta(stripHiddenTags(reintento), ahora, escalon, diasTaller, cifras, userParaPrompt.name, explicandoElPrograma);
       if (auditoria2.texto && auditoria2.hallazgos.length <= auditoria.hallazgos.length) {
         paulaResponse = reintento;
         auditoria = auditoria2;
@@ -1313,7 +1397,7 @@ export async function processPaulaMessage(
   // modelo a escribir corto, y este es el seguro de que, si no aprendió, ella
   // igual recibe tres globos y ni una viñeta. Es lo que ha faltado en todas las
   // versiones anteriores: pedirlo por prompt nunca aguantó más de unos días.
-  paulaResponse = aplicarFormato(normalizarNegritas(auditoria.texto, normalizarCanal(canal)));
+  paulaResponse = aplicarFormato(normalizarNegritas(auditoria.texto, normalizarCanal(canal)), explicandoElPrograma);
 
   // 4c. CRISIS — garantía por código, no por prompt.
   // Si ella nombró violencia o que se quiere morir, ningún link de producto ni
@@ -1327,8 +1411,17 @@ export async function processPaulaMessage(
   // repeticion del link era la unica regla importante que dependia solo del
   // prompt, y el prompt tenia seis ordenes de mandarlo contra dos de no hacerlo.
   const ventaAhora = analizarConversacion(history as Turno[]);
-  if (ventaAhora.tieneLink && !pideElLink(userMessage) && handoff === null) {
-    paulaResponse = aplicarFormato(quitarLinkRepetido(paulaResponse));
+  const ultimaDePaula = [...history].reverse().find((m) => m.role === 'assistant')?.content ?? '';
+  const queHizoElla = leerIntencion(userMessage, ultimaDePaula);
+
+  // ⚠️ UN «DALE» ES PEDIR EL LINK. Sin esto el candado se volvia en contra:
+  // Analia contesto «Dale» a «¿quieres que te vuelva a mandar el link?», y como
+  // «Dale» no encajaba en `pideElLink`, el codigo le BORRO el link del mensaje.
+  // Ella recibio «Aquí tienes el link para que puedas entrar hoy mismo» y
+  // ningun link. Visto en produccion el 2026-08-06.
+  const loEstaPidiendo = pideElLink(userMessage) || queHizoElla === 'acepta';
+  if (ventaAhora.tieneLink && !loEstaPidiendo && handoff === null) {
+    paulaResponse = aplicarFormato(quitarLinkRepetido(paulaResponse), explicandoElPrograma);
   }
 
   // NO LE VUELVE A PREGUNTAR QUE LA FRENA. Dos casos, los dos vistos en
@@ -1340,12 +1433,30 @@ export async function processPaulaMessage(
     ...(history as Turno[]),
     { role: 'user', content: userMessage },
   ]);
-  if (handoff === null && (ventaConEsteTurno.citaFutura || ventaAhora.vecesQuePregunto >= 2)) {
-    paulaResponse = aplicarFormato(quitarPreguntaDeFreno(paulaResponse));
+  // Y el caso mas comun de todos, visto con Analia: preguntarle que la frena a
+  // quien NO HA FRENADO NADA. Se lo pregunto justo despues de que ella abriera
+  // su historia, y otra vez despues de un «Muchisimas gracias!!». Si en toda la
+  // conversacion ella no ha puesto ni una senal de duda, la pregunta sobra.
+  const mensajesDeElla = [...history.filter((m) => m.role === 'user').map((m) => m.content), userMessage];
+  const sinDudaNingunaTodavia = !haySenalDeDuda(mensajesDeElla);
+  const seEstaDespidiendo = queHizoElla === 'se_despide';
+  const estaContando = queHizoElla === 'cuenta';
+
+  if (
+    handoff === null &&
+    (ventaConEsteTurno.citaFutura ||
+      ventaAhora.vecesQuePregunto >= 2 ||
+      sinDudaNingunaTodavia ||
+      seEstaDespidiendo ||
+      estaContando ||
+      queHizoElla === 'pregunta' ||
+      queHizoElla === 'corrige')
+  ) {
+    paulaResponse = aplicarFormato(quitarPreguntaDeFreno(paulaResponse), explicandoElPrograma);
   }
 
   if (handoff === 'pregunta_clase') {
-    paulaResponse = aplicarFormato(dejarSoloJavier(paulaResponse));
+    paulaResponse = aplicarFormato(dejarSoloJavier(paulaResponse), explicandoElPrograma);
   }
 
   if (handoff === 'crisis') {

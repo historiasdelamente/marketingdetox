@@ -395,6 +395,11 @@ export function auditarRespuesta(
   cifrasLocales: string[] = [],
   /** Cómo se llama ELLA. Si es "Javier", no se le pone el apellido del psicólogo. */
   nombreDeElla?: string | null,
+  /**
+   * Solo cuando ELLA preguntó qué incluye el programa. Es el único caso en que
+   * una lista corta está permitida (ver `limitarVinetas` en `formato.ts`).
+   */
+  permitirVinetas = false,
 ): { texto: string; hallazgos: Hallazgo[] } {
   const hallazgos: Hallazgo[] = [];
   let out = repararLinks(texto || '', nombreDeElla);
@@ -502,7 +507,7 @@ export function auditarRespuesta(
   //     cadena. `formato.ts` lo arregla igual antes de enviarlo, pero se marca
   //     aquí para gastar el reintento en que el modelo lo reescriba bien: una
   //     frase escogida por él siempre queda mejor que la que salva el código.
-  if (tieneVinetas(out)) {
+  if (tieneVinetas(out) && !permitirVinetas) {
     hallazgos.push({ tipo: 'vinetas', detalle: 'el mensaje trae líneas con forma de lista' });
   }
 
@@ -839,6 +844,17 @@ export function quitarPreguntaDeFreno(texto: string): string {
     .replace(/\n{3,}/g, SALTO + SALTO)
     .trim();
 
+  // ⚠️ SE CORTA AUNQUE LO QUE QUEDE SEA POCO, Y ES UNA DECISIÓN, NO UN OLVIDO.
+  //
+  // Probando el 2026-08-06 salió el caso feo: a un «Hola» de ella, Paula
+  // contestó un saludo más la pregunta prohibida, y al cortarla quedó
+  // «Hola, Yeny.» y nada más. Se probó a devolver el original en esos casos y
+  // era peor: volvía justo lo que Javier mandó quitar —«¿qué te frena?» a quien
+  // no ha frenado nada—, que es de lo que se quejó.
+  //
+  // Así que el mensaje pobre se acepta y el problema se arregla donde nace: el
+  // guion obliga a hacer una pregunta DE VERDAD (ver la rama ESCUCHAR), y esa
+  // no la toca este candado porque no es una pregunta sobre frenos.
   return limpio.length > 0 ? limpio : original;
 }
 

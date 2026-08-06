@@ -9,7 +9,7 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 # Copy app code (bust cache on each deploy)
-ARG CACHE_BUST=2026-08-06-paula-la-lee-de-verdad
+ARG CACHE_BUST=2026-08-06-paula-escucha-antes-de-vender
 # Y ademas viaja al contenedor, para poder preguntarle en caliente que build corre.
 ENV CACHE_BUST=$CACHE_BUST
 

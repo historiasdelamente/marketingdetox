@@ -11,7 +11,7 @@
 // recordatorios en app/api/cron/recordatorios-apego).
 // ============================================================================
 
-import { MAX_CHARS_GLOBO, comprimirGlobos } from './formato';
+import { MAX_CHARS_GLOBO, comprimirGlobos, esLineaVineta } from './formato';
 
 const API_URL = 'https://api.manychat.com/fb/sending/sendContent';
 

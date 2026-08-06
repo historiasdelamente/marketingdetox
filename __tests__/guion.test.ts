@@ -8,6 +8,13 @@ const paula = (content: string): Turno => ({ role: 'assistant', content });
 
 const SKOOL = 'https://www.skool.com/historias-de-la-mente-4978/about';
 
+/**
+ * Lo que ELLA tiene que haber dicho para que Paula pueda empezar a vender.
+ * Desde el 2026-08-06 hay 2-3 mensajes de escucha antes del link, asi que casi
+ * todos los tests de venta necesitan que ella haya contado algo primero.
+ */
+const YA_CONTO = ella('Sigo con el y llevo nueve anios asi, ya no se ni que me gusta a mi sin preguntarle');
+
 describe('el guion de venta — para que Paula deje de repetirse', () => {
   it('en el primer turno no hay guion: manda el bloque de entrada', () => {
     expect(bloqueGuion([])).toBe('');
@@ -28,14 +35,14 @@ describe('el guion de venta — para que Paula deje de repetirse', () => {
   });
 
   it('si todavía no sabe qué es, el paso es contárselo', () => {
-    const g = bloqueGuion([ella('hola'), paula('Hola, soy Paula. ¿Cómo te llamas?')]);
+    const g = bloqueGuion([ella('hola'), paula('Hola, soy Paula. ¿Cómo te llamas?'), YA_CONTO]);
     expect(g).toMatch(/CONTARLE QUÉ ES/);
     expect(g).toMatch(/Todavía no le has dado nada del programa/);
   });
 
   it('si ya sabe qué es pero no tiene link, el paso es el link', () => {
     const g = bloqueGuion([
-      ella('cuéntame'),
+      YA_CONTO,
       paula('Adentro tienes talleres en vivo cada semana y la comunidad.'),
     ]);
     expect(g).toMatch(/DARLE EL LINK/);
@@ -44,6 +51,7 @@ describe('el guion de venta — para que Paula deje de repetirse', () => {
 
   it('con el link entregado y una objeción, el paso es esa objeción', () => {
     const g = bloqueGuion([
+      YA_CONTO,
       paula(`Adentro hay talleres y comunidad.\n\n${SKOOL}`),
       ella('me interesa pero no tengo plata ahorita'),
     ]);
@@ -53,6 +61,7 @@ describe('el guion de venta — para que Paula deje de repetirse', () => {
 
   it('cuando ya lo sabe todo, el paso es cerrar o soltar — no repetir la oferta', () => {
     const g = bloqueGuion([
+      YA_CONTO,
       paula(`Son $20 al mes con garantía de 7 días. Adentro hay talleres y comunidad.\n\n${SKOOL}`),
       ella('ok'),
     ]);
@@ -162,6 +171,7 @@ describe('la conversación de Nedith: leerla de verdad', () => {
     expect(e.citaFutura).toContain('lunes');
 
     const guion = bloqueGuion([
+      YA_CONTO,
       paula('Los talleres son martes y jueves. ' + SKOOL),
       ella('El dia lunes estaré en mi ciudad'),
     ]);
@@ -184,6 +194,7 @@ describe('la conversación de Nedith: leerla de verdad', () => {
 
   it('a la tercera pregunta le prohíbe volver a preguntar', () => {
     const historial: Turno[] = [
+      YA_CONTO,
       paula('Apego Detox tiene talleres en vivo. ' + SKOOL),
       ella('ya vi'),
       paula('¿Qué te está frenando?'),
@@ -253,5 +264,44 @@ describe('el candado: la pregunta que ya le hizo no sale', () => {
     const solo = '¿Qué te está frenando?';
     expect(quitarPreguntaDeFreno(solo)).toBe(solo);
     expect(quitarPreguntaDeFreno('')).toBe('');
+  });
+});
+
+describe('2-3 mensajes de escucha antes del link', () => {
+  // Javier lo eligio el 2026-08-06. Antes Paula soltaba el programa entero en
+  // el segundo mensaje, en cuanto ella decia su nombre.
+  it('si ella solo ha contestado, el paso es ESCUCHAR y no vender', () => {
+    const g = bloqueGuion([
+      ella('Ok aqui estoy'),
+      paula('Hola, soy Paula. ¿Como te llamas?'),
+      ella('Chile, Yeny lamdrid'),
+    ]);
+    expect(g).toMatch(/ESCUCHAR/);
+    expect(g).toMatch(/NO va: el link/);
+    expect(g).toMatch(/Un solo globo/);
+  });
+
+  it('en cuanto ella cuenta algo suyo, ya se puede vender', () => {
+    const antes = analizarConversacion([ella('Chile, Yeny lamdrid')]);
+    expect(antes.ellaYaConto).toBe(false);
+
+    // Una frase entera sobre lo suyo.
+    const largo = analizarConversacion([
+      ella('En febrero lo eche de mi casa pero cuando recuerdo todavia me hace sentir mal'),
+    ]);
+    expect(largo.ellaYaConto).toBe(true);
+
+    // O contestar la pregunta de entrada, aunque sea corto.
+    for (const corta of ['No he salido', 'ya lo dejé', 'sigo con él']) {
+      expect(analizarConversacion([ella(corta)]).ellaYaConto, corta).toBe(true);
+    }
+  });
+
+  it('pasados 3 turnos deja de esperar, para no quedarse en bucle de preguntas', () => {
+    const historial: Turno[] = [];
+    for (let i = 0; i < 4; i++) {
+      historial.push(ella('ok'), paula('¿Y como estas hoy?'));
+    }
+    expect(bloqueGuion(historial)).not.toMatch(/ESCUCHAR/);
   });
 });

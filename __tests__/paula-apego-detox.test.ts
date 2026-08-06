@@ -8,7 +8,35 @@ import {
 } from '@/lib/whatsapp/blindaje';
 import { APEGO_DETOX, precioApego, proximoEncuentro } from '@/lib/whatsapp/programa';
 import { precioLocal } from '@/lib/whatsapp/moneda';
-import { DOLORES_DENTRO, DOLORES_FUERA, buildSystemPrompt, preguntaEntradaPara } from '@/lib/whatsapp/paula';
+import { aplicarFormato } from '@/lib/whatsapp/formato';
+import { SALUDOS_ENTRADA, buildSystemPrompt, preguntaEntradaPara, saludoEntradaPara } from '@/lib/whatsapp/paula';
+
+/**
+ * ⚰️ LAS VEINTE FRASES DEL BANCO DE DOLORES QUE SE BORRO EL 2026-08-06.
+ *
+ * Ya no viven en `paula.ts`: se repartian a las mujeres como si fueran suyas y
+ * Paula acababa afirmandole a una que llevaba "nueve anios pidiendo perdon"
+ * cuando ella no habia dicho nada de eso. Se quedan AQUI como LISTA NEGRA para
+ * que nadie las reintroduzca sin que salte un test.
+ */
+const DOLORES_PROHIBIDOS = [
+  'Pasas días sin que te dirijan la palabra en tu propia casa, y ni sabes bien qué hiciste',
+  'Te has prometido mil veces que esta vez sí, y al otro día vuelves a lo mismo',
+  'Ya no sabes qué te gusta a ti sin consultarlo con él',
+  'Pides perdón por cosas que no hiciste, con tal de que no se enoje',
+  'Te despiertas a las dos de la mañana con el corazón golpeando, y él ahí, durmiendo tranquilo',
+  'Te han dicho tantas veces que exageras que ya no sabes qué es verdad',
+  'Te fuiste alejando de tus amigas y ahora te da pena llamarlas',
+  'Tienes una angustia en el pecho que no se te quita con nada',
+  'Escribes un mensaje, lo lees tres veces y borras la mitad para que no suene mal',
+  'Lloras sin saber por qué, y después te da rabia haber llorado',
+  'Lo dejaste, y a los tres días ya le estabas contestando',
+  'No duermes bien, y cuando duermes te despiertas pensando en él',
+  'Revisas su última conexión, sus estados, con quién habla',
+  'Sigues decidiendo cosas pensando en qué diría él, aunque ya ni esté para opinar',
+  'Te da vergüenza contarle a alguien que todavía piensas en él',
+  'Sabes lo que te hizo y aun así te duele que se haya ido',
+];
 
 // Viernes 31 de julio de 2026, 10:00 AM Colombia. El lanzamiento de Apego Detox
 // está vivo (termina el 15 de agosto), así que el precio del día es $20.
@@ -486,12 +514,49 @@ describe('el prompt que se arma en cada turno', () => {
   // prosa, y eso no es cosmética: con cuatro delante, mini los pone en columna
   // por mucho que se le prohíba. Con uno, lo único que puede hacer es escribir
   // una frase. Si algún día vuelve a aparecer un "•" aquí, vuelve el folleto.
-  it('NO le pone ni una viñeta delante al modelo — es lo que la hacía copiarlas', () => {
-    // El "•" es el carácter exacto que Paula copiaba al chat, así que es el que
-    // no puede aparecer en ninguna parte de lo que ella lee.
-    for (const p of [prompt(), entrada()]) {
-      expect(p).not.toContain('•');
+  it('las únicas viñetas del prompt están en el bloque de "qué incluye"', () => {
+    // ⚠️ ESTE TEST DECÍA "ni una viñeta, en ninguna parte", y por un buen
+    // motivo: el "•" es el carácter exacto que el modelo copiaba al chat.
+    //
+    // El 2026-08-06 Javier las pidió de vuelta, pero SOLO cuando ella pregunta
+    // qué hay adentro. Así que el ejemplo con viñetas tiene que existir —sin él
+    // el modelo no las usa— y a la vez no puede haber ninguna suelta por ahí,
+    // porque las copiaría a cualquier mensaje.
+    const p = prompt();
+    const conVineta = p.split('\n').filter((l) => l.includes('•'));
+    expect(conVineta.length, 'sin ejemplo el modelo no usa viñetas').toBeGreaterThan(0);
+
+    // Todas viven dentro del bloque 📦, y ni una fuera.
+    const bloque = p.slice(p.indexOf('# 📦 SI PREGUNTA QUÉ ES'), p.indexOf('# 💵 EL PRECIO'));
+    for (const linea of conVineta) {
+      expect(bloque.includes(linea), `viñeta suelta fuera del bloque 📦: «${linea}»`).toBe(true);
     }
+
+    // Y lo mismo en el prompt del primer mensaje.
+    const e = entrada();
+    const bloqueEntrada = e.slice(e.indexOf('# 📦 SI PREGUNTA QUÉ ES'), e.indexOf('# 💵 EL PRECIO'));
+    for (const linea of e.split('\n').filter((l) => l.includes('•'))) {
+      expect(bloqueEntrada.includes(linea), `viñeta suelta en la entrada: «${linea}»`).toBe(true);
+    }
+  });
+
+  it('fuera de ese caso, el código sigue matando las viñetas', () => {
+    // La regla la hace cierta `formato.ts`, no el prompt.
+    const conLista = 'Adentro tienes:\n• Talleres en vivo\n• Comunidad\n• Módulos';
+    expect(aplicarFormato(conLista)).not.toContain('•');
+    // Y cuando ella preguntó qué incluye, se respetan — recortadas a tres.
+    const permitido = aplicarFormato(conLista, true);
+    expect(permitido.split('\n').filter((l) => l.includes('•'))).toHaveLength(3);
+  });
+
+  it('nunca deja pasar más de tres viñetas, ni una viñeta-párrafo', () => {
+    const seis = ['a', 'b', 'c', 'd', 'e', 'f'].map((x) => `• viñeta ${x}`).join('\n');
+    expect(aplicarFormato(seis, true).split('\n').filter((l) => l.includes('•'))).toHaveLength(3);
+
+    const larga = `• ${'palabra '.repeat(40)}`;
+    const cortada = aplicarFormato(larga, true);
+    expect(cortada.length).toBeLessThan(120);
+    expect(cortada).toContain('…');
   });
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -635,15 +700,20 @@ describe('el prompt que se arma en cada turno', () => {
           escalon: 'apego',
         });
         const pregunta = preguntaEntradaPara(id);
-        const dolores = [...DOLORES_DENTRO, ...DOLORES_FUERA].filter((d) => p.includes(d));
+        const saludo = saludoEntradaPara(id);
 
-        for (const dolor of dolores) {
-          const compartidos = [...trios(dolor)].filter((t) => trios(pregunta).has(t));
-          expect(
-            compartidos,
-            `${id}: el dolor «${dolor}» repite «${compartidos.join(', ')}» de su pregunta de entrada`,
-          ).toHaveLength(0);
+        // Ya no se le reparte ningun dolor: eso se borro. Lo que se comprueba
+        // ahora es que NINGUNA de las frases del banco viejo vuelva al prompt.
+        for (const dolor of DOLORES_PROHIBIDOS) {
+          expect(p.includes(dolor), `${id}: volvio el dolor de catalogo «${dolor}»`).toBe(false);
         }
+
+        // Y que el saludo que le toca no le repita la imagen de su pregunta.
+        const compartidos = [...trios(saludo)].filter((t) => trios(pregunta).has(t));
+        expect(
+          compartidos,
+          `${id}: el saludo repite «${compartidos.join(', ')}» de su pregunta de entrada`,
+        ).toHaveLength(0);
       }
     });
 
@@ -694,19 +764,20 @@ describe('el prompt que se arma en cada turno', () => {
     expect(p).not.toContain('YA TIENE EL LINK Y YA SABE QUÉ ES');
   });
 
-  it('el dolor cambia de un turno a otro, no se le repite el mismo', () => {
-    // La semilla era solo su manychat_id —estable para ELLA a propósito— y el
-    // efecto era que le tocaba la misma frase en el turno 2, en el 5 y en el 9.
-    const dolorDelTurno = (n: number) => {
+  it('en ningún turno se le cuela un dolor de catálogo', () => {
+    // Antes aquí se comprobaba que el dolor repartido CAMBIARA entre turnos.
+    // Ya no se reparte ninguno: se borró el banco el 2026-08-06. Lo que se
+    // vigila ahora es que no vuelva, en ningún punto de la conversación.
+    for (const n of [0, 2, 4, 6, 10, 20]) {
       const historial = Array.from({ length: n }, (_, i) => ({
         role: (i % 2 === 0 ? 'user' : 'assistant') as 'user' | 'assistant',
         content: `m${i}`,
       }));
       const p = buildSystemPrompt(usuaria, '', '', { ahora: VIERNES_31, historial });
-      return p.split('\n').filter((l) => /← si TODAVÍA/.test(l)).join('');
-    };
-    const vistos = new Set([dolorDelTurno(2), dolorDelTurno(4), dolorDelTurno(6)]);
-    expect(vistos.size).toBeGreaterThan(1);
+      for (const dolor of DOLORES_PROHIBIDOS) {
+        expect(p.includes(dolor), `turno ${n}: volvió «${dolor}»`).toBe(false);
+      }
+    }
   });
 
   it('la regla de forma va escrita con números, no como una sugerencia', () => {
@@ -716,21 +787,19 @@ describe('el prompt que se arma en cada turno', () => {
     expect(p).toContain('Nunca una lista');
   });
 
-  it('le da UN dolor de cada banco, en prosa, y le dice cuál usar', () => {
+  it('NO le reparte ningún dolor: el dolor lo pone ella', () => {
+    // Javier, 2026-08-06: *"no es que tomes el banco de datos, es ELLA la que
+    // dice las cosas"*. Antes aquí se le entregaba un dolor de cada banco y el
+    // modelo se lo afirmaba a mujeres que no habían contado nada — a Yeny le
+    // dijo "nueve años pidiendo perdón" y ella lo negó cuatro veces.
     const p = prompt();
-    expect(p).toContain('si TODAVÍA está con él');
-    expect(p).toContain('si YA lo dejó');
-    expect(p).toContain('nunca en lista');
-    // Exactamente DOS dolores en todo el prompt —uno por carril— y ni uno más:
-    // si aparecieran tres, vuelve la columna que Javier mandó quitar.
-    //
-    // Se cuentan las LÍNEAS marcadas y no las frases del banco, porque los dos
-    // bancos comparten varias ("te han dicho tantas veces que exageras…" está
-    // en los dos): contando frases, una coincidencia parecía un dolor de más.
-    const marcados = p.split('\n').filter((l) => /← si (TODAVÍA|YA)/.test(l));
-    expect(marcados).toHaveLength(2);
-    expect(marcados.some((l) => DOLORES_DENTRO.some((d) => l.includes(d)))).toBe(true);
-    expect(marcados.some((l) => DOLORES_FUERA.some((d) => l.includes(d)))).toBe(true);
+    expect(p).not.toContain('si TODAVÍA está con él');
+    expect(p).not.toContain('si YA lo dejó');
+    expect(p.split('\n').filter((l) => /← si (TODAVÍA|YA)/.test(l))).toHaveLength(0);
+
+    // Y en su lugar, la orden de recoger lo que ella escribió.
+    expect(p).toMatch(/PROHIBIDO AFIRMARLE UN DOLOR QUE ELLA NO TE HA DICHO/);
+    expect(p).toMatch(/si no puedes señalar con el dedo la palabra de SU mensaje/i);
   });
 
   it('si no sabe el país lo pregunta, y dice que es para darle su moneda', () => {
@@ -766,13 +835,30 @@ describe('el prompt que se arma en cada turno', () => {
     expect(p).toMatch(/para no hacerla repetir nada/i);
   });
 
-  it('a dos mujeres distintas les toca un dolor distinto', () => {
-    // Con un dolor fijo, mini se lo copia igual a todas y se nota el bot.
-    const dolores = (id: string) => {
-      const p = buildSystemPrompt({ ...usuaria, manychat_id: id }, '', '', { ahora: VIERNES_31 });
-      return DOLORES_DENTRO.filter((d) => p.includes(d)).join('|');
-    };
-    expect(dolores('mujer-a')).not.toBe(dolores('mujer-b'));
+  it('a dos mujeres distintas les toca un saludo distinto', () => {
+    // Javier, 2026-08-06: *"no siempre la misma, como si se notara que fuera un
+    // robot"*. Antes las 878 recibían la misma línea calcada.
+    expect(saludoEntradaPara('mujer-a')).not.toBe(saludoEntradaPara('mujer-b'));
+
+    // Y el que le toca es el que viaja en su primer mensaje.
+    const suyo = saludoEntradaPara('mujer-a');
+    const p = buildSystemPrompt({ ...usuaria, manychat_id: 'mujer-a' }, '', '', {
+      ahora: VIERNES_31,
+      esPrimerTurno: true,
+    });
+    expect(p).toContain(suyo);
+  });
+
+  it('todos los saludos dicen "Psicólogo Especialista" y ninguno vende', () => {
+    for (const s of SALUDOS_ENTRADA) {
+      expect(s, s).toContain('Psicólogo Especialista');
+      expect(s, s).not.toMatch(/clínico/i);
+      // Ni precio, ni link, ni COLPSIC: el primer mensaje no vende nada.
+      expect(s, s).not.toMatch(/\$|skool\.com|293219|d[óo]lares/i);
+      expect(s.length, `«${s}» es demasiado largo para un primer globo`).toBeLessThanOrEqual(190);
+    }
+    // Suficiente variedad para que no se note el molde.
+    expect(new Set(SALUDOS_ENTRADA).size).toBeGreaterThanOrEqual(10);
   });
 
   it('a quien todavía no ha entrado NO le da la fecha del próximo taller', () => {

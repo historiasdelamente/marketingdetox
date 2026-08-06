@@ -60,6 +60,11 @@ export function largoSinLinks(texto: string): number {
   return (texto || '').replace(URL_RE, '').replace(/\s+/g, ' ').trim().length;
 }
 
+/** ¿Esta línea concreta es una viñeta? La usa `manychat.ts` para no partirlas. */
+export function esLineaVineta(linea: string): boolean {
+  return LINEA_VINETA.test(linea || '');
+}
+
 /** ¿Quedó alguna línea con forma de lista? */
 export function tieneVinetas(texto: string): boolean {
   return (texto || '').split('\n').some((l) => LINEA_VINETA.test(l));
@@ -187,6 +192,79 @@ export function limitarGlobos(texto: string, max = MAX_GLOBOS): string {
  * Corre SIEMPRE, pase o no pase el blindaje, se haya reintentado o no. Si el
  * modelo mandó viñetas, aquí se quedan; si mandó cinco globos, salen tres.
  */
-export function aplicarFormato(texto: string): string {
-  return limitarGlobos(desvinetar(texto || ''));
+/**
+ * LAS TRES VIÑETAS QUE SÍ SE PERMITEN.
+ *
+ * ⚠️ ESTO ES UNA EXCEPCIÓN ESTRECHA Y A PROPÓSITO. La regla sigue siendo prosa:
+ * Javier cortó las listas en su día porque *"le estás haciendo como si fuera un
+ * flyer a las personas"*, y eso vale para el dolor de ella y para todo lo demás.
+ *
+ * Pero el 2026-08-06 pidió recuperarlas **en un solo sitio**: cuando ella
+ * pregunta qué hay adentro. Ahí una lista de tres líneas se lee de un vistazo y
+ * un párrafo de corrido no, y no suena a folleto porque lo pidió ella.
+ *
+ * Se recortan a tres y se acortan a 90 caracteres: cuatro viñetas ya es una
+ * columna, y una viñeta larga es un párrafo con un punto delante.
+ */
+const MAX_VINETAS = 3;
+const MAX_CHARS_VINETA = 105;
+
+export function limitarVinetas(texto: string): string {
+  let vistas = 0;
+  return (texto || '')
+    .split('\n')
+    .filter((linea) => {
+      if (!LINEA_VINETA.test(linea)) return true;
+      vistas += 1;
+      return vistas <= MAX_VINETAS;
+    })
+    .map((linea) => {
+      const m = linea.match(LINEA_VINETA);
+      if (!m) return linea;
+      const cuerpo = m[1].trim();
+      const corto =
+        cuerpo.length <= MAX_CHARS_VINETA ? cuerpo : cuerpo.slice(0, MAX_CHARS_VINETA).replace(/\s+\S*$/, '') + '…';
+      return `• ${corto}`;
+    })
+    .join('\n');
+}
+
+/**
+ * LA LISTA VIAJA EN UN SOLO GLOBO.
+ *
+ * `limitarGlobos` parte por cada salto de línea, así que una lista de tres
+ * viñetas se convertía en TRES globos y el tope de tres se comía la frase que
+ * las abría. Una lista partida en globos sueltos es exactamente el folleto que
+ * había que evitar, con la agravante de llegar en tres notificaciones.
+ *
+ * Aquí una tirada de viñetas —con la línea que la abre, si termina en dos
+ * puntos— cuenta como UN globo.
+ */
+function globosConListas(texto: string, max = MAX_GLOBOS): string {
+  const lineas = (texto || '').split('\n').map((l) => l.trim());
+  const bloques: string[] = [];
+
+  for (const linea of lineas) {
+    if (!linea) continue;
+    const esVineta = LINEA_VINETA.test(linea);
+    const ultimo = bloques[bloques.length - 1];
+    const ultimoEsLista = ultimo != null && LINEA_VINETA.test(ultimo.split('\n').pop() ?? '');
+
+    if (esVineta && ultimo != null && (ultimoEsLista || ABRE_LISTA.test(ultimo))) {
+      bloques[bloques.length - 1] = `${ultimo}\n${linea}`;
+    } else {
+      bloques.push(linea);
+    }
+  }
+
+  return comprimirGlobos(bloques, max).join('\n\n');
+}
+
+/**
+ * @param permitirVinetas solo cuando ELLA preguntó qué incluye el programa.
+ *   En cualquier otro caso las listas se matan, que es la regla de la casa.
+ */
+export function aplicarFormato(texto: string, permitirVinetas = false): string {
+  const t = texto || '';
+  return permitirVinetas ? globosConListas(limitarVinetas(t)) : limitarGlobos(desvinetar(t));
 }

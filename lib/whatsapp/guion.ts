@@ -40,6 +40,8 @@ export type EstadoVenta = {
   vecesQuePregunto: number;
   /** Ella nombró un momento futuro ("el lunes", "cuando cobre"). Textual. */
   citaFutura: string | null;
+  /** ¿Ya te contó algo suyo de verdad, o solo ha dicho «hola» y su nombre? */
+  ellaYaConto: boolean;
 };
 
 const SABE_QUE_ES = /taller|comunidad|m[óo]dulo|meditaci|en vivo|acompa[ñn]am/i;
@@ -114,7 +116,31 @@ export function analizarConversacion(historial: Turno[]): EstadoVenta {
     objeciones: OBJECIONES.filter((o) => deElla.some((m) => o.patron.test(m))).map((o) => o.clave),
     vecesQuePregunto: dePaula.filter((m) => PREGUNTA_FRENO.test(m)).length,
     citaFutura: conCita ? conCita.trim().slice(0, 120) : null,
+    ellaYaConto: deElla.some((m) => YA_CONTO(m)),
   };
+}
+
+/**
+ * ¿ESTO ES CONTARME ALGO, O SOLO CONTESTARME?
+ *
+ * «Hola», «Chile», «Yeny lamdrid» y «ok» no son su historia: son trámite. Su
+ * historia empieza cuando escribe una frase entera sobre lo suyo, o cuando
+ * contesta la pregunta de entrada diciendo dónde está.
+ *
+ * De esto depende que Paula deje de vender demasiado pronto. Javier eligió el
+ * 2026-08-06 que hubiera **2-3 mensajes de escucha antes del link**, y sin una
+ * definición de "ya me contó" eso no se puede sostener por prompt: el modelo
+ * suelta el programa en cuanto ella dice su nombre.
+ */
+const RESPUESTA_DE_ENTRADA =
+  /ya lo dej[ée]|lo dej[ée]|sigo con [ée]l|todav[íi]a estoy|no he salido|no lo he dejado|me separ[ée]|nos separamos|estoy saliendo|acabo de dejar|sigue conmigo|volvimos/i;
+
+function YA_CONTO(m: string): boolean {
+  const t = (m || '').trim();
+  if (RESPUESTA_DE_ENTRADA.test(t)) return true;
+  // Una frase entera sobre lo suyo. 60 caracteres es más o menos donde deja de
+  // ser un dato y empieza a ser algo contado.
+  return t.replace(/\s+/g, ' ').length >= 60;
 }
 
 /**
@@ -168,8 +194,19 @@ export function bloqueGuion(historial: Turno[], hayHandoff = false): string {
   // preguntar. A Nedith se lo preguntaron cuatro veces seguidas.
   const yaPregunteDemasiado = e.vecesQuePregunto >= 2;
 
-  if (!e.sabeQueEs) {
-    paso = `**CONTARLE QUÉ ES.** Todavía no sabe qué está mirando. Qué hay adentro y qué va a lograr, en una o dos frases, y el link en su propio globo.`;
+  if (!e.ellaYaConto && e.turnos <= 3) {
+    paso = `**ESCUCHAR. Todavía no te ha contado nada suyo — solo ha contestado.**
+
+Aquí NO se vende. Le haces UNA pregunta corta que la invite a contarte dónde está, y te callas a esperar.
+
+⛔ En este mensaje NO va: el link, el precio, los horarios, ni la lista de lo que hay adentro. Nada de eso significa algo para alguien que todavía no te ha dicho qué le pasa.
+⛔ Y no le adivines el dolor para rellenar. Si no te lo ha contado, no lo sabes.
+
+**Un solo globo.** Es una pregunta, no un mensaje con una pregunta al final.
+
+⚠️ Vender aquí es el error más caro que hay: quien recibe el catálogo en el segundo mensaje sabe que le está escribiendo un robot, y deja de contestar. La conversación se gana escuchando dos o tres mensajes primero.`;
+  } else if (!e.sabeQueEs) {
+    paso = `**CONTARLE QUÉ ES.** Ya te contó algo suyo, así que ahora sí. Qué hay adentro y qué va a lograr, en una o dos frases —enganchado a lo que ELLA te dijo— y el link en su propio globo.`;
   } else if (!e.tieneLink) {
     paso = `**DARLE EL LINK.** Ya sabe qué es; lo que falta es la puerta. Una frase corta que la empuje y el link en su propio globo.`;
   } else if (e.citaFutura) {
@@ -225,4 +262,23 @@ const PIDE_LINK = /link|enlace|p[áa]gina|d[óo]nde (entro|me inscribo|pago|comp
 
 export function pideElLink(mensaje: string): boolean {
   return PIDE_LINK.test(mensaje || '');
+}
+
+/**
+ * ¿ELLA ESTÁ PREGUNTANDO QUÉ HAY ADENTRO?
+ *
+ * Es la única pregunta en la que Paula puede contestar con viñetas. Javier lo
+ * pidió el 2026-08-06 —*"trata de poner algunas viñetas, no tantos globos
+ * juntos"*— acotado a este caso: aquí ella está comparando, y tres líneas se
+ * leen de un vistazo. En el resto de la conversación las listas siguen
+ * prohibidas, que es la regla que él mismo puso.
+ *
+ * Ojo con lo que NO entra: «¿cuánto cuesta?» es precio, no contenido, y ahí una
+ * lista sobra.
+ */
+const QUE_INCLUYE =
+  /qu[ée] (incluye|trae|hay|contiene|tiene|es lo que|voy a|me llevo|lograr[íi]a|gano|obtengo)|en qu[ée] consiste|c[óo]mo (es|funciona|va) (el|lo)|de qu[ée] (se )?trata|qu[ée] es (el|lo|eso|esto|apego)|m[áa]s informaci[óo]n|cu[ée]ntame m[áa]s|explicame|expl[íi]came/i;
+
+export function preguntaQueIncluye(mensaje: string): boolean {
+  return QUE_INCLUYE.test(mensaje || '');
 }
