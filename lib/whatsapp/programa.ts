@@ -136,6 +136,32 @@ export const APEGO_DETOX = {
   ],
 
   /**
+   * LOS SEIS BENEFICIOS DE LAS VIÑETAS — los eligió Javier el 2026-08-07.
+   *
+   * Salen en DOS tandas de tres, con ella hablando en medio: *"tres viñetas
+   * cortas, y luego que ella hable puedes anexar tres beneficios más"*. Quién
+   * va en cada tanda lo decide `beneficiosPara()` en paula.ts, rotando por
+   * mujer para que a dos no les toquen los mismos tres primero.
+   *
+   * ⚠️ MENOS DE DIEZ PALABRAS CADA UNO, sin excepción. Una viñeta que no cabe
+   * en un renglón deja de ser viñeta: es un párrafo con un punto delante, y es
+   * exactamente lo que Javier llamó "hacerle un flyer a las personas".
+   *
+   * Y ninguno nombra un módulo ni un entregable: *"la idea no es darle el
+   * nombre de los módulos, sino lo que logrará al entrar"*. El único que suena
+   * a caja —las cuatro horas en vivo— está aquí porque es lo que hace creíble
+   * a los otros cinco.
+   */
+  beneficios: [
+    'Vuelves a dormir toda la noche',
+    'Alguien te contesta a las tres de la mañana',
+    'Te despiertas y él ya no es lo primero',
+    'Cuatro horas en vivo con Javier cada semana',
+    'Sabes qué hacer cuando él vuelva a escribir',
+    'Te sostienes afuera, y esta vez no vuelves',
+  ],
+
+  /**
    * LO QUE VA A SABER HACER. Son los cuatro resultados de la página, y valen
    * más que los pilares para vender: describen a la mujer que sale, no la caja
    * que entra.

@@ -12,7 +12,7 @@ import {
   type MotivoHandoff,
 } from './blindaje';
 import { conocimientoPara } from './conocimiento';
-import { analizarConversacion, bloqueGuion, pideElLink, preguntaQueIncluye, type Turno } from './guion';
+import { analizarConversacion, bloqueGuion, pideElLink, tandaDeVinetas, type Turno } from './guion';
 import { bloqueIntencion, haySenalDeDuda, leerIntencion } from './intencion';
 import { escalonDe, instruccionEscalon, type Escalon } from './escalera';
 import { aplicarFormato } from './formato';
@@ -298,6 +298,33 @@ export function preguntaEntradaPara(semilla: string): string {
 }
 
 /**
+ * LOS SEIS BENEFICIOS, PARTIDOS EN DOS TANDAS DE TRES — INTERCALADOS.
+ *
+ * Javier, 2026-08-07: *"los beneficios de Paula son seis, vas intercalando"*.
+ *
+ * Intercalar es literal: se rota el punto de arranque por mujer y después se
+ * toma uno sí y uno no. Eso hace dos cosas a la vez. Que a dos mujeres no les
+ * toquen los mismos tres primero —la misma razón por la que hay diez saludos y
+ * no uno—, y que ninguna tanda quede toda del mismo palo: si se partiera por la
+ * mitad, la primera se llevaría los tres del cuerpo y la segunda los tres del
+ * programa, y la primera tanda es justo la que tiene que enganchar.
+ *
+ * La semilla es su manychat_id, así que a ELLA le toca siempre el mismo reparto
+ * aunque vuelva mañana: la segunda tanda no puede repetirle uno de la primera.
+ */
+export function beneficiosPara(semilla: string): { primera: string[]; segunda: string[] } {
+  const todos = APEGO_DETOX.beneficios;
+  let h = 0;
+  for (let i = 0; i < semilla.length; i++) h = (h * 31 + semilla.charCodeAt(i)) >>> 0;
+  const k = h % todos.length;
+  const rotados = [...todos.slice(k), ...todos.slice(0, k)];
+  return {
+    primera: [rotados[0], rotados[2], rotados[4]],
+    segunda: [rotados[1], rotados[3], rotados[5]],
+  };
+}
+
+/**
  * CÓMO SE PRESENTA PAULA — una distinta para cada mujer.
  *
  * ⚠️ POR QUÉ HACE FALTA. Javier, 2026-08-06: *"la frase inicial debe ser más
@@ -381,11 +408,63 @@ function estilo(
    * lo que Javier vio como "parece dando el mismo guion".
    */
   yaTieneLink = false,
+  /**
+   * Qué tanda de beneficios toca AHORA: 0 ninguna, 1 la primera, 2 la segunda.
+   * Lo decide `tandaDeVinetas()` en guion.ts, que es la única fuente.
+   */
+  tandaVinetas: 0 | 1 | 2 = 0,
 ): string {
   // La misma pregunta en los tres sitios donde aparece (el bloque de entrada,
   // el ejemplo y la lista de antes de enviar). Si el ejemplo enseñara una
   // pregunta distinta de la que se le pide, el modelo copiaría la del ejemplo.
   const pregunta = preguntaEntradaPara(semilla);
+
+  // LAS VIÑETAS DE ESTE TURNO, o ninguna.
+  //
+  // ⚠️ CUANDO NO TOCAN, EL BLOQUE ENTERO DESAPARECE DEL PROMPT. No basta con
+  // prohibírselas: la regla de esta casa es que lo que el modelo tiene delante
+  // lo copia, y unas viñetas de ejemplo renderizadas en cada turno son
+  // exactamente lo que hacía que las repartiera por toda la conversación.
+  const tandas = beneficiosPara(semilla);
+  const vinetas = tandaVinetas === 1 ? tandas.primera : tandaVinetas === 2 ? tandas.segunda : [];
+
+  const listaVinetas = vinetas.map((v) => '> • ' + v).join('\n');
+  const bloqueVinetas =
+    tandaVinetas === 1
+      ? `# 📦 TE ESTÁ PREGUNTANDO QUÉ ES — CONTÉSTALE DE VERDAD
+
+*"¿En qué consiste?", "¿qué incluye?", "¿qué lograría con esto?"*
+
+Es la pregunta más cerca de la compra. Aquí SÍ das el cuadro — es la única excepción a "nombra una sola cosa".
+
+**🔸 Y ES EL ÚNICO SITIO DONDE PUEDES USAR VIÑETAS.** Ella está comparando y quiere ver qué se lleva: tres líneas se leen de un vistazo y un párrafo de corrido no. En cualquier OTRO mensaje las listas siguen prohibidas.
+
+Dos globos.
+
+**GLOBO 1 — estas TRES viñetas, tal cual, empezando por "• ":**
+
+${listaVinetas}
+
+Las tres van juntas, en el MISMO globo, y van **completas**: no las cambies, no las resumas y no las cambies por otras. Están escritas para caber en un renglón.
+
+⛔ Ahí no van horarios, ni precios, ni explicaciones. Eso va en prosa después.
+
+**GLOBO 2 — una frase tuya, en prosa y sin viñetas**, que recoja lo que ELLA te contó y lo enganche con lo de arriba. Y déjale la puerta abierta a que siga hablando: hay tres beneficios más y salen cuando ella conteste.`
+      : tandaVinetas === 2
+      ? `# 📦 YA LE DISTE TRES. AHORA VAN LOS OTROS TRES
+
+Ella acaba de contestarte, así que toca la segunda mitad. **No repitas las de antes**: estas son distintas y son las que faltaban.
+
+**GLOBO 1 — estas TRES viñetas, tal cual, empezando por "• ":**
+
+${listaVinetas}
+
+Van juntas en el MISMO globo, completas y sin cambiarlas.
+
+**GLOBO 2 — en prosa**, engánchalo con lo que ella acaba de escribirte. Si en su mensaje hay una pregunta, contéstala aquí: eso manda sobre la lista.
+
+⛔ Estas son las últimas viñetas de la conversación. De aquí en adelante, prosa siempre.`
+      : '';
 
   // El país ya no se pregunta "por si acaso": se pregunta porque de él sale el
   // precio en SU moneda, que es el dato que más la ayuda a decidirse.
@@ -459,27 +538,7 @@ La escuchaste → eso tiene dónde trabajarse → no va a estar sola. Nada más:
 
 ---
 
-# 📦 SI PREGUNTA QUÉ ES O QUÉ VA A LOGRAR — CONTÉSTALE DE VERDAD
-
-*"¿En qué consiste?", "¿qué incluye?", "¿qué lograría con esto?"*
-
-Es la pregunta más cerca de la compra. Aquí SÍ das el cuadro completo — única excepción a "nombra una sola cosa".
-
-**🔸 Y ES EL ÚNICO SITIO DONDE PUEDES USAR VIÑETAS.** Aquí ella está comparando y quiere ver qué se lleva: tres líneas se leen de un vistazo y un párrafo de corrido no. En cualquier OTRO mensaje las listas siguen prohibidas.
-
-Dos globos:
-
-**GLOBO 1 — qué se lleva. Máximo TRES viñetas, empezando por "• " y de MENOS DE 10 PALABRAS cada una:**
-
-> • 4 horas en vivo con Javier Vieira cada semana
-> • Comunidad de mujeres, despierta a cualquier hora
-> • El aula entera y las meditaciones, a tu ritmo
-
-Las tres van juntas, en el MISMO globo. Escoge las que respondan a lo que ELLA te contó.
-
-⛔ Una viñeta que no cabe en un renglón deja de ser una viñeta: es un párrafo con un punto delante. Ahí no van horarios, ni precios, ni explicaciones — eso va en prosa después.
-
-**GLOBO 2 — qué le va a pasar a ELLA, en prosa y sin viñetas:** entender de dónde viene la herida, reconocer la manipulación mientras ocurre, bajarle el volumen a la obsesión, sostenerse sin volver. Escoge UNA, la que responda a lo que te contó.
+${bloqueVinetas}
 
 ---
 
@@ -962,6 +1021,12 @@ export function buildSystemPrompt(
   // porque el embudo dice que ya se dijo es la peor cara de un bot.
   const ellaManda =
     intencion === 'corrige' || intencion === 'acepta' || intencion === 'pregunta' || intencion === 'se_despide';
+
+  // Los seis beneficios salen en dos tandas de tres, con ella hablando en medio.
+  // Se calcula UNA vez, aquí, y el mismo número lo vuelve a pedir el formateador
+  // más abajo: si los dos no coinciden, `desvinetar` borra las viñetas que este
+  // prompt acaba de pedir.
+  const tandaVinetas = tandaDeVinetas(historial, opciones.mensajeDeElla ?? '', intencion);
   const guion = bloqueGuion(historial, opciones.handoff != null || ellaManda);
 
   // EL GUION VA PRIMERO, ANTES DEL RELOJ.
@@ -974,7 +1039,7 @@ export function buildSystemPrompt(
 
 ---
 
-${estilo(semilla, paisConocido, opciones.esPrimerTurno ?? false, user.name, montoUSD, local, historial.length, venta.tieneLink)}
+${estilo(semilla, paisConocido, opciones.esPrimerTurno ?? false, user.name, montoUSD, local, historial.length, venta.tieneLink, tandaVinetas)}
 # 📚 LO QUE PUEDES AFIRMAR — FUENTE ÚNICA
 Todo lo que Paula puede decir está aquí abajo. Si un dato no está, no existe: no lo afirmes, dile que lo confirmas con Javier.
 
@@ -1353,9 +1418,14 @@ export async function processPaulaMessage(
   // Las conversiones ciertas de hoy: si Paula dice otra, se la inventó.
   const cifras = cifrasLocalesValidas(precioApego(ahora).monto, tasasHoy);
 
-  // ¿Está ella preguntando qué hay adentro? Es el ÚNICO caso en el que se le
-  // permiten viñetas (Javier, 2026-08-06). En todo lo demás, prosa.
-  const explicandoElPrograma = preguntaQueIncluye(userMessage);
+  // ¿Le tocan viñetas en este turno? Se le pregunta a la MISMA función que armó
+  // el prompt — no se recalcula aquí. Cuando eran dos cálculos separados,
+  // coincidían por suerte; el día que no, el formateador borraba las viñetas que
+  // el prompt acababa de pedir y el mensaje salía descabezado.
+  const ultimaDePaulaAqui =
+    [...(history as Turno[])].reverse().find((m) => m.role === 'assistant')?.content ?? '';
+  const explicandoElPrograma =
+    tandaDeVinetas(history as Turno[], userMessage, leerIntencion(userMessage, ultimaDePaulaAqui)) > 0;
 
   let auditoria = auditarRespuesta(stripHiddenTags(paulaResponse), ahora, escalon, diasTaller, cifras, userParaPrompt.name, explicandoElPrograma);
   if (auditoria.hallazgos.length > 0) {

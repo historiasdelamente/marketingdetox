@@ -282,3 +282,42 @@ const QUE_INCLUYE =
 export function preguntaQueIncluye(mensaje: string): boolean {
   return QUE_INCLUYE.test(mensaje || '');
 }
+
+/**
+ * ¿CUÁNTAS VECES LE HA DADO VIÑETAS YA?
+ *
+ * Se lee de lo que Paula escribió, igual que `tieneLink` — no de memoria, que
+ * es lo que siempre se desincroniza. Cada mensaje suyo con viñetas cuenta una.
+ */
+export function vinetasDadas(turnos: Turno[]): number {
+  return turnos.filter((t) => t.role === 'assistant' && /^\s*•/m.test(t.content || '')).length;
+}
+
+/**
+ * QUÉ TANDA DE BENEFICIOS LE TOCA AHORA: 0 (ninguna), 1 o 2.
+ *
+ * Javier, 2026-08-07: *"que digan qué incluye el programa, todos los beneficios,
+ * con tres viñetas cortas, y luego que ella hable puedes anexar tres beneficios
+ * más"*. O sea seis, partidos en dos tandas con ELLA hablando en medio.
+ *
+ * ⚠️ ESTA FUNCIÓN ES LA ÚNICA FUENTE. La llaman los dos lados —el que arma el
+ * prompt y el que formatea la respuesta— y tienen que decir lo mismo: si el
+ * prompt pide viñetas y el formateador cree que no tocan, `desvinetar` se las
+ * borra y el mensaje sale descabezado. Antes eran dos cálculos distintos de
+ * `preguntaQueIncluye` y solo coincidían por suerte.
+ *
+ * La primera la abre ELLA preguntando. La segunda sale sola en cuanto contesta
+ * cualquier cosa — salvo que se esté despidiendo o corrigiendo un dato suyo:
+ * encima de un "gracias, ya veo" otra lista se lee como folleto, y encima de
+ * una corrección es no haberla escuchado.
+ */
+export function tandaDeVinetas(
+  turnos: Turno[],
+  mensajeDeElla: string,
+  intencion: string | null,
+): 0 | 1 | 2 {
+  const dadas = vinetasDadas(turnos);
+  if (dadas === 0) return preguntaQueIncluye(mensajeDeElla) ? 1 : 0;
+  if (dadas === 1) return intencion === 'se_despide' || intencion === 'corrige' ? 0 : 2;
+  return 0; // las seis ya salieron; a partir de aquí, prosa
+}

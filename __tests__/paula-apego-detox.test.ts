@@ -514,29 +514,71 @@ describe('el prompt que se arma en cada turno', () => {
   // prosa, y eso no es cosmética: con cuatro delante, mini los pone en columna
   // por mucho que se le prohíba. Con uno, lo único que puede hacer es escribir
   // una frase. Si algún día vuelve a aparecer un "•" aquí, vuelve el folleto.
-  it('las únicas viñetas del prompt están en el bloque de "qué incluye"', () => {
-    // ⚠️ ESTE TEST DECÍA "ni una viñeta, en ninguna parte", y por un buen
-    // motivo: el "•" es el carácter exacto que el modelo copiaba al chat.
-    //
-    // El 2026-08-06 Javier las pidió de vuelta, pero SOLO cuando ella pregunta
-    // qué hay adentro. Así que el ejemplo con viñetas tiene que existir —sin él
-    // el modelo no las usa— y a la vez no puede haber ninguna suelta por ahí,
-    // porque las copiaría a cualquier mensaje.
-    const p = prompt();
-    const conVineta = p.split('\n').filter((l) => l.includes('•'));
-    expect(conVineta.length, 'sin ejemplo el modelo no usa viñetas').toBeGreaterThan(0);
+  /**
+   * Una viñeta DE VERDAD abre renglón. La línea que le explica al modelo que
+   * empiece por «• » lleva el carácter dentro de la instrucción y no cuenta:
+   * contándola, este test decía que había cuatro donde hay tres.
+   */
+  const esVineta = (l: string) => /^\s*>?\s*•/.test(l);
 
-    // Todas viven dentro del bloque 📦, y ni una fuera.
-    const bloque = p.slice(p.indexOf('# 📦 SI PREGUNTA QUÉ ES'), p.indexOf('# 💵 EL PRECIO'));
-    for (const linea of conVineta) {
-      expect(bloque.includes(linea), `viñeta suelta fuera del bloque 📦: «${linea}»`).toBe(true);
+  it('si no le tocan viñetas, el prompt no trae NI UNA', () => {
+    // ⚠️ ESTE TEST DECÍA LO CONTRARIO —que el ejemplo con viñetas tenía que
+    // estar siempre— y era el compromiso que había mientras el bloque vivía
+    // fijo en el prompt. El 2026-08-07, al partir los beneficios en dos tandas,
+    // el bloque pasó a existir solo cuando toca, así que ya no hay que elegir:
+    // cuando no tocan, el modelo no tiene ni un "•" delante que copiar.
+    for (const p of [prompt(), entrada()]) {
+      const conVineta = p.split('\n').filter(esVineta);
+      expect(conVineta, `viñeta suelta: «${conVineta[0]}»`).toEqual([]);
     }
+  });
 
-    // Y lo mismo en el prompt del primer mensaje.
-    const e = entrada();
-    const bloqueEntrada = e.slice(e.indexOf('# 📦 SI PREGUNTA QUÉ ES'), e.indexOf('# 💵 EL PRECIO'));
-    for (const linea of e.split('\n').filter((l) => l.includes('•'))) {
-      expect(bloqueEntrada.includes(linea), `viñeta suelta en la entrada: «${linea}»`).toBe(true);
+  it('cuando pregunta qué incluye salen TRES, y las otras tres cuando contesta', () => {
+    // Los seis de Javier, en dos tandas con ella hablando en medio.
+    const pide = { role: 'user' as const, content: '¿qué incluye?' };
+    const conVinetas = { role: 'assistant' as const, content: '• una\n• dos\n• tres' };
+
+    const primera = buildSystemPrompt(usuaria, 'tiktok_live', '+521234567890', {
+      ahora: VIERNES_31,
+      historial: [pide],
+      mensajeDeElla: '¿qué incluye?',
+    });
+    const v1 = primera.split('\n').filter(esVineta);
+    expect(v1.length, 'la primera tanda son tres').toBe(3);
+
+    const segunda = buildSystemPrompt(usuaria, 'tiktok_live', '+521234567890', {
+      ahora: VIERNES_31,
+      historial: [pide, conVinetas],
+      mensajeDeElla: 'ay, sí, eso me pasa igualito',
+    });
+    const v2 = segunda.split('\n').filter(esVineta);
+    expect(v2.length, 'la segunda tanda son otras tres').toBe(3);
+
+    // Y son DISTINTAS: repetirle las mismas es lo que la hace sentir un bot.
+    expect(v2.some((l) => v1.includes(l)), 'la segunda tanda repite una de la primera').toBe(false);
+
+    // Las seis juntas son exactamente el banco, sin inventos ni faltantes.
+    const dichas = [...v1, ...v2].map((l) => l.replace(/^>?\s*•\s*/, '').trim()).sort();
+    expect(dichas).toEqual([...APEGO_DETOX.beneficios].sort());
+  });
+
+  it('no le suelta más viñetas si se está despidiendo', () => {
+    const p = buildSystemPrompt(usuaria, 'tiktok_live', '+521234567890', {
+      ahora: VIERNES_31,
+      historial: [
+        { role: 'user', content: '¿qué incluye?' },
+        { role: 'assistant', content: '• una\n• dos\n• tres' },
+      ],
+      mensajeDeElla: 'gracias, lo pienso y te cuento',
+    });
+    expect(p.split('\n').filter(esVineta)).toEqual([]);
+  });
+
+  it('ninguna viñeta pasa de nueve palabras', () => {
+    // Una viñeta que no cabe en un renglón es un párrafo con un punto delante,
+    // que es justo lo que Javier llamó "hacerle un flyer a las personas".
+    for (const b of APEGO_DETOX.beneficios) {
+      expect(b.split(/\s+/).length, `demasiado larga: «${b}»`).toBeLessThan(10);
     }
   });
 
