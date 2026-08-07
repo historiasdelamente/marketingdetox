@@ -71,7 +71,7 @@ const OFFSET_COLOMBIA = '-05:00';
 // ║                                                                           ║
 // ║  LO QUE NO SE TOCA A MANO NUNCA: la fecha del próximo encuentro (la       ║
 // ║  calcula `proximoEncuentro()`) y el precio vigente (lo calcula            ║
-// ║  `precioApego()`, que cambia solo el 15 de agosto).                       ║
+// ║  `precioApego()` contra la fecha de `lanzamiento.finISO`).                ║
 // ╚═══════════════════════════════════════════════════════════════════════════╝
 // ---------------------------------------------------------------------------
 
@@ -85,14 +85,22 @@ export const APEGO_DETOX = {
   garantiaDias: 7,
 
   /**
-   * Lanzamiento: $20 al mes hasta el 15 de agosto, $40 después. El precio le
-   * queda BLOQUEADO a quien entra en lanzamiento — mientras no cancele, sigue
-   * pagando 20 aunque suba. Los números son los de Skool ("JOIN $20/month"),
-   * no 19.97: ella ve el de Skool al pagar y un centavo de diferencia se nota.
+   * EL LANZAMIENTO SE CERRÓ EL 2026-08-07, antes de tiempo (iba hasta el 15).
+   * Desde entonces son $40 al mes y Paula no puede nombrar ninguna promoción:
+   * `precioApego()` devuelve enLanzamiento=false y el bloque del reloj le dice
+   * explícitamente que ya terminó.
+   *
+   * A quien entró en lanzamiento el precio le quedó BLOQUEADO: mientras no
+   * cancele sigue pagando 20 aunque haya subido. Los números son los de Skool
+   * ("JOIN $40/month"), no 39.97: ella ve el de Skool al pagar y un centavo de
+   * diferencia se nota.
+   *
+   * ⚠️ `finISO` YA PASÓ a propósito. Para abrir una campaña nueva se pone una
+   * fecha futura aquí y el lanzamiento revive solo, en Paula y en la página.
    */
   lanzamiento: {
-    /** Último instante del 15 de agosto, hora Colombia. */
-    finISO: '2026-08-15T23:59:59-05:00',
+    /** Último instante del 6 de agosto, hora Colombia: el último día a $20. */
+    finISO: '2026-08-06T23:59:59-05:00',
     precioPromo: 20,
     precioNormal: 40,
   },
@@ -247,7 +255,7 @@ export type PrecioVigente = {
   enLanzamiento: boolean;
   /** El número que Paula puede afirmar hoy: 20 o 40. */
   monto: number;
-  /** "$20 USD al mes" — armado una sola vez, para no armarlo mal en cada sitio. */
+  /** "$40 USD al mes" — armado una sola vez, para no armarlo mal en cada sitio. */
   frase: string;
   /** El precio tachado. `null` cuando ya no hay promoción que mostrar. */
   antes: number | null;
@@ -485,14 +493,20 @@ export function bloqueContexto(
   const precio = precioApego(ahora);
   const { encuentros, garantiaDias, checkout, landing, modulos, pilares, resultados, angulo } = APEGO_DETOX;
 
-  // LA URGENCIA REAL. Es una fecha de calendario, no una frase de venta — y a
-  // diferencia de la que tenía la clase ("no queda grabada"), perdérsela no le
-  // quita el producto: le sube el precio. Eso empuja sin castigar, que es justo
-  // lo que hacía falta.
+  // LA URGENCIA, CUANDO LA HAY. Es una fecha de calendario, no una frase de
+  // venta — y a diferencia de la que tenía la clase ("no queda grabada"),
+  // perdérsela no le quita el producto: le sube el precio. Empuja sin castigar.
+  //
+  // ⚠️ HOY NO HAY NINGUNA: el lanzamiento se cerró el 2026-08-07 y esta rama
+  // está dormida. La fecha se saca de `finISO` en vez de escribirla aquí,
+  // porque la anterior decía "el 15 de agosto" a mano y habría mentido en la
+  // campaña siguiente. Ahora se abre una fecha nueva en APEGO_DETOX y esto
+  // sale correcto solo.
   const normal = precio.antes ?? APEGO_DETOX.lanzamiento.precioNormal;
+  const cierre = fechaLarga(new Date(APEGO_DETOX.lanzamiento.finISO), TZ_COLOMBIA);
   const lanzamiento = precio.enLanzamiento
-    ? `🔥 LANZAMIENTO VIVO: ${precio.frase} (antes $${normal}). Le quedan ${precio.diasRestantes} días — el 15 de agosto sube a $${normal} y no vuelve a bajar. El precio le queda BLOQUEADO: mientras no cancele, sigue pagando $${precio.monto} aunque suba. Entrar hoy o entrar el 16 son $${normal - precio.monto} de diferencia CADA MES, para siempre.`
-    : `PRECIO: ${precio.frase}. El lanzamiento ya terminó — no lo nombres ni prometas que puede alcanzarlo.`;
+    ? `🔥 LANZAMIENTO VIVO: ${precio.frase} (antes $${normal}). Le quedan ${precio.diasRestantes} días — el ${cierre} a medianoche sube a $${normal} y no vuelve a bajar. El precio le queda BLOQUEADO: mientras no cancele, sigue pagando $${precio.monto} aunque suba. Entrar hoy o entrar al día siguiente son $${normal - precio.monto} de diferencia CADA MES, para siempre.`
+    : `PRECIO: ${precio.frase}. NO hay lanzamiento, NO hay descuento y NO hay fecha límite: no los nombres, no los insinúes y nunca le prometas que todavía alcanza un precio más bajo. Quien entró en el lanzamiento anterior conserva el suyo, y eso solo se dice si ELLA ya está adentro y pregunta si le va a subir.`;
 
   // La FECHA del próximo encuentro solo se le da a quien ya está adentro. A las
   // demás se les dice QUÉ incluye el programa (dos encuentros por semana), no

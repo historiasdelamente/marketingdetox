@@ -15,7 +15,7 @@
 //      cobra depende de la tasa del día y del recargo de su tarjeta, que no
 //      controlamos. Dar una cifra exacta que después no cuadra en el extracto
 //      es exactamente el tipo de sorpresa que hace pedir la devolución.
-//   2. EL DÓLAR MANDA. Los $20 USD son el dato duro; la conversión es el favor
+//   2. EL DÓLAR MANDA. El precio en USD es el dato duro; la conversión es el favor
 //      que se le hace para que se lo pueda imaginar. Si alguna vez chocan, gana
 //      el dólar — es lo que ella va a ver en la pantalla de Skool.
 //

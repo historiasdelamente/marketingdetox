@@ -560,7 +560,12 @@ export function instruccionCorreccion(
       case 'producto_retirado':
         return `- Escribiste "${h.detalle}", y eso ya NO se vende. La clase suelta del jueves se retiró: ahora los talleres en vivo son parte del programa, dos por semana. Tampoco existe el pago por Nequi — se paga con tarjeta dentro de Skool. Quítalo y ofrécele ${APEGO_DETOX.nombre}, que se entra HOY: ${APEGO_DETOX.checkout}`;
       case 'urgencia_falsa':
-        return `- Usaste "${h.detalle}". Prohibido inventar escasez. No hay cupos que se acaben: la única fecha real es el 15 de agosto, cuando sube el precio.`;
+        // Mientras hubo lanzamiento, la fecha de cierre era la única urgencia
+        // legítima. Ya no la hay: si aquí siguiera nombrada, el reintento le
+        // estaría enseñando a Paula a vender una promoción que ya no existe.
+        return precio.enLanzamiento
+          ? `- Usaste "${h.detalle}". Prohibido inventar escasez. No hay cupos que se acaben: la única fecha real es el cierre del lanzamiento, y le quedan ${precio.diasRestantes} días.`
+          : `- Usaste "${h.detalle}". Prohibido inventar escasez. No hay cupos, ni fecha límite, ni promoción que se acabe: son ${precio.frase} y se entra HOY. Lo que la mueve es lo que ella te contó, no un reloj inventado.`;
       case 'psicoeducacion':
         return `- Escribiste "${h.detalle}": te pusiste a explicarle lo que le pasa por dentro, y eso NO lo haces por chat. Quita esa explicación. En su lugar, las tres piezas de siempre: la escuchaste, eso se trabaja adentro, y ahí hay más mujeres pasando por lo mismo.`;
       case 'vinetas':

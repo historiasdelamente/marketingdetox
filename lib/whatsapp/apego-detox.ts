@@ -6,7 +6,7 @@
 // `apego-detox` —el cron de recordatorios— coma de los datos nuevos y no de los
 // viejos. Cuando ese se migre, este archivo se borra.
 //
-// ⚠️ El precio es un GETTER a propósito: cambia solo el 15 de agosto. Si fuera
+// ⚠️ El precio es un GETTER a propósito: lo decide la fecha, no una constante.
 // una constante, un contenedor que lleve días levantado seguiría diciendo el
 // precio de lanzamiento después de que subió.
 // ============================================================================
@@ -19,12 +19,12 @@ export type { Ocurrencia as Encuentro } from './programa';
 export const APEGO = {
   ...APEGO_DETOX,
 
-  /** "$20 USD" — el precio vigente HOY. */
+  /** "$40 USD" — el precio vigente HOY. */
   get precio(): string {
     return `$${precioApego(new Date()).monto} USD`;
   },
   periodicidad: 'al mes',
-  /** "$20 USD al mes" — frase completa, para no armarla mal en cada sitio. */
+  /** "$40 USD al mes" — frase completa, para no armarla mal en cada sitio. */
   get precioFrase(): string {
     return precioApego(new Date()).frase;
   },

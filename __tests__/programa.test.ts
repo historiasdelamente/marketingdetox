@@ -79,28 +79,47 @@ describe('lo que vende es una puerta abierta, no un evento', () => {
 });
 
 describe('el precio se calcula, no se escribe', () => {
-  it('en lanzamiento son 20 con 40 tachado', () => {
-    const p = precioApego(colombia('2026-08-01T09:00:00'));
+  // ⚠️ ESTOS TESTS NO FIJAN UNA FECHA DEL CALENDARIO A MANO, y es a propósito.
+  // Antes decían "el 15 de agosto" y "el 16": cuando Javier cerró el
+  // lanzamiento antes de tiempo (2026-08-07), tres se cayeron a la vez sin que
+  // hubiera ni un bug. Lo que se prueba es el MECANISMO —antes del cierre 20,
+  // después 40— así que las fechas salen de la propia configuración.
+  const FIN = new Date(APEGO_DETOX.lanzamiento.finISO);
+  const unMinutoAntes = new Date(FIN.getTime() - 60_000);
+  const unMinutoDespues = new Date(FIN.getTime() + 60_000);
+
+  it('mientras el lanzamiento vive son 20 con 40 tachado', () => {
+    const p = precioApego(unMinutoAntes);
     expect(p.enLanzamiento).toBe(true);
     expect(p.monto).toBe(20);
     expect(p.antes).toBe(40);
     expect(p.frase).toBe('$20 USD al mes');
-    expect(p.diasRestantes).toBe(14);
   });
 
-  it('el 15 de agosto todavía alcanza el precio de lanzamiento', () => {
-    const p = precioApego(colombia('2026-08-15T22:00:00'));
+  it('el último día todavía alcanza el precio de lanzamiento', () => {
+    const p = precioApego(FIN);
     expect(p.enLanzamiento).toBe(true);
     expect(p.monto).toBe(20);
     expect(p.diasRestantes).toBe(0);
   });
 
-  it('el 16 ya son 40 y desaparece el tachado', () => {
-    const p = precioApego(colombia('2026-08-16T00:30:00'));
+  it('pasado el cierre son 40 y desaparece el tachado', () => {
+    const p = precioApego(unMinutoDespues);
     expect(p.enLanzamiento).toBe(false);
     expect(p.monto).toBe(40);
     expect(p.antes).toBe(null);
     expect(p.frase).toBe('$40 USD al mes');
+  });
+
+  // ⚠️ EL QUE DE VERDAD IMPORTA. Javier cerró el lanzamiento el 2026-08-07: hoy
+  // Paula tiene que cobrar 40 y no le puede ofrecer ninguna promoción a nadie.
+  // Si alguien vuelve a poner una fecha futura en `finISO` sin querer, este es
+  // el que lo caza — con el reloj real, no con uno de mentira.
+  it('HOY el lanzamiento está cerrado y son 40', () => {
+    const p = precioApego(new Date());
+    expect(p.enLanzamiento).toBe(false);
+    expect(p.monto).toBe(40);
+    expect(p.antes).toBe(null);
   });
 
   it('el precio nunca es un número que no sea 20 o 40', () => {
@@ -108,11 +127,24 @@ describe('el precio se calcula, no se escribe', () => {
     expect([precioPromo, precioNormal]).toEqual([20, 40]);
   });
 
-  it('la urgencia dice cuánto le cuesta esperar, no que pierda el producto', () => {
+  it('con el lanzamiento cerrado le prohíbe nombrar descuentos y fechas límite', () => {
+    // Lo que ella lee en Skool son 40. Si Paula le insinúa que todavía alcanza
+    // los 20, la mujer llega al checkout, ve otra cifra y se va.
+    const b = bloqueContexto(unMinutoDespues, null, false, TASAS);
+    expect(b).toContain('$40 USD al mes');
+    expect(b).toMatch(/NO hay lanzamiento/);
+    expect(b).toMatch(/NO hay fecha límite/i);
+    expect(b).not.toMatch(/LANZAMIENTO VIVO/);
+  });
+
+  it('mientras vivió, la urgencia decía cuánto cuesta esperar, no que pierda el producto', () => {
     // La de la clase era "no queda grabada": si se la perdía, perdía la plata.
     // Esta empuja sin castigar — perdérsela le sube el precio, no se lo quita.
-    const b = bloqueContexto(colombia('2026-08-05T10:00:00'), null, false, TASAS);
+    const b = bloqueContexto(unMinutoAntes, null, false, TASAS);
     expect(b).toMatch(/\$20 de diferencia CADA MES/i);
+    // Y la fecha del cierre sale de `finISO`, no escrita a mano: la que había
+    // decía "el 15 de agosto" y habría mentido en la campaña siguiente.
+    expect(b).not.toMatch(/el 15 de agosto sube/);
   });
 });
 
@@ -122,7 +154,12 @@ describe('el horario de los talleres, en la semana de ELLA', () => {
   // con otra etiqueta. Habría llegado una hora tarde a cada taller. El prompt le
   // daba la hora de Colombia y a la vez le ordenaba "una sola hora: la de ella",
   // y el modelo resolvió la contradicción cambiándole el nombre al número.
-  const ahora = colombia('2026-08-05T10:00:00');
+  //
+  // Es un miércoles POSTERIOR al cierre del lanzamiento (2026-08-06), que es el
+  // estado real de producción: sin precio tachado y sin cuenta atrás. Con un
+  // miércoles anterior, la fecha de cierre del lanzamiento aparecía en el
+  // bloque y chocaba con el test de "la fecha del próximo taller NO se da".
+  const ahora = colombia('2026-08-12T10:00:00');
 
   it('a México le da SU hora, no la de Colombia', () => {
     const b = bloqueContexto(ahora, '+525512345678', false, TASAS);
@@ -159,25 +196,29 @@ describe('el horario de los talleres, en la semana de ELLA', () => {
     // en la vida. Lo que se reserva es el día del mes del próximo taller.
     const b = bloqueContexto(ahora, '+525512345678', false, TASAS);
     expect(b).toMatch(/pregunta de COMPRA/i);
-    // El próximo taller cae el jueves 6; la única fecha que puede aparecer es la
-    // de HOY, en la línea del reloj.
-    expect(b).not.toContain('jueves 6 de agosto');
+    // El próximo taller cae el jueves 13; la única fecha que puede aparecer es
+    // la de HOY, en la línea del reloj.
+    expect(b).not.toContain('jueves 13 de agosto');
   });
 
   it('a la que ya entró sí le da la fecha, y también en su hora', () => {
     const b = bloqueContexto(ahora, '+525512345678', true, TASAS);
-    expect(b).toContain('jueves 6 de agosto');
+    expect(b).toContain('jueves 13 de agosto');
     expect(b).toContain('martes y jueves, 7:00 PM');
   });
 });
 
 describe('el precio en la moneda de ELLA', () => {
-  const ahora = colombia('2026-08-05T10:00:00');
+  // Después del cierre del lanzamiento: las cifras son las de $40, que es lo
+  // que ella ve en Skool. Antes esto estaba clavado en un miércoles de
+  // lanzamiento y seguía comprobando conversiones de $20 — un precio que ya
+  // nadie puede pagar.
+  const ahora = colombia('2026-08-12T10:00:00');
 
   it('a una colombiana le da las dos cifras, con el dólar delante', () => {
     const b = bloqueContexto(ahora, '+573001112233', false, TASAS);
-    expect(b).toContain('$20 USD');
-    expect(b).toContain('unos 80.000 COP');
+    expect(b).toContain('$40 USD');
+    expect(b).toContain('unos 160.000 COP');
   });
 
   it('siempre "unos" — nunca una cifra exacta', () => {
@@ -215,9 +256,9 @@ describe('el precio en la moneda de ELLA', () => {
     // delante se lo inventó.
     const completas = { USD: 1, COP: 4000, MXN: 18, ARS: 1000, CLP: 950, PEN: 3.7, EUR: 0.92, BRL: 5.5 };
     const b = bloqueContexto(ahora, '+573001112233', false, completas);
-    expect(b).toContain('80.000 COP');
-    expect(b).toContain('20.000 ARS');
-    expect(b).toContain('360 MXN');
+    expect(b).toContain('160.000 COP');
+    expect(b).toContain('40.000 ARS');
+    expect(b).toContain('720 MXN');
     // Y le prohíbe salirse de esa lista.
     expect(b).toMatch(/únicas cifras que puedes decir/i);
     expect(b).toMatch(/NUNCA calcules tú una conversión/i);
@@ -227,7 +268,7 @@ describe('el precio en la moneda de ELLA', () => {
     // La colombiana que vive en Madrid tiene línea +57 y paga en euros.
     const b = bloqueContexto(ahora, '+573001112233', false, TASAS, 'ES');
     expect(b).toContain('España');
-    expect(b).not.toContain('unos 80.000 COP');
+    expect(b).not.toContain('unos 160.000 COP');
   });
 });
 
@@ -278,11 +319,11 @@ describe('el conversor de monedas', () => {
   });
 
   it('el bloque del reloj tampoco da cifra local sin tasa verificada', () => {
-    const b = bloqueContexto(colombia('2026-08-05T10:00:00'), '+573001112233', false, {
+    const b = bloqueContexto(colombia('2026-08-12T10:00:00'), '+573001112233', false, {
       valores: { USD: 1, COP: 4000 },
       vivas: false,
     });
-    expect(b).not.toContain('80.000');
+    expect(b).not.toContain('160.000');
     expect(b).toMatch(/no hay tasa verificada/i);
   });
 });
