@@ -12,6 +12,7 @@ import {
   type MotivoHandoff,
 } from './blindaje';
 import { conocimientoPara } from './conocimiento';
+import { correoEn, enviarLeadAlCRM } from './crm';
 import { analizarConversacion, bloqueGuion, pideElLink, tandaDeVinetas, type Turno } from './guion';
 import { bloqueIntencion, haySenalDeDuda, leerIntencion } from './intencion';
 import { escalonDe, instruccionEscalon, type Escalon } from './escalera';
@@ -803,6 +804,14 @@ export type WaUser = {
    */
   escalon?: string | null;
   /**
+   * Su correo, cuando lo da. La columna ya existe en `wa_users`.
+   *
+   * Cuando aparece por primera vez se manda al CRM, y de ahí sale sola la
+   * secuencia de tres correos. Aquí se guarda para saber que YA lo tenemos y no
+   * volver a pedírselo — nada más pesado que un bot que pide dos veces lo mismo.
+   */
+  email?: string | null;
+  /**
    * ISO del país que ELLA dijo por texto ('CO', 'MX'…). MANDA sobre el
    * indicativo de su número: muchas viven en un país distinto del de su línea,
    * y ahí el teléfono le daría la hora y la moneda equivocadas.
@@ -893,7 +902,7 @@ export async function updateUser(manychatId: string, updates: Partial<Pick<WaUse
 // PATCH separado en best-effort para que un schema sin la columna nunca rompa.
 async function updateUserOptional(
   manychatId: string,
-  col: 'origen' | 'canal' | 'phone' | 'escalon' | 'pais',
+  col: 'origen' | 'canal' | 'phone' | 'escalon' | 'pais' | 'email',
   val: string,
 ) {
   try {
@@ -1027,6 +1036,41 @@ export function buildSystemPrompt(
   // más abajo: si los dos no coinciden, `desvinetar` borra las viñetas que este
   // prompt acaba de pedir.
   const tandaVinetas = tandaDeVinetas(historial, opciones.mensajeDeElla ?? '', intencion);
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // PEDIRLE EL CORREO — solo si no lo tenemos y la conversación ya arrancó.
+  //
+  // No se le pide un dato: se le ofrece la cartilla. Es la misma diferencia que
+  // hay entre "déjame tu correo" y "¿te la mando?" — la primera suena a
+  // formulario y la segunda a regalo, y ella lleva años dándole cosas a alguien
+  // que no le daba nada.
+  //
+  // ⚠️ NO EN EL PRIMER MENSAJE. Ahí lo único que toca es su nombre y su país
+  // (bloque de entrada). Pedirle tres cosas seguidas a alguien que acaba de
+  // escribir "hola" es un formulario con emojis.
+  //
+  // ⚠️ NI CUANDO ELLA MANDA. Si está corrigiendo, aceptando, preguntando o
+  // despidiéndose, el embudo se calla — es la regla de una sola voz por turno,
+  // la misma que apaga el guion de venta.
+  //
+  // Cuando lo escriba, el código lo guarda y lo manda al CRM, y de ahí sale
+  // sola la secuencia. Paula no manda ni un correo.
+  const puedePedirCorreo =
+    !user.email && !opciones.esPrimerTurno && !opciones.handoff && !ellaManda && historial.length >= 4;
+
+  const bloqueCorreo = puedePedirCorreo
+    ? `# 📬 TIENES ALGO QUE MANDARLE, Y TODAVÍA NO TIENES DÓNDE
+
+Hay una cartilla suya esperando: **«Sal del Narcisismo», doce pasos con ejercicios**, escrita por Javier Vieira. Es gratis y se la mandas por correo.
+
+**Ofrécesela en UNA línea, pegada a lo que ella acaba de contarte**, y pídele el correo en la misma frase. Así de simple: *"tengo una cartilla que te va a servir justo para eso, ¿a qué correo te la mando?"*
+
+⛔ **No la nombres como un requisito ni como un registro.** Nada de "déjame tu correo", "te registro" ni "para enviarte información". Ella lleva años dándole cosas a alguien que no le daba nada: esto es al revés, tú le das algo.
+⛔ **Una sola vez.** Si no te lo da, sigues la conversación como si nada y no vuelves a insistir. Insistir por un correo es lo que la hace sentir vendida.
+⛔ Y **no es lo primero del mensaje**: primero contestas lo suyo, y esto va al final, en media línea.
+
+`
+    : '';
   const guion = bloqueGuion(historial, opciones.handoff != null || ellaManda);
 
   // EL GUION VA PRIMERO, ANTES DEL RELOJ.
@@ -1036,6 +1080,8 @@ export function buildSystemPrompt(
   // esto, no lo repitas", ya había leído qué hay adentro dos veces en la zona
   // de máxima atención. Ahora lo primero que lee es qué toca AHORA.
   return `${handoff}${lectura}${guion ? guion + GUION_SEP : ""}${contextoVivo}${instruccionEscalon()}
+
+${bloqueCorreo}
 
 ---
 
@@ -1355,6 +1401,37 @@ export async function processPaulaMessage(
   // proposito: lo que ella dice manda sobre su indicativo. El porque completo
   // esta en `paisDeElla`.
   paisDicho = paisDeElla(paisDicho, telefono);
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // SU CORREO — se guarda y se manda al CRM la PRIMERA vez que lo escribe.
+  //
+  // Se lee con expresión regular, no con el extractor del modelo: un correo mal
+  // leído no se nota hasta que el envío rebota, y `gpt-4.1-mini` se come un
+  // punto o cambia una letra sin avisar. Lo que se puede calcular, se calcula.
+  //
+  // Va DESPUÉS de resolver su país porque el país viaja en el lead: al CRM le
+  // sirve para segmentar, y aquí ya está decidido (lo que ella dijo manda sobre
+  // su indicativo).
+  //
+  // Ni la escritura en la base ni la llamada al CRM pueden tumbar la respuesta:
+  // las dos se rinden en silencio y dejan el motivo en el log. Ella sigue
+  // hablando con Paula como si nada.
+  // ─────────────────────────────────────────────────────────────────────────
+  const suCorreo = user.email ? null : correoEn(userMessage);
+  if (suCorreo) {
+    await updateUserOptional(manychatId, 'email', suCorreo);
+    const enviado = await enviarLeadAlCRM({
+      email: suCorreo,
+      nombre: updates.name ?? user.name,
+      telefono: telefono ?? null,
+      pais: paisDicho ?? null,
+      origen: 'paula',
+      extra: { manychat_id: manychatId, canal: normalizarCanal(canal) },
+    });
+    console.log(
+      `[Paula] correo de ${manychatId}: ${suCorreo} -> CRM ${enviado.ok ? 'OK' : 'FALLO: ' + enviado.error}`,
+    );
+  }
 
   // Confirmación de compra dicha por ella.
   if (user.funnel_stage !== 'compradora' && COMPRA_USER_RE.test(userMessage)) {

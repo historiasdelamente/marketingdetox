@@ -28,7 +28,7 @@ import {
   quitarPreguntaDeFreno,
   quitarVentaEnCrisis,
 } from '@/lib/whatsapp/blindaje';
-import { analizarConversacion, pideElLink, preguntaQueIncluye, type Turno } from '@/lib/whatsapp/guion';
+import { analizarConversacion, pideElLink, tandaDeVinetas, type Turno } from '@/lib/whatsapp/guion';
 import { haySenalDeDuda, leerIntencion } from '@/lib/whatsapp/intencion';
 import { escalonDe } from '@/lib/whatsapp/escalera';
 import { aplicarFormato } from '@/lib/whatsapp/formato';
@@ -141,10 +141,16 @@ describe('conversación manual con Paula', () => {
     // Blindaje + reintento, igual que en producción. Los días del taller van en
     // la zona de ELLA: sin esto el simulador audita con las reglas de Colombia y
     // marca como error el día que es correcto para una mujer de Madrid.
-    const explicandoElPrograma = preguntaQueIncluye(mensaje);
+    // ⚠️ ESTO TIENE QUE SER EL MISMO CÁLCULO QUE PRODUCCIÓN, no uno parecido.
+    // Estaba en `preguntaQueIncluye(mensaje)`, que era lo que había antes de las
+    // dos tandas: con eso el simulador borraba las viñetas de la SEGUNDA tanda y
+    // habría enseñado un mensaje que en producción no sale así. Un simulador que
+    // no corre el mismo pipeline no sirve para nada.
     const ultimaDePaula = [...estado.historial].reverse().find((m) => m.role === 'assistant')?.content ?? '';
     const queHizoElla = leerIntencion(mensaje, ultimaDePaula);
-    out.push(`🔎 LECTURA: ella esta -> ${queHizoElla}${explicandoElPrograma ? ' (pregunta que incluye -> vinetas OK)' : ''}
+    const tanda = tandaDeVinetas(estado.historial as Turno[], mensaje, queHizoElla);
+    const explicandoElPrograma = tanda > 0;
+    out.push(`🔎 LECTURA: ella esta -> ${queHizoElla}${tanda ? ` (le toca la tanda ${tanda} de vinetas)` : ''}
 `);
 
     const diasTaller = diasTallerPara(ahora, telefono, estado.usuaria.pais);
