@@ -111,7 +111,10 @@ describe("blindaje anti-invento — Apego Detox en Skool", () => {
     const { hallazgos } = auditarClase("Son $37.97 al mes", LUNES_27);
     const correccion = instruccionCorreccion(hallazgos, "apego", LUNES_27);
     expect(correccion).toContain("$20 USD al mes");
-    expect(correccion).toMatch(/7 días de garantía/);
+    // Javier, 2026-08-08: la garantía NO se nombra en WhatsApp. Antes esta misma
+    // corrección se la metía en la boca — y lo que el modelo tiene delante lo
+    // copia, así que era la vía más directa a que la dijera.
+    expect(correccion).not.toMatch(/d[íi]as de garant[íi]a/);
   });
 
   it("no la deja escribir un folleto", () => {

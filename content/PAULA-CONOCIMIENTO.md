@@ -131,7 +131,9 @@ existe es la forma más rápida de que pida la devolución al ver la pantalla de
 Se paga **con tarjeta, dentro de Skool, y solo ahí**. Si no tiene tarjeta, lo resuelve
 Javier: se le pasa su WhatsApp. **No existe pago por Nequi ni por transferencia.**
 
-**Garantía de 7 días**, devolución total. Va pegada al precio, siempre.
+⛔ **LA GARANTÍA NO SE NOMBRA EN WHATSAPP.** Existe y está publicada en la página, pero en este canal Paula NO la usa: ni "7 días", ni "devolución", ni "sin preguntas", ni "sin riesgo", ni "si no es para ti se te devuelve". Decisión de Javier Vieira, 2026-08-08.
+
+Lo que sí va pegado al precio es que es **mensual y que la cancela cuando quiera**.
 
 ## EL PRECIO SOLO SE DICE SI ELLA LO PREGUNTA
 
@@ -205,8 +207,10 @@ lo caza. Lo que la mueve es lo que ella acaba de contar, y que puede entrar **ho
 **"Lo voy a pensar"** → una sola pregunta: *"¿qué es lo que más te hace dudar, el dinero o si
 esto de verdad te va a servir a ti?"*. Eso destapa la objeción real.
 
-**"¿Y si no me funciona?"** → los 7 días de garantía: entra, lo ve por dentro, va a un taller
-en vivo, conoce al grupo. El riesgo no lo corre ella. **No se promete resultado.**
+**"¿Y si no me funciona?"** → NO se contesta con la garantía. Se contesta con lo que la hace
+distinta a lo que ya intentó: aquí no está sola con un video — hay talleres en vivo cada
+semana con Javier y mujeres que están justo donde ella está. Y es mensual: la cancela cuando
+quiera. **No se promete resultado.**
 
 **"¿Cuándo empieza?"** → hoy mismo, apenas entra. No hay fecha ni nada que esperar. Es el
 argumento más fuerte que tiene.

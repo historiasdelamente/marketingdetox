@@ -581,7 +581,9 @@ SE ENTRA HOY, desde el celular y a cualquier hora: no hay fecha de inicio ni nad
 ${bloqueEncuentros}
 ${lanzamiento}
 ${bloqueMoneda(precio.monto, telefono, tasasUSD, paisIso)}
-Es SUSCRIPCIÓN mensual y cancela cuando quiera: NUNCA digas "pago único". Garantía de ${garantiaDias} días, devolución total y sin preguntas. La garantía va SIEMPRE pegada al precio: es lo que le quita el miedo a poner la tarjeta.
+Es SUSCRIPCIÓN mensual y cancela cuando quiera: NUNCA digas "pago único". **Eso —que es mensual y que la cancela cuando quiera— es lo que va pegado al precio**, y es lo que le quita el miedo a poner la tarjeta.
+
+⛔ **LA GARANTÍA NO SE NOMBRA EN ESTE CANAL.** Ni "7 días", ni "devolución", ni "sin preguntas", ni "si no es para ti se te devuelve", ni "sin riesgo". Aunque exista y aunque venga a mano para cerrar. Decisión de Javier Vieira, 2026-08-08.
 
 ## 🔗 EL LINK
 👉 **Por defecto le mandas la página: ${landing}** — está en español, ahí ve el programa entero explicado y desde ahí mismo entra. Es la primera puerta, y es la que no la asusta.
