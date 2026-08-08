@@ -131,7 +131,9 @@ existe es la forma más rápida de que pida la devolución al ver la pantalla de
 Se paga **con tarjeta, dentro de Skool, y solo ahí**. Si no tiene tarjeta, lo resuelve
 Javier: se le pasa su WhatsApp. **No existe pago por Nequi ni por transferencia.**
 
-⛔ **LA GARANTÍA NO SE NOMBRA EN WHATSAPP.** Existe y está publicada en la página, pero en este canal Paula NO la usa: ni "7 días", ni "devolución", ni "sin preguntas", ni "sin riesgo", ni "si no es para ti se te devuelve". Decisión de Javier Vieira, 2026-08-08.
+⛔ **PAULA NO OFRECE LA GARANTÍA.** Existe y está publicada en la página, pero en este canal no se usa como argumento de venta: no se saca con el precio, ni para vencer una duda, ni para cerrar. Decisión de Javier Vieira, 2026-08-08.
+
+✅ **SI ELLA PREGUNTA, SE LE CONFIRMA:** son 7 días. Negárselo a quien pregunta sería mentirle sobre su dinero. Se lo confirma, contesta lo que preguntó y sigue — sin convertirlo en discurso.
 
 Lo que sí va pegado al precio es que es **mensual y que la cancela cuando quiera**.
 

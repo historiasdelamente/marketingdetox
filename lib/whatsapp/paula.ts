@@ -5,6 +5,7 @@ import {
   dejarSoloJavier,
   instruccionCorreccion,
   quitarLinkRepetido,
+  quitarGarantiaNoPedida,
   quitarPreguntaDeFreno,
   instruccionHandoff,
   motivoHandoff,
@@ -13,7 +14,7 @@ import {
 } from './blindaje';
 import { conocimientoPara } from './conocimiento';
 import { correoEn, enviarLeadAlCRM } from './crm';
-import { analizarConversacion, bloqueGuion, pideElLink, tandaDeVinetas, type Turno } from './guion';
+import { analizarConversacion, bloqueGuion, pideElLink, preguntaPorGarantia, tandaDeVinetas, type Turno } from './guion';
 import { bloqueIntencion, haySenalDeDuda, leerIntencion } from './intencion';
 import { escalonDe, instruccionEscalon, type Escalon } from './escalera';
 import { aplicarFormato } from './formato';
@@ -414,11 +415,40 @@ function estilo(
    * Lo decide `tandaDeVinetas()` en guion.ts, que es la única fuente.
    */
   tandaVinetas: 0 | 1 | 2 = 0,
+  /**
+   * ELLA acaba de preguntar por la garantía o por la devolución.
+   *
+   * Lo decide `preguntaPorGarantia()` en guion.ts, sobre el mensaje de ELLA.
+   * Cambia el bloque de la garantía de "no la nombres" a "confírmasela".
+   */
+  preguntoGarantia = false,
 ): string {
   // La misma pregunta en los tres sitios donde aparece (el bloque de entrada,
   // el ejemplo y la lista de antes de enviar). Si el ejemplo enseñara una
   // pregunta distinta de la que se le pide, el modelo copiaría la del ejemplo.
   const pregunta = preguntaEntradaPara(semilla);
+
+  // ───────────────────────────────────────────────────────────────────────
+  // LA GARANTÍA — NO SE OFRECE, PERO SI ELLA PREGUNTA SE LE CONFIRMA.
+  //
+  // Javier, 2026-08-08: primero *"no digas sobre la garantía, quita eso"*, y
+  // después *"confirme y di que tiene 7 días de garantía cuando te pregunte"*.
+  // Son las dos mitades de una sola regla, y aquí se elige cuál va delante.
+  //
+  // El bloque de datos duros enuncia la REGLA completa (no la ofrezcas; si te
+  // pregunta, confírmasela). Esto de aquí es la instrucción del TURNO: dice cuál
+  // de las dos mitades toca AHORA, para que el modelo no tenga que decidirlo.
+  // Y el candado `quitarGarantiaNoPedida` respalda la rama prohibitiva, porque
+  // la garantía es el cierre más fácil que existe y el prompt solo no la sujeta.
+  const bloqueGarantia = preguntoGarantia
+    ? `# 🧾 TE ESTÁ PREGUNTANDO POR LA GARANTÍA — CONFÍRMASELA
+
+Sí la hay: **${APEGO_DETOX.garantiaDias} días**. Se lo dices claro y de una, sin rodeos: entra, lo ve por dentro, y si no es para ella se le devuelve.
+
+Está publicada en la página y en los términos. **Esquivarla sería mentirle sobre su dinero**, y eso no se hace: preguntar esto es de las cosas más sensatas que puede hacer una mujer a la que ya le vendieron humo antes.
+
+⛔ Pero no la conviertas en discurso: se lo confirmas, contestas lo que preguntó y sigues. Nada de "sin riesgo", "pruébalo" ni repetirla en los mensajes siguientes.`
+    : `⛔⛔ **NUNCA LE NOMBRES LA GARANTÍA NI LA DEVOLUCIÓN.** Ni con el precio, ni para vencer una duda, ni para cerrar. Nada de "${APEGO_DETOX.garantiaDias} días", "si no es para ti se te devuelve", "sin preguntas" ni "pruébalo sin riesgo". Decisión de Javier Vieira, 2026-08-08. (Si ELLA la pregunta, este bloque cambia solo y te dice que se la confirmes.)`;
 
   // LAS VIÑETAS DE ESTE TURNO, o ninguna.
   //
@@ -555,7 +585,7 @@ Cuando lo pregunte, la respuesta tiene **FORMA FIJA: dos globos, en este orden, 
 
 ⛔ **NADA MÁS EN ESOS DOS GLOBOS.** Ni los módulos, ni los talleres, ni la comunidad, ni el horario. Ella preguntó **cuánto cuesta**, no qué incluye: encimarle la ficha del producto es el chorrero que la hace cerrar el chat. Si quiere saber qué hay adentro, lo va a preguntar.
 
-⛔⛔ **NUNCA LE NOMBRES LA GARANTÍA NI LA DEVOLUCIÓN.** Ni con el precio, ni para vencer una duda, ni para cerrar. Nada de "7 días", "si no es para ti se te devuelve", "sin preguntas" ni "pruébalo sin riesgo". No se menciona en este canal — decisión de Javier Vieira, 2026-08-08.
+${bloqueGarantia}
 
 ⛔ **Nunca una cifra local exacta:** siempre "unos". **Nunca "pago único"**: es suscripción. Nunca "solo" ni "apenas" delante del número, ni "una inversión en ti".
 
@@ -1093,7 +1123,7 @@ ${bloqueCorreo}
 
 ---
 
-${estilo(semilla, paisConocido, opciones.esPrimerTurno ?? false, user.name, montoUSD, local, historial.length, venta.tieneLink, tandaVinetas)}
+${estilo(semilla, paisConocido, opciones.esPrimerTurno ?? false, user.name, montoUSD, local, historial.length, venta.tieneLink, tandaVinetas, preguntaPorGarantia(opciones.mensajeDeElla ?? ''))}
 # 📚 LO QUE PUEDES AFIRMAR — FUENTE ÚNICA
 Todo lo que Paula puede decir está aquí abajo. Si un dato no está, no existe: no lo afirmes, dile que lo confirmas con Javier.
 
@@ -1577,6 +1607,16 @@ export async function processPaulaMessage(
   const loEstaPidiendo = pideElLink(userMessage) || queHizoElla === 'acepta';
   if (ventaAhora.tieneLink && !loEstaPidiendo && handoff === null) {
     paulaResponse = aplicarFormato(quitarLinkRepetido(paulaResponse), explicandoElPrograma);
+  }
+
+  // LA GARANTIA NO SE OFRECE, PERO SI ELLA PREGUNTA SI SE LE CONFIRMA.
+  //
+  // Javier, 2026-08-08. La mitad de "no se ofrece" no aguanta solo con el
+  // prompt: la garantia es el cierre mas facil que existe y el modelo va a
+  // alcanzarlo en cuanto ella dude. Va aqui, donde no es negociable — y con la
+  // misma excepcion que el link: si ELLA la pregunto, no se toca nada.
+  if (!preguntaPorGarantia(userMessage)) {
+    paulaResponse = quitarGarantiaNoPedida(paulaResponse);
   }
 
   // NO LE VUELVE A PREGUNTAR QUE LA FRENA. Dos casos, los dos vistos en

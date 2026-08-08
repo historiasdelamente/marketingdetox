@@ -866,6 +866,54 @@ export function quitarLinkRepetido(texto: string): string {
 }
 
 /**
+ * LA FRASE QUE VENDE CON LA GARANTÍA.
+ *
+ * Deliberadamente NO incluye "cancela cuando quiera": eso no es la garantía,
+ * es la condición de la suscripción, y es justo lo que Javier dejó en su lugar
+ * como lo que sí baja el miedo.
+ */
+const VENDE_GARANTIA =
+  /garant[íi]a|garantizad|reembols|devoluci[óo]n|se te devuelve|te devolvemos|devoluci[óo]n total|sin riesgo|\d+\s*d[íi]as? (para )?(probar|devolver)|si no es para ti/i;
+
+/**
+ * QUITA LA GARANTÍA CUANDO ELLA NO LA PIDIÓ.
+ *
+ * Javier, 2026-08-08: no se ofrece, pero si ELLA pregunta se le confirman los
+ * días que diga `APEGO_DETOX.garantiaDias`. La mitad de "no se ofrece" no aguanta
+ * solo con el prompt — la garantía es el cierre más fácil que existe y el
+ * modelo va a alcanzarlo en cuanto ella dude. Es la regla de oro del proyecto
+ * otra vez: el prompt lo pide, el código lo hace cierto.
+ *
+ * Quien llama decide: solo se aplica cuando `preguntaPorGarantia()` dice que
+ * ella NO preguntó. Si preguntó, esto no se toca y Paula contesta libre.
+ *
+ * Se corta por frases, como el resto de candados: la garantía suele venir
+ * pegada al final de una frase que sí sirve ("son $40 al mes, y tienes 7 días
+ * de garantía"), y borrar la línea entera se llevaría el precio con ella.
+ */
+export function quitarGarantiaNoPedida(texto: string): string {
+  const original = texto || '';
+  if (!original.trim()) return original;
+
+  const limpio = original
+    .split(SALTO)
+    .map((linea) =>
+      linea
+        .split(/(?<=[.!?…])\s+/)
+        .filter((frase) => !VENDE_GARANTIA.test(frase))
+        .join(' ')
+        .trim(),
+    )
+    .join(SALTO)
+    .replace(/\n{3,}/g, SALTO + SALTO)
+    .trim();
+
+  // Si la frase de la garantía era el mensaje entero, se devuelve el original:
+  // un globo vacío deja a la mujer colgada, que es peor que un argumento de más.
+  return limpio.length > 0 ? limpio : original;
+}
+
+/**
  * LA PREGUNTA QUE YA LE HIZO — FUERA.
  *
  * ⚠️ ESTE CANDADO NACIÓ DE VER QUE EL PROMPT NO BASTA. El guion ya le dice, en

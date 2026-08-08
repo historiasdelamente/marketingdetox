@@ -331,6 +331,31 @@ export function pideElLink(mensaje: string): boolean {
 }
 
 /**
+ * ¿ELLA PREGUNTA POR LA GARANTÍA O POR LA DEVOLUCIÓN?
+ *
+ * Javier, 2026-08-08: *"confirme y di que tiene 7 días de garantía cuando te
+ * pregunte"*. La regla tiene dos mitades y las dos importan:
+ *
+ *   · Paula NO la ofrece. No es un argumento de venta en este canal.
+ *   · Si ELLA pregunta, se la confirma. Está publicada en la página y en los
+ *     términos: esquivarla sería mentirle sobre su dinero, y eso no se hace.
+ *
+ * Esta función es la que separa las dos mitades, y por eso se lee del mensaje
+ * de ELLA —nunca del de Paula—: la pregunta la tiene que haber hecho ella.
+ *
+ * Se escribe amplio a propósito. El coste de los dos errores no es el mismo: si
+ * se dispara de más, Paula confirma una garantía real a alguien que preguntó
+ * algo parecido —molesto y poco más—; si se queda corta, le niega a una mujer
+ * una condición de su compra que sí existe. Ante la duda, que se dispare.
+ */
+const PREGUNTA_GARANTIA =
+  /garant[íi]a|garantizad|reembols|devoluci[óo]n|me devuelven|te devuelven|devuelven (el|la|mi)|recuperar (mi|el) (dinero|plata)|si no me gusta|si no me sirve|si no funciona.*(devuelv|dinero|plata)|puedo cancelar.*(devuelv|dinero)|pierdo (mi|el) dinero|me arrepiento/i;
+
+export function preguntaPorGarantia(mensaje: string): boolean {
+  return PREGUNTA_GARANTIA.test(mensaje || '');
+}
+
+/**
  * ¿ELLA ESTÁ PREGUNTANDO QUÉ HAY ADENTRO?
  *
  * Es la única pregunta en la que Paula puede contestar con viñetas. Javier lo
