@@ -18,6 +18,8 @@
 // ╚═══════════════════════════════════════════════════════════════════════════╝
 // ============================================================================
 
+import { APEGO_DETOX } from './programa';
+
 export type Turno = { role: 'user' | 'assistant'; content: string };
 
 /** Lo que Paula ya cubrió. Se deduce de sus propios mensajes, no de memoria. */
@@ -26,7 +28,7 @@ export type EstadoVenta = {
   turnos: number;
   /** Ya le contó qué hay adentro (talleres, comunidad, módulos…). */
   sabeQueEs: boolean;
-  /** Ya recibió el link de Skool. */
+  /** Ya recibió un link del programa — la página o el de Skool, cualquiera. */
   tieneLink: boolean;
   /** Ya le dio el precio. */
   sabePrecio: boolean;
@@ -45,7 +47,25 @@ export type EstadoVenta = {
 };
 
 const SABE_QUE_ES = /taller|comunidad|m[óo]dulo|meditaci|en vivo|acompa[ñn]am/i;
-const TIENE_LINK = /skool\.com/i;
+
+/**
+ * ¿YA LE MANDÓ UN LINK DEL PROGRAMA? CUENTAN LOS DOS.
+ *
+ * ⚠️ Desde el 2026-08-08 Paula manda por defecto la PÁGINA y deja el de Skool
+ * para cuando ella ya va a pagar (ver `## 🔗 EL LINK` en programa.ts). Si esto
+ * siguiera mirando solo a skool.com, el estado se quedaría clavado en «todavía
+ * no tiene link» y el guion le ordenaría mandarlo otra vez turno tras turno —
+ * justo la repetición que este archivo existe para matar.
+ *
+ * La landing sale de `programa.ts`, que es la fuente única: si cambia el link,
+ * esto lo sigue solo. `skool.com` se deja a nivel de dominio a propósito, para
+ * que valga escriba Paula el /about o no.
+ */
+const escaparRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const TIENE_LINK = new RegExp(
+  `skool\\.com|${escaparRegex(APEGO_DETOX.landing.replace(/^https?:\/\//, ''))}`,
+  'i',
+);
 const SABE_PRECIO = /\$\s?\d|\d+\s*d[óo]lares|al mes/i;
 const SABE_GARANTIA = /garant[íi]a|se te devuelve|devoluci[óo]n/i;
 const ES_HOY = /hoy mismo|entras hoy|sin esperar|no hay que esperar|apenas entras/i;

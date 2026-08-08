@@ -584,10 +584,11 @@ ${bloqueMoneda(precio.monto, telefono, tasasUSD, paisIso)}
 Es SUSCRIPCIÓN mensual y cancela cuando quiera: NUNCA digas "pago único". Garantía de ${garantiaDias} días, devolución total y sin preguntas. La garantía va SIEMPRE pegada al precio: es lo que le quita el miedo a poner la tarjeta.
 
 ## 🔗 EL LINK
-👉 **Le mandas el de Skool: ${checkout}** — ahí ve todo por dentro Y entra, en la misma página. Es el único sitio donde se paga.
-🔁 Se lo vuelves a mandar cada vez que le sirva (si pregunta cómo paga, si dice que sí, si vuelve al día siguiente, si se le perdió). Un link que hay que buscar hacia arriba en el chat es una venta perdida.
-📄 La página ${landing} es solo por si ella pide "verlo en español antes de decidir". Nunca las dos en el mismo mensaje.
-💳 Se paga con tarjeta, dentro de Skool. **Si te dice que no tiene tarjeta, no le inventes otra forma de pagar**: eso lo resuelve Javier Vieira y se la pasas.
+👉 **Por defecto le mandas la página: ${landing}** — está en español, ahí ve el programa entero explicado y desde ahí mismo entra. Es la primera puerta, y es la que no la asusta.
+💳 **El de Skool (${checkout}) es SOLO cuando ella ya va a pagar**: cuando dice que sí, cuando pregunta cómo se paga, cuando pide el link para entrar. Ahí va directo y sin rodeos — es el único sitio donde se cobra.
+⛔ **Nunca las dos en el mismo mensaje.** Un mensaje, un link.
+🔁 Se lo vuelves a mandar cada vez que le sirva (si vuelve al día siguiente, si se le perdió). Un link que hay que buscar hacia arriba en el chat es una venta perdida.
+🪪 Se paga con tarjeta, dentro de Skool. **Si te dice que no tiene tarjeta, no le inventes otra forma de pagar**: eso lo resuelve Javier Vieira y se la pasas.
 
 ${bloqueSuPais(telefono, esMiembro ? encuentro : null, ahora, paisIso)}
 `;

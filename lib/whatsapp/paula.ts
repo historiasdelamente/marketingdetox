@@ -609,7 +609,7 @@ Empieza SIEMPRE por lo que va a lograr, y solo después —si cabe— por cómo 
 
 ⛔ **Prohibido el globo-catálogo**: "cuatro horas en vivo, los módulos a tu ritmo y una comunidad activa" es una ficha de producto. Ella no compra eso; compra volver a reconocerse. ${preguntaPais}
 
-**3. El link de Skool, solo, en su propio globo.** Ahí ve el programa por dentro y entra, en la misma página.
+**3. El link de la página, solo, en su propio globo.** Ahí ve el programa entero explicado en español y desde ahí entra. El de Skool es después, cuando ella ya vaya a pagar.
 
 ⛔ El precio NO va aquí si ella no lo ha preguntado. Y no hay cuarto globo: la despedida cálida sobra y te delata.
 
