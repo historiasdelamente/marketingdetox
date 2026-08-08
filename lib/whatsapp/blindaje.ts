@@ -799,16 +799,70 @@ export function dejarSoloJavier(texto: string): string {
  * Se filtra por linea, como en crisis: quitar un link a media frase deja el
  * texto peor que no tocarlo.
  */
+/**
+ * LA FRASE QUE ANUNCIA UN LINK — «solo entras aquí:», «aquí tienes el link».
+ *
+ * ⚠️ SIN ESTO, EL CANDADO DE ABAJO FABRICA EL PEOR MENSAJE POSIBLE. Quitar el
+ * link y dejar la frase que lo presentaba deja a una mujer mirando un anuncio
+ * que no lleva a ninguna parte, y eso se lee como que el bot se rompió. Pasó
+ * dos veces en producción: Analia el 2026-08-06 («Aquí tienes el link para que
+ * puedas entrar hoy mismo» + nada) y Hessell el 2026-08-08 («Para unirte hoy
+ * mismo, solo entras aquí:» + nada), las dos veces preguntando cómo entrar.
+ *
+ * Las dos veces se parcheó ampliando `PIDE_LINK`, y las dos veces se volvió a
+ * romper con otras palabras. Este es el candado que no depende de adivinar cómo
+ * escribe ella: si el link se fue, la frase que lo anunciaba se va con él.
+ */
+const ANUNCIA_LINK =
+  /(aqu[íi]|ac[áa])\s*(tienes|te dejo|va|est[áa]|lo tienes)|te (dejo|paso|mando|env[íi]o|comparto) el (link|enlace)|este es el (link|enlace)|el (link|enlace) (es|va)|entras? (aqu[íi]|ac[áa])|ingresas? (aqu[íi]|ac[áa])|te (unes|inscribes|suscribes) (aqu[íi]|ac[áa])|desde (aqu[íi]|ac[áa])|en este (link|enlace)|(dando|haciendo) clic/i;
+
+/**
+ * Deja la línea sin la frase que anunciaba el link que acabamos de borrar.
+ *
+ * Se corta por FRASES y no por líneas —igual que `quitarPreguntaDeFreno`—
+ * porque el anuncio casi siempre viene pegado al final de una frase que sí
+ * sirve: en el caso de Hessell, el mismo globo traía el horario de los talleres
+ * (útil) y el «solo entras aquí:» (huérfano). Borrar la línea entera le habría
+ * quitado también el horario que sí había pedido.
+ *
+ * El corte por dos puntos finales va aparte del regex a propósito: unos dos
+ * puntos al final de un mensaje SIEMPRE anuncian algo que ya no está.
+ */
+function sinAnuncioDeLink(linea: string): string {
+  return linea
+    .split(/(?<=[.!?…])\s+/)
+    .filter((frase) => {
+      const f = frase.trim();
+      if (!f) return false;
+      return !ANUNCIA_LINK.test(f) && !/[:：]\s*$/.test(f);
+    })
+    .join(' ')
+    .trim();
+}
+
 export function quitarLinkRepetido(texto: string): string {
+  const original = texto || '';
   const productos = [APEGO_DETOX.checkout, APEGO_DETOX.landing]
     .map((url) => url.replace(/^https?:\/\//, '').replace(/\?.*$/, ''));
 
-  return (texto || '')
-    .split(SALTO)
-    .filter((linea) => !productos.some((prod) => linea.includes(prod)))
+  const lineas = original.split(SALTO);
+  const quedan = lineas.filter((linea) => !productos.some((prod) => linea.includes(prod)));
+
+  // Si no se quitó ningún link no se toca nada más: `sinAnuncioDeLink` solo
+  // tiene sentido cuando hay un huérfano que limpiar. Aplicarlo siempre borraría
+  // el «te cuento lo que hay adentro:» de un mensaje que sí lo cumple debajo.
+  const seFueUnLink = quedan.length !== lineas.length;
+
+  const limpio = (seFueUnLink ? quedan.map(sinAnuncioDeLink) : quedan)
     .join(SALTO)
     .replace(/\n{3,}/g, SALTO + SALTO)
     .trim();
+
+  // ⚠️ UN MENSAJE VACÍO ES PEOR QUE UN LINK REPETIDO. Si su respuesta entera era
+  // el anuncio y el link, al quitar los dos no queda nada y ella no recibiría
+  // NADA — el silencio se lee como que la dejaron colgada. En ese caso se
+  // devuelve el original y que le llegue el link otra vez.
+  return limpio.length > 0 ? limpio : original;
 }
 
 /**

@@ -278,7 +278,53 @@ ${yaDicho(historial)}`;
  * —el prompt lo pide, el código lo hace cierto—, y la repetición del link era la
  * única regla importante que seguía dependiendo solo del prompt.
  */
-const PIDE_LINK = /link|enlace|p[áa]gina|d[óo]nde (entro|me inscribo|pago|compro)|c[óo]mo (entro|me inscribo|pago|compro|hago)|m[áa]ndamelo|p[áa]samelo|se me perdi[óo]|no lo encuentro|quiero entrar|me interesa|s[íi] quiero|c[óo]mo es el pago|cu[áa]nto (vale|cuesta)|precio/i;
+/**
+ * TODAS LAS FORMAS DE DECIR «ENTRAR», EN UN SOLO SITIO.
+ *
+ * ⚠️ HESSELL, 2026-08-08 — EL FALLO QUE OBLIGÓ A ESCRIBIR ESTO. Ella escribió
+ * **«Y como me uno a la comunidad»**, que es la pregunta de compra más directa
+ * que existe. `me uno` no estaba en la lista, así que `pideElLink` devolvió
+ * false; como ella YA tenía el link de antes, el candado de `paula.ts` llamó a
+ * `quitarLinkRepetido` y le **borró la línea del link**. Recibió *"Para unirte
+ * hoy mismo, solo entras aquí:"* y nada debajo. Volvió a preguntar y tampoco.
+ *
+ * Es el mismo fallo de Analia del 2026-08-06 (ver `paula.ts`, «UN DALE ES PEDIR
+ * EL LINK») con otras palabras. Dos veces el mismo fallo por la misma causa
+ * significa que **la lista siempre se va a quedar corta**: ninguna mujer escribe
+ * como el regex. Por eso el arreglo va en dos capas y esta es solo la primera —
+ * la segunda vive en `quitarLinkRepetido`, que ya no deja huérfana la frase que
+ * anuncia el link.
+ *
+ * Van sin prefijo a propósito: quien los usa les pega delante el «cómo/dónde/
+ * quiero» que corresponda, para que un «pago» suelto no dispare nada.
+ */
+const ENTRAR =
+  'entro|entrar|me inscribo|inscribirme|me uno|unirme|me sumo|sumarme|ingreso|ingresar|me meto|meterme|me suscribo|suscribirme|me registro|registrarme|me anoto|anotarme|me apunto|apuntarme|accedo|acceder|empiezo|empezar|comienzo|comenzar|pago|pagar|compro|comprar|hago';
+
+const PIDE_LINK = new RegExp(
+  [
+    'link',
+    'enlace',
+    'p[áa]gina',
+    // «cómo me uno», «dónde me inscribo», «qué hago para entrar», «por dónde entro»
+    `(d[óo]nde|c[óo]mo|qu[ée] hago para|hago para|por d[óo]nde)\\s+(${ENTRAR})`,
+    // «quiero unirme», «me gustaría inscribirme», «quisiera entrar»
+    `(quiero|quisiera|me gustar[íi]a)\\s+(${ENTRAR})`,
+    'me quiero (unir|inscribir|suscribir|meter|anotar|apuntar|meter)',
+    'quiero (ser parte|pertenecer)',
+    'm[áa]ndamelo',
+    'p[áa]samelo',
+    'se me perdi[óo]',
+    'no lo encuentro',
+    'quiero entrar',
+    'me interesa',
+    's[íi] quiero',
+    'c[óo]mo es el pago',
+    'cu[áa]nto (vale|cuesta)',
+    'precio',
+  ].join('|'),
+  'i',
+);
 
 export function pideElLink(mensaje: string): boolean {
   return PIDE_LINK.test(mensaje || '');
@@ -296,8 +342,21 @@ export function pideElLink(mensaje: string): boolean {
  * Ojo con lo que NO entra: «¿cuánto cuesta?» es precio, no contenido, y ahí una
  * lista sobra.
  */
+/**
+ * ⚠️ «CÓMO ME UNO» TAMBIÉN ES ESTA PREGUNTA. Javier, 2026-08-08, viendo el chat
+ * de Hessell: *"debes de saber cómo unirse (…) los beneficios que posee, todo
+ * esto, porque ellas no saben nada"*. Quien pregunta cómo se une no está
+ * pidiendo un trámite: está pidiendo que le digan qué es eso a lo que se va a
+ * unir. Contestarle solo con el horario —que es lo que pasó— es dejarla igual
+ * de a ciegas que antes de preguntar.
+ *
+ * Por eso entra aquí y no solo en `PIDE_LINK`: aquí es donde se le abren las
+ * viñetas cortas, que es la forma en que esto se lee de un vistazo en un
+ * celular. Javier el mismo día: *"en viñetas cortas los beneficios de lo que se
+ * logrará, organizado para humanos, no como un chorrero de letras"*.
+ */
 const QUE_INCLUYE =
-  /qu[ée] (incluye|trae|hay|contiene|tiene|es lo que|voy a|me llevo|lograr[íi]a|gano|obtengo)|en qu[ée] consiste|c[óo]mo (es|funciona|va) (el|lo)|de qu[ée] (se )?trata|qu[ée] es (el|lo|eso|esto|apego)|m[áa]s informaci[óo]n|cu[ée]ntame m[áa]s|explicame|expl[íi]came/i;
+  /qu[ée] (incluye|trae|hay|contiene|tiene|es lo que|voy a|me llevo|lograr[íi]a|gano|obtengo)|en qu[ée] consiste|c[óo]mo (es|funciona|va) (el|lo)|de qu[ée] (se )?trata|qu[ée] es (el|lo|eso|esto|apego)|m[áa]s informaci[óo]n|cu[ée]ntame m[áa]s|explicame|expl[íi]came|(c[óo]mo|d[óo]nde|qu[ée] hago para|hago para)\s+(me uno|unirme|me inscribo|inscribirme|me suscribo|suscribirme|me registro|registrarme|ingreso|ingresar|entro|entrar|me meto|meterme|empiezo|empezar)|quiero (unirme|ser parte|pertenecer|inscribirme)|qu[ée] es (la comunidad|skool)|c[óo]mo (es|funciona) la comunidad/i;
 
 export function preguntaQueIncluye(mensaje: string): boolean {
   return QUE_INCLUYE.test(mensaje || '');
