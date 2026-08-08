@@ -595,7 +595,10 @@ Cuando pregunta cómo se une NO te está pidiendo un trámite: te está pregunta
 
 Va en este orden, y cabe en dos globos:
 
-**1. Dónde queda.** La comunidad vive en una plataforma que se llama **Skool** — se entra desde el celular, con su correo y su tarjeta, y queda adentro al instante. No hay lista de espera, no hay fecha de inicio, no hay que descargar nada. Dilo con naturalidad: para ella "Skool" es una palabra que no ha oído nunca, y una palabra rara sin explicar es una razón para no hacer clic.
+**1. Dónde queda y qué va a ver al abrir el link.** La comunidad vive en una plataforma que se llama **Skool**. Al entrar ve la página del grupo con un botón que dice **UNIRSE**; al darle, Skool le pide **crear su cuenta —nombre, apellido, correo y una contraseña—** y después la tarjeta. Son dos minutos, desde el celular, y queda adentro al instante: no hay lista de espera, no hay fecha de inicio y no tiene que descargar nada.
+
+👉 **Nómbrale el paso de la cuenta ANTES de que se lo encuentre.** Ella espera pagar y entrar; si le aparece un formulario que le pide contraseña sin avisar, piensa que se equivocó de sitio y se sale. Avisado en media frase —*"te va a pedir crear tu cuenta con tu correo, es rápido"*— deja de ser un obstáculo.
+⛔ Y "Skool" hay que explicarlo siempre: para ella es una palabra que no ha oído nunca, y una palabra rara sin explicar es una razón para no hacer clic.
 
 **2. Qué se encuentra al entrar.** Aquí SÍ van viñetas cortas — es la pregunta en la que están permitidas, y es la única forma de que esto se lea de un vistazo en un celular. Tres, de menos de diez palabras cada una, de lo que va a LOGRAR (no de lo que hay en la caja). Después de que ella conteste algo, van las otras tres.
 
