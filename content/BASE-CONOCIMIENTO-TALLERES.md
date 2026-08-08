@@ -181,6 +181,21 @@
 
 ---
 
+### 14. Integracion Gestalt + Esquemas + ACT para Trauma de Abandono y Trauma Bond (263 afirmaciones)
+**Archivo:** [research-integracion-gestalt-esquemas-act-trauma-2026.md](research-integracion-gestalt-esquemas-act-trauma-2026.md)
+- Secuencia de intervencion — 72 afirmaciones (estabilizar antes de procesar, ventana de tolerancia, fases de Herman, terapeuta dirige el rescripting en las primeras sesiones)
+- Errores y contraindicaciones — 24 afirmaciones (riesgo de retraumatizacion por trabajo profundo prematuro / fuera de la ventana de tolerancia)
+- Terapia de Esquemas · Imagery Rescripting / Modos — 50 afirmaciones (Young, Arntz; mecanismo = cumplir necesidades no satisfechas del Nino Vulnerable, limited reparenting)
+- ACT · Defusion / Valores / Accion comprometida — 41 afirmaciones (la accion basada en valores —no la mera importancia— es lo que reduce sintomas; contacto cero como accion comprometida, no como mandato)
+- Sesion experiencial vs psicoeducativa — 31 afirmaciones (evocar en el momento, no dar clase)
+- Gestalt · Silla vacia / Two-chair — 18 afirmaciones (Greenberg, EFT, unfinished business)
+- Duelo / Perdida parental temprana / Apego — 13 afirmaciones (apego desorganizado predice duelo prolongado)
+- Trauma bond / Dependencia / Abuso — 10 afirmaciones (el dano emocional, no la violencia fisica sola, predice la decision de irse)
+
+**Nota metodologica:** recuperado del journal de un workflow de investigacion web (Opus, 10 angulos, ~30 fuentes peer-reviewed) cuya sintesis final fallo; las afirmaciones NO pasaron la verificacion adversarial de 3 votos. Cotejar las marcadas [tang.] o de fuente blog antes de uso clinico directo. Fecha: 2026-06-02.
+
+---
+
 ## RESUMEN POR HERIDA QUE SANAN
 
 | Herida | Tecnicas clave |
