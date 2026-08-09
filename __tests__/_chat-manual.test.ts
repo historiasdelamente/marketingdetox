@@ -25,11 +25,12 @@ import {
   dejarSoloJavier,
   instruccionCorreccion,
   motivoHandoff,
+  quitarGarantiaNoPedida,
   quitarLinkRepetido,
   quitarPreguntaDeFreno,
   quitarVentaEnCrisis,
 } from '@/lib/whatsapp/blindaje';
-import { analizarConversacion, pideElLink, tandaDeVinetas, type Turno } from '@/lib/whatsapp/guion';
+import { analizarConversacion, pideElLink, preguntaPorGarantia, tandaDeVinetas, type Turno } from '@/lib/whatsapp/guion';
 import { haySenalDeDuda, leerIntencion } from '@/lib/whatsapp/intencion';
 import { escalonDe } from '@/lib/whatsapp/escalera';
 import { aplicarFormato } from '@/lib/whatsapp/formato';
@@ -209,6 +210,12 @@ describe('conversación manual con Paula', () => {
     ) {
       final = aplicarFormato(quitarPreguntaDeFreno(final), explicandoElPrograma);
     }
+    // LA GARANTÍA. Mismo candado y mismo orden que producción: si ELLA no la
+    // preguntó, fuera. Sin esto el simulador enseñaría una garantía que
+    // producción sí borra — o sea, mentiría a favor del bot, que es justo de lo
+    // que avisa la cabecera de este archivo.
+    if (!preguntaPorGarantia(mensaje)) final = quitarGarantiaNoPedida(final);
+
     if (handoff === 'pregunta_clase') final = aplicarFormato(dejarSoloJavier(final), explicandoElPrograma);
     if (handoff === 'crisis') final = quitarVentaEnCrisis(final);
 

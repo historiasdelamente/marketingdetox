@@ -15,7 +15,7 @@ import {
 } from './blindaje';
 import { conocimientoPara } from './conocimiento';
 import { correoEn, enviarLeadAlCRM } from './crm';
-import { analizarConversacion, bloqueGuion, pideElLink, preguntaPorGarantia, tandaDeVinetas, type Turno } from './guion';
+import { analizarConversacion, bloqueGuion, pideElLink, preguntaPorGarantia, tandaDeVinetas, yaContoAlgo, type Turno } from './guion';
 import { bloqueIntencion, haySenalDeDuda, leerIntencion } from './intencion';
 import { escalonDe, instruccionEscalon, type Escalon } from './escalera';
 import { aplicarFormato } from './formato';
@@ -266,11 +266,63 @@ export const PREGUNTAS_ENTRADA_SIN_DIAGNOSTICO = [
  * es lo más concreto que tiene delante. Con un modelo barato, lo que está en el
  * prompt se usa. La forma de que no lo mande es que no lo vea.
  */
-const entrada = (pregunta: string, sabesPais: boolean, saludo: string) => `# 🚪 ES TU PRIMER MENSAJE
+/**
+ * EL BLOQUE DE ENTRADA — se arma con lo que ELLA YA DIO.
+ *
+ * ╔═══════════════════════════════════════════════════════════════════════════╗
+ * ║  📌 REESCRITO EL 2026-08-08, viendo el chat real de Angela.               ║
+ * ║                                                                           ║
+ * ║  Ella llegó diciendo: «mi nombre es Angela, en TikTok mi cuenta es la de  ║
+ * ║  pretty, estoy interesada en el detox». O sea: nombre, de dónde viene y   ║
+ * ║  a qué. Y recibió, en este orden:                                        ║
+ * ║                                                                           ║
+ * ║    1. «¿desde qué país me escribes?»  ← su +57 ya lo decía               ║
+ * ║    2. «Mucho gusto, Angela.»          ← un globo entero para nada        ║
+ * ║    3. la pregunta del carril                                             ║
+ * ║                                                                           ║
+ * ║  TRES TURNOS DE TRÁMITE antes de que pasara nada. Javier: *"esa pregunta  ║
+ * ║  sobra, ella acaba de venir de un live, tiene claro por qué escribe"*.    ║
+ * ║                                                                           ║
+ * ║  ⚠️ LO QUE **NO** SE TOCA, y es decisión suya del 2026-08-05: la pregunta ║
+ * ║  del carril sigue siendo del CURSO y no de su vida — nada de «cuéntame    ║
+ * ║  qué te pasa». Una pregunta íntima invita a desahogarse, ella se desahoga ║
+ * ║  gratis y se va satisfecha sin comprar. Lo que cambia es CUÁNDO llega y   ║
+ * ║  cuántos trámites tiene delante, no de qué es.                            ║
+ * ╚═══════════════════════════════════════════════════════════════════════════╝
+ *
+ * La regla nueva es una sola: **no le preguntes lo que ella ya te dio.**
+ */
+const entrada = (
+  pregunta: string,
+  sabesPais: boolean,
+  saludo: string,
+  sabesNombre: boolean,
+  yaConto: boolean,
+) => {
+  // Qué queda por preguntar, después de descontar lo que ella ya dio.
+  const falta = [!sabesNombre && 'su nombre', !sabesPais && 'de qué país te escribe'].filter(
+    Boolean,
+  ) as string[];
+
+  const segundoGlobo = falta.length
+    ? `**GLOBO 2 — le preguntas ${falta.join(' y ')}**, en una sola línea corta.
+
+Se contesta en tres palabras, así que casi todas contestan, y una conversación que arrancó es media venta.${
+        sabesPais ? '' : ' Su país te deja decirle el precio en la moneda con la que ella cuenta el dinero.'
+      }`
+    : `**GLOBO 2 — ella ya te dio su nombre y ya sabes su país: NO le preguntes ninguna de las dos.** Ese globo es la pregunta del carril, y va aquí mismo:
+
+> ${pregunta}
+
+**Pedirle un dato que ya te dio es lo que la hace sentir que habla con una máquina.** Y "Mucho gusto, X" no se manda solo en un globo: eso no es un mensaje, es un trámite.`;
+
+  const siYaConto = yaConto
+    ? `\n⚠️ **ELLA YA TE CONTÓ EN QUÉ CARRIL ESTÁ** (si sigue con él o ya salió). **No se lo preguntes.** Recoges lo suyo en media línea, con SUS palabras, y pasas directo a qué es el programa. Volver a preguntárselo es no haberla leído.\n`
+    : '';
+
+  return `# 🚪 ES TU PRIMER MENSAJE
 
 Ella acaba de escribirte. Soltarle aquí el programa, el precio y el link la deja leyendo un volante. Una conversación empieza cuando ella contesta.
-
-Son **dos globos, y el segundo es una pregunta**.
 
 **GLOBO 1 — te presentas con ESTA frase, tal cual está escrita:**
 
@@ -278,22 +330,18 @@ Son **dos globos, y el segundo es una pregunta**.
 
 Es la que le toca a ella. No la cambies, no la resumas y no le añadas nada: está medida para que suene a persona y no a ventanilla.
 
-**GLOBO 2 — le preguntas su nombre${sabesPais ? '' : ' y de qué país te escribe'}**, así de simple: *"¿Cómo te llamas${sabesPais ? '' : ' y desde qué país me escribes'}?"*
-
-**POR QUÉ ESO Y NO OTRA COSA.** Se contesta en tres palabras, así que casi todas contestan — y una conversación que arrancó es media venta. Su nombre te deja hablarle como una persona y no como un formulario${sabesPais ? '' : ', y su país te deja decirle el precio en la moneda con la que ella cuenta el dinero, que es lo que más la ayuda a decidirse'}.
-
+${segundoGlobo}
+${siYaConto}
 Si en su mensaje ya te contó algo (que no duerme, que él se fue, que lleva años así), **recoges eso con SUS palabras en media línea** y después preguntas. Si solo dijo "hola", te presentas y preguntas: no le inventes un dolor.
 
-Si ella se presenta sola, no se lo vuelvas a preguntar: úsalo.
-
 ⛔ Aquí NO va: el precio, lo que incluye, ni el link. Eso es del mensaje siguiente.
-⛔ Nada de "¿en qué te puedo ayudar?", "cuéntame tu caso", "¿qué te está pasando?". Eso es un formulario.
-⛔ **Una sola pregunta.** El nombre y el país son UNA pregunta corta, no dos; la de abajo es para el mensaje que sigue.
-
-📌 Guarda esta para el SEGUNDO mensaje, cuando ya sepas cómo se llama — es la que te dice si él sigue ahí o ya se fue, y de eso depende todo lo que le digas después: *"${pregunta}"*
-
+⛔ Nada de "¿en qué te puedo ayudar?", "cuéntame tu caso", "¿qué te está pasando?". Eso es un formulario, y además la invita a desahogarse gratis.
+⛔ **Una sola pregunta**, nunca dos.
+⛔ **DOS GLOBOS COMO MUCHO.** Ni un "Mucho gusto" suelto, ni una despedida cálida: cada globo de relleno es un turno que ella gasta sin avanzar.
+${falta.length ? `\n📌 Guarda esta para el SEGUNDO mensaje, cuando ya sepas cómo se llama — te dice si él sigue ahí o ya se fue, y de eso depende todo lo que le digas después: *"${pregunta}"*\n` : ''}
 ---
 `;
+};
 
 /** La pregunta de entrada que le toca a ELLA. Estable entre turnos. */
 export function preguntaEntradaPara(semilla: string): string {
@@ -429,6 +477,12 @@ function estilo(
    * Cambia el bloque de la garantía de "no la nombres" a "confírmasela".
    */
   preguntoGarantia = false,
+  /**
+   * ELLA ya contó algo suyo en el mensaje de entrada — típicamente en qué carril
+   * está. Lo decide `yaContoAlgo()` en guion.ts. Si es true, la entrada no le
+   * vuelve a preguntar lo que acaba de decir.
+   */
+  yaContoDeEntrada = false,
 ): string {
   // La misma pregunta en los tres sitios donde aparece (el bloque de entrada,
   // el ejemplo y la lista de antes de enviar). Si el ejemplo enseñara una
@@ -658,7 +712,7 @@ Escribe cortito, con errores, en varios mensajes seguidos. Contéstale igual. Lo
 
 ---
 
-${esPrimerTurno ? entrada(pregunta, paisConocido, saludoEntradaPara(semilla)) : tandaVinetas === 1 ? `# 🎯 ESTE MENSAJE YA LO TIENES ESCRITO ARRIBA — EL BLOQUE 📦
+${esPrimerTurno ? entrada(pregunta, paisConocido, saludoEntradaPara(semilla), Boolean(nombre), yaContoDeEntrada) : tandaVinetas === 1 ? `# 🎯 ESTE MENSAJE YA LO TIENES ESCRITO ARRIBA — EL BLOQUE 📦
 
 Lo que toca ahora es exactamente eso: los tres globos del bloque 📦, en ese orden y sin añadir nada.
 
@@ -718,6 +772,8 @@ Empieza SIEMPRE por lo que va a lograr, y solo después —si cabe— por cómo 
 # 🚫 LO QUE NO HACES NUNCA
 
 **No haces terapia** (arriba tienes la forma). **No diagnosticas** — ni a ella ni a él. **No le dices qué hacer con su vida**: ni déjalo, ni vuelve, ni denúncialo. **No le pides permiso** ("¿te comparto el link?"): si sirve, lo mandas. **No la interrogas.** **No prometes resultados** ni tiempos. **No inventas**: si un dato no está abajo, no existe — *"eso lo confirmo con Javier Vieira y te digo"*. **No te repitas**: ni la misma apertura, ni el mismo argumento dos veces.
+
+⛔ **NI UN GLOBO DE CORTESÍA, EN NINGÚN MOMENTO DE LA CONVERSACIÓN.** "Mucho gusto, Angela." solo, en su propio globo, no es un mensaje: es un trámite, y le gasta un turno a ella sin darle nada. Si le vas a dar la bienvenida, va **pegado a la misma frase que sí dice algo** — *"Mucho gusto, Angela. Te cuento qué es esto…"*— o no va. Lo mismo con las despedidas cálidas y los "qué bueno saludarte".
 
 ---
 
@@ -1205,7 +1261,7 @@ ${bloqueCorreo}
 
 ---
 
-${estilo(semilla, paisConocido, opciones.esPrimerTurno ?? false, user.name, montoUSD, local, historial.length, venta.tieneLink, tandaVinetas, preguntaPorGarantia(opciones.mensajeDeElla ?? ''))}
+${estilo(semilla, paisConocido, opciones.esPrimerTurno ?? false, user.name, montoUSD, local, historial.length, venta.tieneLink, tandaVinetas, preguntaPorGarantia(opciones.mensajeDeElla ?? ''), yaContoAlgo(opciones.mensajeDeElla ?? ''))}
 # 📚 LO QUE PUEDES AFIRMAR — FUENTE ÚNICA
 Todo lo que Paula puede decir está aquí abajo. Si un dato no está, no existe: no lo afirmes, dile que lo confirmas con Javier.
 
@@ -1426,10 +1482,22 @@ export async function callOpenRouter(systemPrompt: string, messages: Array<{ rol
   // la ANATOMÍA del mensaje en vez de una frase, y por eso a cada escalón se le
   // entrega SOLO su material — con el del otro producto delante, lo mezcla.
   const model = process.env.PAULA_MODEL || 'openai/gpt-4.1-mini';
+  // ⚠️ EL TOPE TIENE QUE SUBIR SI EL MODELO PIENSA ANTES DE ESCRIBIR.
+  //
+  // 512 alcanzaba de sobra para gpt-4.1-mini, que escribe directo. Probando
+  // `google/gemini-3.6-flash` el 2026-08-08 las respuestas salieron cortadas a
+  // MITAD DE PALABRA («…y es esto: **Ape»): los modelos que razonan gastan parte
+  // de este presupuesto en su razonamiento interno, que ella nunca ve, y lo que
+  // queda no alcanza para el mensaje. No es que el modelo escriba mal — es que
+  // se queda sin aire.
+  //
+  // Se deja en 512 por defecto (es lo que corre hoy y no cambia el gasto) y se
+  // sube por entorno para poder comparar modelos con el simulador.
+  const maxTokens = Number(process.env.PAULA_MAX_TOKENS) || 512;
   const body = JSON.stringify({
     model,
     messages: [{ role: 'system', content: systemPrompt }, ...messages],
-    max_tokens: 512,
+    max_tokens: maxTokens,
     temperature: 0.7,
   });
 

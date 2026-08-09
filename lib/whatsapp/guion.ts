@@ -174,6 +174,18 @@ export function analizarConversacion(historial: Turno[]): EstadoVenta {
 const RESPUESTA_DE_ENTRADA =
   /ya lo dej[ée]|lo dej[ée]|sigo con [ée]l|todav[íi]a estoy|no he salido|no lo he dejado|me separ[ée]|nos separamos|estoy saliendo|acabo de dejar|sigue conmigo|volvimos|ya sal[íi]|ya me sal[íi]|acabo de salir|quiero dejarl[oa]|quiero salir|necesito salir|estoy con [ée]l|sigo ah[íi]|sigo adentro|a[úu]n estoy|quiero recuperarme|quiero sanar|no s[ée] c[óo]mo salir|me dej[óo]|terminamos|me fui/i;
 
+/**
+ * ¿YA CONTÓ ALGO SUYO EN ESTE MENSAJE?
+ *
+ * Lo usa la ENTRADA para no preguntarle lo que ella acaba de decir. Angela llegó
+ * con «mi nombre es Angela… estoy interesada en el detox» y aun así le
+ * preguntaron el país y después en qué carril estaba. Tres turnos de trámite
+ * encima de una mujer que ya había dicho a qué venía.
+ */
+export function yaContoAlgo(mensaje: string): boolean {
+  return YA_CONTO(mensaje || '');
+}
+
 function YA_CONTO(m: string): boolean {
   const t = (m || '').trim();
   if (RESPUESTA_DE_ENTRADA.test(t)) return true;
