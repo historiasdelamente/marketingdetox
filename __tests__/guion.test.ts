@@ -59,14 +59,18 @@ describe('el guion de venta — para que Paula deje de repetirse', () => {
     expect(g).toMatch(/un ángulo que NO hayas usado/);
   });
 
-  it('cuando ya lo sabe todo, el paso es cerrar o soltar — no repetir la oferta', () => {
+  it('cuando ya lo sabe todo, se vende sin empujar — y sin la pregunta del freno', () => {
     const g = bloqueGuion([
       YA_CONTO,
       paula(`Son $20 al mes con garantía de 7 días. Adentro hay talleres y comunidad.\n\n${SKOOL}`),
       ella('ok'),
     ]);
-    expect(g).toMatch(/CERRAR O SOLTAR/);
-    expect(g).toMatch(/repetir la oferta ahora la aleja/);
+    expect(g).toMatch(/YA LO TIENE TODO/);
+    expect(g).toMatch(/Repetir la oferta la aleja/);
+    // Javier, 2026-08-09: la pregunta del freno no existe en este chat. El paso
+    // tiene que PROHIBIRLA, nunca sugerirla.
+    expect(g).toMatch(/PROHIBIDO preguntarle qué la frena/);
+    expect(g).not.toMatch(/pregunta corta que destape/);
   });
 
   it('le pone delante sus dos últimos mensajes con la prohibición de repetirlos', () => {

@@ -15,8 +15,8 @@ import {
 } from './blindaje';
 import { conocimientoPara } from './conocimiento';
 import { correoEn, enviarLeadAlCRM } from './crm';
-import { analizarConversacion, bloqueGuion, pideElLink, preguntaPorGarantia, tandaDeVinetas, yaContoAlgo, type Turno } from './guion';
-import { bloqueIntencion, haySenalDeDuda, leerIntencion } from './intencion';
+import { analizarConversacion, bloqueGuion, pideElLink, preguntaPorGarantia, preguntaQueIncluye, tandaDeVinetas, yaContoAlgo, type Turno } from './guion';
+import { bloqueIntencion, leerIntencion } from './intencion';
 import { escalonDe, instruccionEscalon, type Escalon } from './escalera';
 import { aplicarFormato } from './formato';
 import {
@@ -727,7 +727,7 @@ Lo que haces en este mensaje:
 
 **1. CONTESTAR EXACTAMENTE LO QUE ELLA ACABA DE DECIR.** Si preguntó algo, eso y nada más. Si te contó algo nuevo, lo recoges con sus palabras.
 
-**2. UNA SOLA COSA NUEVA**, si aporta: un detalle de adentro que no le hayas nombrado todavía, o una pregunta corta que destape qué la frena. Si no tienes nada nuevo que decir, mejor un mensaje corto que uno relleno.
+**2. UNA SOLA COSA NUEVA**, si aporta: un detalle de adentro que no le hayas nombrado todavía, el que le responda a lo que ella contó. Si no tienes nada nuevo que decir, mejor un mensaje corto que uno relleno.
 
 ⛔ **NO vuelvas a listar lo que incluye.** Ya se lo dijiste.
 ⛔ **El link solo si ella lo pide o lo perdió**, o si acaba de decir que sí. No en cada mensaje: repetido pierde fuerza y parece automático.
@@ -773,6 +773,10 @@ Empieza SIEMPRE por lo que va a lograr, y solo después —si cabe— por cómo 
 
 **No haces terapia** (arriba tienes la forma). **No diagnosticas** — ni a ella ni a él. **No le dices qué hacer con su vida**: ni déjalo, ni vuelve, ni denúncialo. **No le pides permiso** ("¿te comparto el link?"): si sirve, lo mandas. **No la interrogas.** **No prometes resultados** ni tiempos. **No inventas**: si un dato no está abajo, no existe — *"eso lo confirmo con Javier Vieira y te digo"*. **No te repitas**: ni la misma apertura, ni el mismo argumento dos veces.
 
+⛔ **NUNCA LE PREGUNTAS QUÉ LA FRENA, QUÉ LA HACE DUDAR, NI "SI HAY ALGO EN PARTICULAR".** Con ninguna palabra y en ningún momento — orden directa de Javier Vieira, 2026-08-09. Esa es LA pregunta de vendedor, y en cuanto sale, ella deja de hablar con una persona. Si dudó, le resuelves la duda concreta o le das un dato nuevo; si calla, cierras cálido con la puerta abierta.
+
+⛔ **PROHIBIDO EL ECO.** Recoger sus palabras NO es devolverle su frase reordenada: *"ya lo dejé pero no puedo soltarlo"* → ~"Ya lo dejaste pero sientes que no puedes soltarlo"~ es un espejo, y ella lo nota. Tu primera frase tiene que AÑADIR algo que ella no dijo: qué significa eso que cuenta, qué cuesta vivirlo así, o qué suele venir después. Si tu frase es la suya con otras palabras, bórrala y escribe la tuya.
+
 ⛔ **NI UN GLOBO DE CORTESÍA, EN NINGÚN MOMENTO DE LA CONVERSACIÓN.** "Mucho gusto, Angela." solo, en su propio globo, no es un mensaje: es un trámite, y le gasta un turno a ella sin darle nada. Si le vas a dar la bienvenida, va **pegado a la misma frase que sí dice algo** — *"Mucho gusto, Angela. Te cuento qué es esto…"*— o no va. Lo mismo con las despedidas cálidas y los "qué bueno saludarte".
 
 ---
@@ -784,6 +788,8 @@ Empieza SIEMPRE por lo que va a lograr, y solo después —si cabe— por cómo 
 **Te cuenta su dolor** → la forma de arriba, y en el mismo mensaje QUÉ ES y QUÉ SE LLEVA. Solo entonces el link.
 
 **Pregunta en qué consiste o qué va a lograr** → el bloque de arriba. Nada de "te entiendo".
+
+**Te pide que le cuentes del programa ("cuéntame", "dame información")** → se lo cuentas AHORA, completo y con el link. JAMÁS "cuando me digas te cuento" — ella YA lo dijo, y hacerla pedirlo dos veces es perder la venta.
 
 **Pregunta el precio** → ahí sí: las dos cifras y el link. Sin garantía y sin nada más.
 
@@ -1764,7 +1770,15 @@ export async function processPaulaMessage(
   // «Dale» no encajaba en `pideElLink`, el codigo le BORRO el link del mensaje.
   // Ella recibio «Aquí tienes el link para que puedas entrar hoy mismo» y
   // ningun link. Visto en produccion el 2026-08-06.
-  const loEstaPidiendo = pideElLink(userMessage) || queHizoElla === 'acepta';
+  //
+  // ⚠️ Y LA PRESENTACION TAMBIEN ES PEDIR EL LINK. Javier, 2026-08-09: escribio
+  // «Cuéntame» (pidiendo el programa), la presentacion salio con su «Puedes
+  // ingresar aquí 👉»… y este candado le borro el link de abajo, porque
+  // «Cuéntame» no encajaba en `pideElLink`. Tuvo que escribir «No veo el link».
+  // Presentar el programa ES un momento de link: si toca tanda de vinetas o
+  // ella pregunto que incluye, el link se queda.
+  const loEstaPidiendo =
+    pideElLink(userMessage) || queHizoElla === 'acepta' || explicandoElPrograma || preguntaQueIncluye(userMessage);
   if (ventaAhora.tieneLink && !loEstaPidiendo && handoff === null) {
     paulaResponse = aplicarFormato(quitarLinkRepetido(paulaResponse), explicandoElPrograma);
   }
@@ -1779,36 +1793,19 @@ export async function processPaulaMessage(
     paulaResponse = quitarGarantiaNoPedida(paulaResponse);
   }
 
-  // NO LE VUELVE A PREGUNTAR QUE LA FRENA. Dos casos, los dos vistos en
-  // produccion con Nedith: ella ya dio una fecha —«el dia lunes estare en mi
-  // ciudad»—, o ya se lo preguntaron dos veces y ya contesto. El guion lo
-  // prohibe en negrita y arriba del todo; se probo con dos modelos y los dos lo
-  // preguntaron igual. Por eso va aqui, donde no es negociable.
-  const ventaConEsteTurno = analizarConversacion([
-    ...(history as Turno[]),
-    { role: 'user', content: userMessage },
-  ]);
-  // Y el caso mas comun de todos, visto con Analia: preguntarle que la frena a
-  // quien NO HA FRENADO NADA. Se lo pregunto justo despues de que ella abriera
-  // su historia, y otra vez despues de un «Muchisimas gracias!!». Si en toda la
-  // conversacion ella no ha puesto ni una senal de duda, la pregunta sobra.
-  const mensajesDeElla = [...history.filter((m) => m.role === 'user').map((m) => m.content), userMessage];
-  const sinDudaNingunaTodavia = !haySenalDeDuda(mensajesDeElla);
-  const seEstaDespidiendo = queHizoElla === 'se_despide';
-  const estaContando = queHizoElla === 'cuenta';
-
-  if (
-    handoff === null &&
-    (ventaConEsteTurno.citaFutura ||
-      ventaAhora.vecesQuePregunto >= 2 ||
-      sinDudaNingunaTodavia ||
-      seEstaDespidiendo ||
-      estaContando ||
-      queHizoElla === 'pregunta' ||
-      queHizoElla === 'corrige')
-  ) {
-    paulaResponse = aplicarFormato(quitarPreguntaDeFreno(paulaResponse), explicandoElPrograma);
-  }
+  // LA PREGUNTA DEL FRENO NO EXISTE — SIEMPRE, SIN CONDICIONES.
+  //
+  // Historia del candado: nacio condicionado (Nedith: cita futura o dos
+  // preguntas ya hechas; Analia: preguntarselo a quien no habia frenado nada).
+  // El 2026-08-09 Javier probo el bot, recibio «¿Hay algo en particular que te
+  // haga dudar de entrar?» — habia senal de duda, primera vez, intencion que no
+  // gateaba: la pregunta paso limpia por el hueco entre condiciones — y la
+  // prohibio del todo: *"no preguntes si hay algo en particular que te frene al
+  // entrar"*. Asi que fuera el gating: la pregunta del vendedor no existe en
+  // este chat, en ninguna conjugacion y bajo ninguna condicion.
+  // (`quitarPreguntaDeFreno` ya devuelve el original si al cortar no queda
+  // nada, asi que ella nunca recibe un globo vacio.)
+  paulaResponse = aplicarFormato(quitarPreguntaDeFreno(paulaResponse), explicandoElPrograma);
 
   if (handoff === 'pregunta_clase') {
     paulaResponse = aplicarFormato(dejarSoloJavier(paulaResponse), explicandoElPrograma);

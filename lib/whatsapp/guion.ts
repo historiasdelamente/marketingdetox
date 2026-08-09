@@ -107,8 +107,16 @@ const OBJECIONES: Array<{ clave: string; patron: RegExp }> = [
  * dos veces que no tenía cómo pagar. Preguntar lo mismo que ya te contestaron es
  * la señal más clara de que no la estás leyendo.
  */
+/**
+ * ⚠️ AMPLIADA EL 2026-08-09 TRAS VERLA PASAR EN PRODUCCIÓN. Paula escribió
+ * «¿Hay algo en particular que te haga dudar de entrar?» — la pregunta que
+ * Javier mandó matar, con OTRA conjugación («te haga dudar», subjuntivo) y un
+ * «en particular» en medio. El regex viejo solo conocía «te hace dudar» pegado,
+ * así que el candado la dejó pasar entera. Ahora cubre subjuntivos (frene,
+ * detenga, impida, haga), el «en particular», y «qué dudas tienes».
+ */
 export const PREGUNTA_FRENO =
-  /qu[ée] (m[áa]s )?te (est[áa] )?(frena|detiene|frenando|deteniendo|impide|impidiendo|hace dudar|est[áa] haciendo dudar)|es solo eso|solo eso lo que te|algo (m[áa]s )?que te est[ée] (frenando|haciendo dudar)|qu[ée] te detiene|hay algo (m[áa]s )?que te fren|algo m[áa]s que te frena/i;
+  /qu[ée] (m[áa]s )?te (est[áa] )?(fren[ae]|deti[e]?ne|detenga|frenando|deteniendo|impid[ae]|impidiendo|preocup[ae]|ha[cg][ae] dudar|est[áa] haciendo dudar)|es solo eso|solo eso lo que te|(hay )?algo( en particular)?( m[áa]s)? que te (est[ée] )?(fren\w*|deteng\w*|detien\w*|impid\w*|preocup\w*|ha[cg][ae] dudar|haciendo dudar)|qu[ée] te (detiene|frena|impide)|qu[ée] es lo que( m[áa]s)? te (hace|haga) dudar|qu[ée] dudas? (tienes|te quedan?)/i;
 
 /**
  * ELLA NOMBRÓ UN MOMENTO. Es lo más valioso que puede decir una mujer que no
@@ -264,7 +272,20 @@ export function bloqueGuion(historial: Turno[], hayHandoff = false, mensajeDeEll
   // preguntar. A Nedith se lo preguntaron cuatro veces seguidas.
   const yaPregunteDemasiado = e.vecesQuePregunto >= 2;
 
-  if (!e.ellaYaConto && e.turnos <= 3) {
+  // ⚠️ ESTA RAMA VA PRIMERO Y NO ES NEGOCIABLE. Javier probó el bot el
+  // 2026-08-09: escribió «podrías darme información del programa» y Paula
+  // contestó «aquí estoy lista para contarte todo cuando me digas» — lo obligó
+  // a pedirlo DOS veces. Después escribió «Cuéntame» y como el estado decía
+  // "ya sabe todo, cierra", salió un cierre con la pregunta del freno en vez
+  // de la presentación. Cuando ELLA pide que le cuenten, todo lo demás del
+  // embudo se calla: no hay estado que valga más que una compradora
+  // preguntando por el producto.
+  if (preguntaQueIncluye(mensajeDeElla ?? '')) {
+    paso = `**CONTARLE EL PROGRAMA — TE LO ESTÁ PIDIENDO ELLA.** Se lo cuentas AHORA, en ESTE mensaje, completo: qué es, qué se lleva y el link. Si abajo hay un bloque 📦 con viñetas, ese es el formato.
+
+⛔ PROHIBIDO aplazarlo: nada de "cuando me digas te cuento", "aquí estoy lista para contarte", "¿quieres que te cuente?". Ella YA lo pidió — hacerla pedirlo dos veces es perder la venta.
+⛔ Y NO cierres este mensaje preguntándole qué la frena o qué la hace dudar. Se cierra con el link.`;
+  } else if (!e.ellaYaConto && e.turnos <= 3) {
     paso = `**ESCUCHAR. Todavía no te ha contado nada suyo — solo ha contestado.**
 
 Aquí NO se vende. Le haces UNA pregunta corta que la invite a contarte dónde está, y te callas a esperar.
@@ -305,9 +326,17 @@ Tu mensaje NO puede terminar en «¿qué te frena?», «¿es solo eso?» ni ning
 
 ⛔ Si esa objeción es de logística —no tiene cómo pagar, no hay banco, solo efectivo— **no la rebatas y no le digas que "eso se trabaja adentro"**: no es una herida, es un banco. Eso se le pasa a Javier.`;
   } else if (!e.sabePrecio) {
-    paso = `**ESPERAR SU PREGUNTA, NO EMPUJAR.** Ya tiene el link y sabe qué es. No le repitas la oferta: contéstale lo que te pregunte. Si no pregunta nada concreto, una sola pregunta corta que destape qué la frena — *"¿qué te está haciendo dudar?"* — y te callas.`;
+    paso = `**ESPERAR SU PREGUNTA, NO EMPUJAR.** Ya tiene el link y sabe qué es. No le repitas la oferta: contéstale lo que te pregunte. Si no pregunta nada concreto, recoges lo último que dijo y le das UNA cosa nueva y concreta de adentro —la que le responda a lo suyo: la comunidad a las 3 AM si no duerme, los talleres en vivo si está sola con esto, que se entra hoy y la primera clase la ve apenas entra— y te callas.
+
+⛔ **PROHIBIDO preguntarle qué la frena, qué la hace dudar o "si hay algo en particular".** Orden directa de Javier Vieira, 2026-08-09: esa pregunta no existe en este chat, con ninguna palabra. Si no hay nada que decir, un mensaje corto y cálido vale más que una pregunta de vendedor.`;
   } else {
-    paso = `**CERRAR O SOLTAR.** Ya sabe qué es, cuánto vale y por dónde entra. No hay nada más que contarle: repetir la oferta ahora la aleja. Una pregunta que destape lo que la frena, o si ya dijo que no dos veces, la sueltas con cariño y le dejas la puerta abierta.`;
+    paso = `**YA LO TIENE TODO — AHORA SE VENDE SIN EMPUJAR.** Sabe qué es, cuánto vale y por dónde entra. Repetir la oferta la aleja, y las preguntas de vendedor también.
+
+Lo que haces: recoges lo último que dijo con SUS palabras, y le dejas UNA cosa sobre la mesa que no le hayas dicho —que se entra hoy mismo y en dos minutos está adentro, que la primera clase la ve apenas entra, o el detalle de adentro que le responda a lo suyo—. Y cierras cálido, con la puerta abierta: *"cuando quieras entrar, aquí estoy"*.
+
+Si ya dijo que no dos veces, la sueltas con cariño y no vuelves a vender en este mensaje.
+
+⛔ **PROHIBIDO preguntarle qué la frena, qué la hace dudar o "si hay algo en particular".** Orden directa de Javier Vieira, 2026-08-09. El silencio de ella no se llena con preguntas de vendedor.`;
   }
 
   return `# 🧭 POR DÓNDE VA ESTA CONVERSACIÓN — LÉELO ANTES DE ESCRIBIR
@@ -430,8 +459,16 @@ export function preguntaPorGarantia(mensaje: string): boolean {
  * celular. Javier el mismo día: *"en viñetas cortas los beneficios de lo que se
  * logrará, organizado para humanos, no como un chorrero de letras"*.
  */
+/**
+ * ⚠️ AMPLIADA EL 2026-08-09 CON EL CHAT REAL DE JAVIER. Él escribió «podrías
+ * darme información del programa» y después «Cuéntame» — y ninguna de las dos
+ * encajaba: el regex pedía «más información» con el "más" puesto, o «cuéntame
+ * más». Resultado: tanda 0, `desvinetar` mató la lista y la presentación salió
+ * en chorrero. Quien pide información del programa, CON CUALQUIER PALABRA, está
+ * pidiendo la presentación con viñetas.
+ */
 const QUE_INCLUYE =
-  /qu[ée] (incluye|trae|hay|contiene|tiene|es lo que|voy a|me llevo|lograr[íi]a|gano|obtengo)|en qu[ée] consiste|c[óo]mo (es|funciona|va) (el|lo)|de qu[ée] (se )?trata|qu[ée] es (el|lo|eso|esto|apego)|m[áa]s informaci[óo]n|cu[ée]ntame m[áa]s|explicame|expl[íi]came|(c[óo]mo|d[óo]nde|qu[ée] hago para|hago para)\s+(me uno|unirme|me inscribo|inscribirme|me suscribo|suscribirme|me registro|registrarme|ingreso|ingresar|entro|entrar|me meto|meterme|empiezo|empezar)|quiero (unirme|ser parte|pertenecer|inscribirme)|qu[ée] es (la comunidad|skool)|c[óo]mo (es|funciona) la comunidad/i;
+  /qu[ée] (incluye|trae|hay|contiene|tiene|es lo que|voy a|me llevo|lograr[íi]a|gano|obtengo)|en qu[ée] consiste|c[óo]mo (es|funciona|va) (el|lo)|de qu[ée] (se )?trata|qu[ée] es (el|lo|eso|esto|apego)|(m[áa]s )?informaci[óo]n (del|de el|sobre|acerca del?) (programa|curso|detox)|(dame|darme|quiero|env[íi]ame|m[áa]ndame|p[áa]same|puedes darme|podr[íi]as darme)( m[áa]s)? informaci[óo]n|\bcu[ée]ntame\b|h[áa]blame del (programa|curso|detox)|qu[ée] (hacen|se hace|se trabaja) en el (programa|curso|detox)|explicame|expl[íi]came|(c[óo]mo|d[óo]nde|qu[ée] hago para|hago para)\s+(me uno|unirme|me inscribo|inscribirme|me suscribo|suscribirme|me registro|registrarme|ingreso|ingresar|entro|entrar|me meto|meterme|empiezo|empezar)|quiero (unirme|ser parte|pertenecer|inscribirme|saber (m[áa]s|del programa|qu[ée] es))|qu[ée] es (la comunidad|skool)|c[óo]mo (es|funciona) la comunidad/i;
 
 export function preguntaQueIncluye(mensaje: string): boolean {
   return QUE_INCLUYE.test(mensaje || '');

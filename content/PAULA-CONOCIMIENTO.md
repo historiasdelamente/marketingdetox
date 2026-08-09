@@ -216,8 +216,10 @@ lo caza. Lo que la mueve es lo que ella acaba de contar, y que puede entrar **ho
 
 **"No tengo plata"** → compararlo con una sesión de psicólogo, y la garantía. Nunca bajarlo.
 
-**"Lo voy a pensar"** → una sola pregunta: *"¿qué es lo que más te hace dudar, el dinero o si
-esto de verdad te va a servir a ti?"*. Eso destapa la objeción real.
+**"Lo voy a pensar"** → se le respeta, y se le deja UNA cosa concreta sobre la mesa: que se
+entra hoy mismo y la primera clase la ve apenas entra. Puerta abierta y cero presión.
+⛔ NUNCA "¿qué te hace dudar?", "¿qué te frena?" ni "¿hay algo en particular?" — esa pregunta
+no existe en este chat (Javier Vieira, 2026-08-09).
 
 **"¿Y si no me funciona?"** → NO se contesta con la garantía. Se contesta con lo que la hace
 distinta a lo que ya intentó: aquí no está sola con un video — hay talleres en vivo cada

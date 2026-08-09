@@ -112,8 +112,13 @@ const URL_RE = /https?:\/\/[^\s<>()"']+/gi;
  * no la palabra "clase" suelta: "las clases en vivo son dos por semana" es
  * correcto y no puede marcarse.
  */
+// ⚠️ Los precios viejos llevan guarda de dígito delante Y detrás. Sin ella,
+// «25.000» encendía la alarma dentro de «unos 125.000 COP» — que es el precio
+// CORRECTO de Colombia a $40 — y cada mensaje de precio colombiano quemaba un
+// reintento entero (doble costo, doble latencia) para "corregir" una cifra que
+// estaba bien. Visto en el simulador el 2026-08-09.
 const CLASE_RETIRADA =
-  /clase\s+del\s+jueves|la\s+clase\s+en\s+vivo\s+del|recuperando\s+mi\s+ser|volver\s+a\s+m[íi]\b|te\s+espero\s+el\s+jueves|25\.?000|\b7\s*(?:usd|d[óo]lares)|120\s*(?:mxn|pesos\s+mexicanos)|volver-a-mi/i;
+  /clase\s+del\s+jueves|la\s+clase\s+en\s+vivo\s+del|recuperando\s+mi\s+ser|volver\s+a\s+m[íi]\b|te\s+espero\s+el\s+jueves|(?<![\d.])25\.?000(?!\d|[.,]\d)|\b7\s*(?:usd|d[óo]lares)|(?<![\d.])120\s*(?:mxn|pesos\s+mexicanos)|volver-a-mi/i;
 
 // La clase era el único sitio donde Nequi tenía sentido. Skool cobra con
 // tarjeta y nadie recibe transferencias: si Paula da un número de Nequi, está
@@ -211,8 +216,13 @@ const PROMESA_GRATIS = /(?:te\s+(?:lo\s+)?(?:regalo|env[íi]o\s+gratis)|(?:clase
 // es la misma pedida de permiso disfrazada de cortesía, y se le escapaba porque
 // no nombra lo que va a mandar. Se exige el signo de apertura y el cierre
 // pegado para no marcar preguntas legítimas ("¿quieres entrar el jueves?").
+// ⚠️ 2026-08-09: entra el APLAZAMIENTO, que es la pedida de permiso al revés.
+// Javier escribió «podrías darme información del programa» y Paula contestó
+// «aquí estoy lista para contarte todo sobre el programa cuando me digas» —
+// ella YA lo pidió y el bot la puso a pedirlo otra vez. Mismo pecado, otra
+// máscara: no dar lo que sirve teniéndolo en la mano.
 const PIDE_PERMISO =
-  /(?:quieres|te\s+gustar[íi]a|deseas)\s+que\s+te\s+(?:cuente|comparta|mande|env[íi]e|pase|explique|diga|deje)|¿\s*te\s+(?:cuento|comparto|mando|env[íi]o|paso|dejo)\b|¿\s*(?:quieres|te\s+parece|te\s+sirve|lo\s+quieres)\s*\?|\bsi\s+(?:quieres|gustas|deseas|te\s+parece)\s*,?\s*(?:te\s+)?(?:lo\s+|la\s+)?(?:paso|mando|env[íi]o|comparto|dejo|cuento)\b/i;
+  /(?:quieres|te\s+gustar[íi]a|deseas)\s+que\s+te\s+(?:cuente|comparta|mande|env[íi]e|pase|explique|diga|deje)|¿\s*te\s+(?:cuento|comparto|mando|env[íi]o|paso|dejo)\b|¿\s*(?:quieres|te\s+parece|te\s+sirve|lo\s+quieres)\s*\?|\bsi\s+(?:quieres|gustas|deseas|te\s+parece)\s*,?\s*(?:te\s+)?(?:lo\s+|la\s+)?(?:paso|mando|env[íi]o|comparto|dejo|cuento)\b|cuando\s+(?:me\s+digas|t[úu]\s+me\s+digas|quieras)\s*(?:te\s+(?:cuento|explico|comparto|digo)|,?\s*aqu[íi]\s+estoy)|apenas\s+me\s+digas|list[ao]\s+para\s+contarte|me\s+dices\s+y\s+te\s+(?:cuento|explico|comparto)/i;
 
 // Paula acompaña y vende; NO psicoeduca. Explicarle el mecanismo por chat la
 // deja satisfecha con la explicación y sin entrar al proceso — y además suena
@@ -604,7 +614,7 @@ export function instruccionCorreccion(
       case 'modulos_inventados':
         return `- Escribiste "${h.detalle}", y ese número no es el que ella va a ver. El aula tiene ${MODULOS_REALES} módulos más el Súper Bonus. Mejor todavía: no des números — nombra UN módulo, el que le responde a lo que te contó.`;
       case 'pide_permiso':
-        return `- Escribiste "${h.detalle}": le pediste permiso para algo obvio, y eso te delata como bot y la cansa. Quítalo. Si la información sirve, dásela; si el link aplica, mándalo. Cierra invitando ("Te espero adentro"), no preguntando.`;
+        return `- Escribiste "${h.detalle}": le pediste permiso o la pusiste a pedirlo otra vez, y eso te delata como bot y la cansa. Quítalo. **Si ella pidió información, se la das AHORA, en este mismo mensaje — completa: qué es, qué se lleva y el link.** Nunca "cuando me digas": ella ya lo dijo. Cierra invitando ("Te espero adentro"), no preguntando.`;
       default:
         return `- ${h.detalle}`;
     }
@@ -834,8 +844,17 @@ export function dejarSoloJavier(texto: string): string {
  * romper con otras palabras. Este es el candado que no depende de adivinar cómo
  * escribe ella: si el link se fue, la frase que lo anunciaba se va con él.
  */
+/**
+ * ⚠️ AMPLIADA EL 2026-08-09 — TERCERA VEZ DEL MISMO FALLO, ahora con la línea
+ * educada del 👉. Javier probó el bot y recibió «Puedes ingresar aquí 👉» y
+ * ningún link debajo: «ingresar» es infinitivo y el regex solo conocía
+ * «ingresa/ingresas», y la línea termina en 👉, no en «:», así que el corte por
+ * dos puntos tampoco la vio. Ahora entran los infinitivos, el «puedes…», las
+ * frases de acceso («te dejo el acceso») y —en `sinAnuncioDeLink`— cualquier
+ * frase que termine en manito o flecha, que SIEMPRE anuncia algo debajo.
+ */
 const ANUNCIA_LINK =
-  /(aqu[íi]|ac[áa])\s*(tienes|te dejo|va|est[áa]|lo tienes)|te (dejo|paso|mando|env[íi]o|comparto) el (link|enlace)|este es el (link|enlace)|el (link|enlace) (es|va)|entras? (aqu[íi]|ac[áa])|ingresas? (aqu[íi]|ac[áa])|te (unes|inscribes|suscribes) (aqu[íi]|ac[áa])|desde (aqu[íi]|ac[áa])|en este (link|enlace)|(dando|haciendo) clic/i;
+  /(aqu[íi]|ac[áa])\s*(tienes|te dejo|va|est[áa]|lo tienes)|te (dejo|paso|mando|env[íi]o|comparto) el (link|enlace|acceso)|te lo dejo|este es el (link|enlace)|el (link|enlace) (es|va)|entra[rs]? (aqu[íi]|ac[áa])|ingres\w* (aqu[íi]|ac[áa])|puedes? (ingresar|entrar|verlo|ver (todo|los detalles|el programa))|el acceso (por aqu[íi]|ac[áa])|te (unes|inscribes|suscribes) (aqu[íi]|ac[áa])|desde (aqu[íi]|ac[áa])|en este (link|enlace)|(dando|haciendo) clic/i;
 
 /**
  * Deja la línea sin la frase que anunciaba el link que acabamos de borrar.
@@ -855,7 +874,8 @@ function sinAnuncioDeLink(linea: string): string {
     .filter((frase) => {
       const f = frase.trim();
       if (!f) return false;
-      return !ANUNCIA_LINK.test(f) && !/[:：]\s*$/.test(f);
+      // Dos puntos, manito o flecha al final = anuncia algo que ya no está.
+      return !ANUNCIA_LINK.test(f) && !/(?:[:：]|👉|👇|➡️|➡|⬇️|⬇)\s*$/u.test(f);
     })
     .join(' ')
     .trim();

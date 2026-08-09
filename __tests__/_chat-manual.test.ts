@@ -30,7 +30,7 @@ import {
   quitarPreguntaDeFreno,
   quitarVentaEnCrisis,
 } from '@/lib/whatsapp/blindaje';
-import { analizarConversacion, pideElLink, preguntaPorGarantia, tandaDeVinetas, type Turno } from '@/lib/whatsapp/guion';
+import { analizarConversacion, pideElLink, preguntaPorGarantia, preguntaQueIncluye, tandaDeVinetas, type Turno } from '@/lib/whatsapp/guion';
 import { haySenalDeDuda, leerIntencion } from '@/lib/whatsapp/intencion';
 import { escalonDe } from '@/lib/whatsapp/escalera';
 import { aplicarFormato } from '@/lib/whatsapp/formato';
@@ -188,28 +188,15 @@ describe('conversación manual con Paula', () => {
     // candado y en el mismo orden que `paula.ts`: si ya lo tiene y no lo está
     // pidiendo, fuera.
     // Un «Dale» tambien es pedir el link — si no, se le borra y llega vacio.
-    const loEstaPidiendo = pideElLink(mensaje) || queHizoElla === 'acepta';
+    // Y la presentacion (tanda o «cuéntame») tambien: mismo calculo que paula.ts.
+    const loEstaPidiendo =
+      pideElLink(mensaje) || queHizoElla === 'acepta' || explicandoElPrograma || preguntaQueIncluye(mensaje);
     if (venta.tieneLink && !loEstaPidiendo && handoff === null) {
       final = aplicarFormato(quitarLinkRepetido(final), explicandoElPrograma);
     }
-    // La pregunta que ya le hizo — mismo candado y mismo orden que produccion.
-    const ventaConEsteTurno = analizarConversacion([
-      ...(estado.historial as Turno[]),
-      { role: 'user', content: mensaje },
-    ]);
-    const mensajesDeElla = [...estado.historial.filter((m) => m.role === 'user').map((m) => m.content), mensaje];
-    if (
-      handoff === null &&
-      (ventaConEsteTurno.citaFutura ||
-        venta.vecesQuePregunto >= 2 ||
-        !haySenalDeDuda(mensajesDeElla) ||
-        queHizoElla === 'se_despide' ||
-        queHizoElla === 'cuenta' ||
-        queHizoElla === 'pregunta' ||
-        queHizoElla === 'corrige')
-    ) {
-      final = aplicarFormato(quitarPreguntaDeFreno(final), explicandoElPrograma);
-    }
+    // La pregunta del freno no existe — SIEMPRE, sin condiciones (2026-08-09),
+    // mismo candado que produccion.
+    final = aplicarFormato(quitarPreguntaDeFreno(final), explicandoElPrograma);
     // LA GARANTÍA. Mismo candado y mismo orden que producción: si ELLA no la
     // preguntó, fuera. Sin esto el simulador enseñaría una garantía que
     // producción sí borra — o sea, mentiría a favor del bot, que es justo de lo
