@@ -20,6 +20,7 @@ import path from 'path';
 import { describe, it } from 'vitest';
 
 import {
+  asegurarLinkTrasLaLista,
   auditarRespuesta,
   dejarSoloJavier,
   instruccionCorreccion,
@@ -178,6 +179,9 @@ describe('conversación manual con Paula', () => {
     const venta = analizarConversacion(estado.historial as Turno[]);
 
     let final = aplicarFormato(normalizarNegritas(auditoria.texto, 'whatsapp'), explicandoElPrograma);
+    // Mismo candado y mismo orden que produccion: si se quedo en la ultima
+    // vineta y no mando link, se le pone la pagina detras.
+    if (explicandoElPrograma && handoff === null) final = asegurarLinkTrasLaLista(final);
     // EL LINK REPETIDO. Faltaba aquí, y el simulador enseñaba un link que
     // producción sí borra — o sea que mentía a favor del bot. Es el mismo
     // candado y en el mismo orden que `paula.ts`: si ya lo tiene y no lo está

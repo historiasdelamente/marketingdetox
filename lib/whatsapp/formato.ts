@@ -121,6 +121,17 @@ export function desvinetar(texto: string): string {
 const esLink = (globo: string) => /https?:\/\//.test(globo);
 
 /**
+ * ¿Este globo es una lista ya cosida (varias viñetas en renglones)?
+ *
+ * Se trata como un link a la hora de fusionar: **no se toca**. Fusionar une con
+ * un espacio, así que pegarle otro globo a una lista deja la última viñeta y la
+ * frase siguiente en el mismo renglón — o peor, si se fusiona por delante, las
+ * tres viñetas en una sola línea. Que es exactamente el chorrero del que
+ * veníamos.
+ */
+const esLista = (globo: string) => (globo || '').split('\n').filter((l) => LINEA_VINETA.test(l)).length >= 2;
+
+/**
  * Baja una lista de globos hasta `max` FUSIONANDO, nunca tirando.
  *
  * ⚠️ POR QUÉ NO SE RECORTA POR EL FINAL, que es lo que hacía antes. En la
@@ -151,6 +162,7 @@ export function comprimirGlobos(globos: string[], max = MAX_GLOBOS): string[] {
     let mejorLargo = Infinity;
     for (let i = 0; i < out.length - 1; i++) {
       if (esLink(out[i]) || esLink(out[i + 1])) continue;
+      if (esLista(out[i]) || esLista(out[i + 1])) continue;
       const largo = out[i].length + out[i + 1].length;
       if (largo < mejorLargo) {
         mejorLargo = largo;
@@ -207,7 +219,12 @@ export function limitarGlobos(texto: string, max = MAX_GLOBOS): string {
  * columna, y una viñeta larga es un párrafo con un punto delante.
  */
 const MAX_VINETAS = 3;
-const MAX_CHARS_VINETA = 105;
+/**
+ * Se exporta porque es el número que de verdad manda sobre lo largas que
+ * pueden ser las viñetas de `programa.ts`: una que se pase no se rechaza, llega
+ * recortada con puntos suspensivos. Hay un test que las mide contra esto.
+ */
+export const MAX_CHARS_VINETA = 105;
 
 export function limitarVinetas(texto: string): string {
   let vistas = 0;

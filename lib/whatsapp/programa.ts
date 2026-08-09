@@ -136,29 +136,47 @@ export const APEGO_DETOX = {
   ],
 
   /**
-   * LOS SEIS BENEFICIOS DE LAS VIÑETAS — los eligió Javier el 2026-08-07.
+   * LOS SEIS BENEFICIOS DE LAS VIÑETAS. Salen en DOS tandas de tres, con ella
+   * hablando en medio: *"tres viñetas cortas, y luego que ella hable puedes
+   * anexar tres beneficios más"* (Javier, 2026-08-07).
    *
-   * Salen en DOS tandas de tres, con ella hablando en medio: *"tres viñetas
-   * cortas, y luego que ella hable puedes anexar tres beneficios más"*. Quién
-   * va en cada tanda lo decide `beneficiosPara()` en paula.ts, rotando por
-   * mujer para que a dos no les toquen los mismos tres primero.
+   * ⚠️ REESCRITOS EL 2026-08-08, Y EL CAMBIO ES DE FONDO. Javier, viendo tres
+   * conversaciones reales: *"la usuaria queda sin saber qué es Apego Detox (…)
+   * solo habla de terapias en vivo en una chorrera de texto"*. Y al elegir qué
+   * llevan: *"viñetas con transformación e información, y muy importante que
+   * hagas terapia en video, con 17 módulos"*.
    *
-   * ⚠️ MENOS DE DIEZ PALABRAS CADA UNO, sin excepción. Una viñeta que no cabe
-   * en un renglón deja de ser viñeta: es un párrafo con un punto delante, y es
-   * exactamente lo que Javier llamó "hacerle un flyer a las personas".
+   * La versión anterior era SOLO transformación —"Vuelves a dormir toda la
+   * noche", "Alguien te contesta a las tres de la mañana"—. Se leían bonito y
+   * dejaban a la mujer sin saber qué estaba comprando: ni un módulo, ni un
+   * formato, ni una hora. Bonito no vende si ella no sabe qué hay dentro de la
+   * caja.
    *
-   * Y ninguno nombra un módulo ni un entregable: *"la idea no es darle el
-   * nombre de los módulos, sino lo que logrará al entrar"*. El único que suena
-   * a caja —las cuatro horas en vivo— está aquí porque es lo que hace creíble
-   * a los otros cinco.
+   * **AHORA CADA VIÑETA LLEVA LAS DOS MITADES:** el entregable delante (qué es)
+   * y lo que ella saca detrás (qué logra), unidas por dos puntos. Ese ":" es la
+   * bisagra — a la izquierda lo que compra, a la derecha por qué le sirve.
+   *
+   * ⚠️ EL TOPE YA NO SE CUENTA EN PALABRAS, SE CUENTA EN CARACTERES. El límite
+   * viejo (menos de diez palabras) hacía imposible meter las dos mitades. El
+   * que manda de verdad es `MAX_CHARS_VINETA` en `formato.ts`, que es el que
+   * recorta: una viñeta que se pasa no se rechaza, se corta con puntos
+   * suspensivos. Debajo de ese número caben en un renglón de celular, que es
+   * todo lo que hay que respetar.
+   *
+   * ⚠️ EL ORDEN DE LOS TRES PRIMEROS NO SE TOCA Y NO ROTA: son los tres
+   * pilares, o sea la respuesta a "¿qué es Apego Detox?". Rotarlos —como se
+   * hacía— significaba que a unas mujeres les tocaba enterarse de las
+   * meditaciones y no de los 17 módulos. Ver `beneficiosPara()` en paula.ts.
    */
   beneficios: [
-    'Vuelves a dormir toda la noche',
-    'Alguien te contesta a las tres de la mañana',
-    'Te despiertas y él ya no es lo primero',
-    'Cuatro horas en vivo con Javier cada semana',
-    'Sabes qué hacer cuando él vuelva a escribir',
-    'Te sostienes afuera, y esta vez no vuelves',
+    // ── TANDA 1: los tres pilares. Fijos. Esto ES Apego Detox. ──
+    '17 módulos de terapia en video: entiendes por qué te pasó y que no fue por débil',
+    '4 horas en vivo con Javier Vieira cada semana: no lo haces sola',
+    'Comunidad a cualquier hora: alguien te contesta a las 3 de la mañana',
+    // ── TANDA 2: los otros tres, cuando ella ya contestó. ──
+    'Meditaciones y ejercicios: el cuerpo baja de la alerta y vuelves a dormir',
+    'Se desbloquea por etapas: sabes qué hacer la próxima vez que él escriba',
+    'Bonus Taller Plus: PDFs y hojas de ruta para los días de crisis',
   ],
 
   /**

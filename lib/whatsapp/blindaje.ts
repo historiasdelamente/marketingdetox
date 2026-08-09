@@ -26,6 +26,7 @@ import {
   MAX_CHARS_GLOBO,
   MAX_CHARS_TURNO,
   MAX_GLOBOS,
+  esLineaVineta,
   largoSinLinks,
   tieneVinetas,
 } from './formato';
@@ -527,7 +528,27 @@ export function auditarRespuesta(
   const bloqueMasLargo = Math.max(0, ...bloques.map(largoSinLinks));
   const globosReales = globosDe(out).length;
 
-  if (bloqueMasLargo > MAX_CHARS_GLOBO || largo > MAX_CHARS_TURNO || globosReales > MAX_GLOBOS) {
+  // ⚠️ EL TOPE DE 320 SE MIDE SOBRE LA PROSA, NO SOBRE LAS VIÑETAS. 2026-08-08.
+  //
+  // El tope existe para que el mensaje no sea un ladrillo, y un ladrillo es un
+  // párrafo de corrido. Tres viñetas de un renglón no lo son: se leen sueltas,
+  // que es justamente para lo que están.
+  //
+  // Sin esta resta el turno de la presentación —frase de ella + tres viñetas +
+  // frase de cierre— se pasaba de 320 SIEMPRE, saltaba `demasiado_largo`, y la
+  // corrección le ordenaba al modelo "escoge los DOS datos que ella necesita y
+  // borra los demás". O sea: el propio blindaje deshacía la lista que el prompt
+  // acababa de pedir y devolvía el mensaje al chorrero. Las viñetas no podían
+  // sobrevivir ni aunque el modelo las escribiera perfectas.
+  //
+  // Su largo no queda sin vigilar: cada viñeta pasa igual por `bloqueMasLargo`,
+  // y `limitarVinetas` las recorta a tres y a su tope de caracteres.
+  const largoVinetas = permitirVinetas
+    ? bloques.filter(esLineaVineta).reduce((n, l) => n + largoSinLinks(l), 0)
+    : 0;
+  const largoProsa = largo - largoVinetas;
+
+  if (bloqueMasLargo > MAX_CHARS_GLOBO || largoProsa > MAX_CHARS_TURNO || globosReales > MAX_GLOBOS) {
     hallazgos.push({
       tipo: 'demasiado_largo',
       detalle: `${largo} caracteres en ${globosReales} globos (el bloque más largo, ${bloqueMasLargo})`,
@@ -569,9 +590,9 @@ export function instruccionCorreccion(
       case 'psicoeducacion':
         return `- Escribiste "${h.detalle}": te pusiste a explicarle lo que le pasa por dentro, y eso NO lo haces por chat. Quita esa explicación. En su lugar, las tres piezas de siempre: la escuchaste, eso se trabaja adentro, y ahí hay más mujeres pasando por lo mismo.`;
       case 'vinetas':
-        return `- Le mandaste una LISTA, y eso está prohibido en todos los mensajes sin excepción. Nada de •, guiones, números ni frases cortas en renglones seguidos: eso se ve como un folleto en cadena y es justo lo que la hace irse. Escoge UNA sola de esas líneas —la que más se parezca a lo que ELLA te contó— y escríbela como una frase normal, pegada a lo que ella dijo. Las demás se borran.`;
+        return `- Le mandaste una LISTA en un mensaje que no la lleva. Las viñetas solo van cuando el prompt te las da escritas en un bloque 📦, y en este mensaje no hay ninguno: aquí una lista se ve como un folleto en cadena y es justo lo que la hace irse. Escoge UNA sola de esas líneas —la que más se parezca a lo que ELLA te contó— y escríbela como una frase normal, pegada a lo que ella dijo. Las demás se borran.`;
       case 'demasiado_largo':
-        return `- Te pasaste de largo: ${h.detalle}. El tope son **${MAX_CHARS_TURNO} caracteres de texto** repartidos en **${MAX_GLOBOS} globos como mucho, y el del link es uno de los tres** — o sea DOS globos de texto, de ${MAX_CHARS_GLOBO} caracteres cada uno como máximo, separados por una línea en blanco. Escoge los DOS datos que ella necesita ahora mismo y borra los demás: si preguntó el precio, el precio y el link. Lo que incluye, los talleres y la comunidad NO caben todos en el mismo mensaje, y lo primero que sobra es la frase de despedida.`;
+        return `- Te pasaste de largo: ${h.detalle}. El tope son **${MAX_CHARS_TURNO} caracteres de texto** repartidos en **${MAX_GLOBOS} globos como mucho, y el del link es uno de los tres** — o sea DOS globos de texto, de ${MAX_CHARS_GLOBO} caracteres cada uno como máximo, separados por una línea en blanco. Recorta la PROSA —**si hay una lista de viñetas, esa se queda entera y no cuenta para el tope**—: escoge los DOS datos que ella necesita ahora mismo y borra los demás. Si preguntó el precio, el precio y el link. Lo primero que sobra es siempre la frase de despedida.`;
       case 'precio_falso':
         return `- Escribiste "${h.detalle}", y ese NO es el precio de hoy. ${APEGO_DETOX.nombre} son ${precio.frase}, suscripción mensual que ella cancela cuando quiera. No inventes otra cifra en dólares, y **no le nombres la garantía**. (La equivalencia en su moneda sí es aproximada: esa va con "unos" y te la da el bloque del reloj, ya calculada.)`;
       case 'pago_unico':
@@ -863,6 +884,47 @@ export function quitarLinkRepetido(texto: string): string {
   // NADA — el silencio se lee como que la dejaron colgada. En ese caso se
   // devuelve el original y que le llegue el link otra vez.
   return limpio.length > 0 ? limpio : original;
+}
+
+/**
+ * EL MENSAJE DE LA PRESENTACIÓN NO PUEDE TERMINAR EN LA ÚLTIMA VIÑETA.
+ *
+ * ╔═══════════════════════════════════════════════════════════════════════════╗
+ * ║ ⚠️ VISTO CONTRA EL MODELO REAL EL 2026-08-08, en el primer intento con las ║
+ * ║ viñetas ya funcionando. Paula escribió la frase de entrada y las tres      ║
+ * ║ viñetas… y ahí paró. Sin la frase de cierre y **sin el link**.             ║
+ * ║                                                                           ║
+ * ║ Y se entiende por qué: una lista de tres puntos se ve terminada. El        ║
+ * ║ prompt pedía tres globos, pero el segundo cerraba tan bien en el ojo del   ║
+ * ║ modelo que el tercero sobraba.                                            ║
+ * ║                                                                           ║
+ * ║ Es el peor sitio posible para quedarse a medias: es el único mensaje en    ║
+ * ║ que ella se entera de qué es Apego Detox, o sea el mensaje con más ganas   ║
+ * ║ de entrar de toda la conversación — y se quedaba sin puerta.               ║
+ * ║                                                                           ║
+ * ║ El prompt ya se lo pide en negrita y dos veces. Esto es lo que lo hace     ║
+ * ║ cierto, que es la regla de oro de este proyecto.                          ║
+ * ╚═══════════════════════════════════════════════════════════════════════════╝
+ *
+ * Solo actúa si se dan las tres: hay lista, no hay ningún link, y el mensaje
+ * termina en una viñeta. Si Paula cerró en prosa sin link, es que decidió no
+ * mandarlo y eso es asunto suyo; aquí solo se repara el mensaje descabezado.
+ */
+export function asegurarLinkTrasLaLista(texto: string, link = APEGO_DETOX.landing): string {
+  const t = (texto || '').trim();
+  if (!t) return texto;
+  if (URL_RE.test(t)) {
+    URL_RE.lastIndex = 0;
+    return texto;
+  }
+  URL_RE.lastIndex = 0;
+
+  const lineas = t.split(SALTO).map((l) => l.trim()).filter(Boolean);
+  const vinetas = lineas.filter(esLineaVineta).length;
+  if (vinetas < 2) return texto;
+  if (!esLineaVineta(lineas[lineas.length - 1])) return texto;
+
+  return `${t}${SALTO}${SALTO}${link}`;
 }
 
 /**

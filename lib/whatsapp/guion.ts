@@ -152,8 +152,27 @@ export function analizarConversacion(historial: Turno[]): EstadoVenta {
  * definición de "ya me contó" eso no se puede sostener por prompt: el modelo
  * suelta el programa en cuanto ella dice su nombre.
  */
+/**
+ * ⚠️ AMPLIADO EL 2026-08-08, Y ERA LA CAUSA RAÍZ DE LA CONVERSACIÓN MUDA.
+ *
+ * La pregunta de entrada es *"¿sigues con él y quieres salir, o ya saliste y
+ * quieres recuperarte?"*. Las tres mujeres de las capturas contestaron
+ * exactamente eso — **«Ya salí y quiero recuperarme»**, **«Quiero dejarlo»** —
+ * y ninguna de las dos frases estaba aquí: `lo dej[ée]` pide "dejé" en pasado,
+ * y "ya salí" no aparecía por ningún lado. Con menos de 60 caracteres, el
+ * respaldo por longitud tampoco las salvaba.
+ *
+ * Resultado: `ellaYaConto` daba false **justo después de que ella contestara la
+ * única pregunta que le hicimos**, y el guion le ordenaba a Paula seguir
+ * escuchando y no contarle qué hay adentro. La mujer contestó y el sistema
+ * siguió creyendo que no había dicho nada.
+ *
+ * La lección: esta lista tiene que cubrir, antes que nada, **las respuestas
+ * previsibles a nuestra propia pregunta de entrada**. Si se añade una pregunta
+ * de entrada nueva en `PREGUNTAS_ENTRADA`, hay que pasar por aquí.
+ */
 const RESPUESTA_DE_ENTRADA =
-  /ya lo dej[ée]|lo dej[ée]|sigo con [ée]l|todav[íi]a estoy|no he salido|no lo he dejado|me separ[ée]|nos separamos|estoy saliendo|acabo de dejar|sigue conmigo|volvimos/i;
+  /ya lo dej[ée]|lo dej[ée]|sigo con [ée]l|todav[íi]a estoy|no he salido|no lo he dejado|me separ[ée]|nos separamos|estoy saliendo|acabo de dejar|sigue conmigo|volvimos|ya sal[íi]|ya me sal[íi]|acabo de salir|quiero dejarl[oa]|quiero salir|necesito salir|estoy con [ée]l|sigo ah[íi]|sigo adentro|a[úu]n estoy|quiero recuperarme|quiero sanar|no s[ée] c[óo]mo salir|me dej[óo]|terminamos|me fui/i;
 
 function YA_CONTO(m: string): boolean {
   const t = (m || '').trim();
@@ -161,6 +180,25 @@ function YA_CONTO(m: string): boolean {
   // Una frase entera sobre lo suyo. 60 caracteres es más o menos donde deja de
   // ser un dato y empieza a ser algo contado.
   return t.replace(/\s+/g, ' ').length >= 60;
+}
+
+/**
+ * EL HISTORIAL **CON** EL MENSAJE QUE ELLA ACABA DE ESCRIBIR.
+ *
+ * ⚠️ POR QUÉ HACE FALTA. `buildSystemPrompt` recibe el historial y el mensaje
+ * nuevo por separado: el historial llega SIN él (el modelo lo recibe aparte,
+ * como último turno). Así que todo lo que se calculaba aquí miraba la
+ * conversación **un mensaje por detrás** — se decidía qué contestarle sin leer
+ * lo que acababa de decir.
+ *
+ * Es lo que dejó a Mayra en el limbo: escribió «Ya salí y quiero recuperarme» y
+ * el guion, mirando solo hacia atrás, seguía en «todavía no te ha contado nada».
+ */
+function conSuMensaje(turnos: Turno[], mensajeDeElla?: string): Turno[] {
+  const t = (mensajeDeElla ?? '').trim();
+  if (!t) return turnos;
+  if (turnos[turnos.length - 1]?.role === 'user' && turnos[turnos.length - 1]?.content === t) return turnos;
+  return [...turnos, { role: 'user', content: t }];
 }
 
 /**
@@ -183,8 +221,8 @@ ${ultimos.map((m) => `— «${m.content.replace(/\s*\n+\s*/g, ' / ').slice(0, 24
  * EL SIGUIENTE PASO, calculado. Es lo que sustituye a "manda tres globos y el
  * link" repetido hasta el infinito.
  */
-export function bloqueGuion(historial: Turno[], hayHandoff = false): string {
-  const e = analizarConversacion(historial);
+export function bloqueGuion(historial: Turno[], hayHandoff = false, mensajeDeElla?: string): string {
+  const e = analizarConversacion(conSuMensaje(historial, mensajeDeElla));
 
   // Primer turno: manda el bloque de entrada, aquí no hay guion que dar.
   if (e.turnos === 0) return '';
@@ -410,10 +448,35 @@ export function vinetasDadas(turnos: Turno[]): number {
  * borra y el mensaje sale descabezado. Antes eran dos cálculos distintos de
  * `preguntaQueIncluye` y solo coincidían por suerte.
  *
- * La primera la abre ELLA preguntando. La segunda sale sola en cuanto contesta
- * cualquier cosa — salvo que se esté despidiendo o corrigiendo un dato suyo:
- * encima de un "gracias, ya veo" otra lista se lee como folleto, y encima de
- * una corrección es no haberla escuchado.
+ * La segunda sale sola en cuanto contesta cualquier cosa — salvo que se esté
+ * despidiendo o corrigiendo un dato suyo: encima de un "gracias, ya veo" otra
+ * lista se lee como folleto, y encima de una corrección es no haberla escuchado.
+ *
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ⚠️ LA PRIMERA TANDA YA NO DEPENDE DE QUE ELLA PREGUNTE. 2026-08-08.
+ *
+ * Hasta hoy la única llave era `preguntaQueIncluye`, o sea que ella escribiera
+ * *"¿qué incluye?"* / *"¿en qué consiste?"*. Suena razonable y en la práctica
+ * significaba que **las viñetas no salían nunca**: se comprobó contra tres
+ * conversaciones reales y en las tres `tandaDeVinetas` devolvía 0.
+ *
+ * La razón es que en este embudo ella no pregunta. Llega de un anuncio, Paula
+ * le hace la pregunta de entrada, ella contesta *"quiero dejarlo"* o *"ya salí
+ * y quiero recuperarme"* — y ahí Paula le presenta el programa. Ese es el
+ * momento. Preguntar "¿qué incluye?" es de quien ya sabe que hay algo que
+ * incluye cosas; ella todavía no sabe ni que existe.
+ *
+ * Javier, viendo esas conversaciones: *"la usuaria queda sin saber qué es Apego
+ * Detox"*. Literal: la lista existía en el código y no se disparaba jamás.
+ *
+ * **Ahora la primera tanda tiene DOS llaves, y basta una:**
+ *   · ella lo pregunta — lo de siempre; o
+ *   · es el turno en que Paula le presenta el programa: ella ya contó algo
+ *     suyo (`ellaYaConto`) y todavía no le han contado qué hay adentro
+ *     (`!sabeQueEs`). Eso es exactamente el paso "CONTARLE QUÉ ES" de
+ *     `bloqueGuion`, y por eso las dos piezas dicen ahora lo mismo en vez de
+ *     pelearse.
+ * ═══════════════════════════════════════════════════════════════════════════
  */
 export function tandaDeVinetas(
   turnos: Turno[],
@@ -421,7 +484,18 @@ export function tandaDeVinetas(
   intencion: string | null,
 ): 0 | 1 | 2 {
   const dadas = vinetasDadas(turnos);
-  if (dadas === 0) return preguntaQueIncluye(mensajeDeElla) ? 1 : 0;
+
+  if (dadas === 0) {
+    if (preguntaQueIncluye(mensajeDeElla)) return 1;
+    // El turno de la presentación. `conSuMensaje` es imprescindible: sin él,
+    // "ya salí y quiero recuperarme" todavía no está en el historial y esto
+    // diría que ella no ha contado nada — que es el fallo que veníamos a matar.
+    const e = analizarConversacion(conSuMensaje(turnos, mensajeDeElla));
+    // `e.turnos >= 1` deja fuera el saludo de entrada: ahí solo se pregunta.
+    if (e.turnos >= 1 && e.ellaYaConto && !e.sabeQueEs) return 1;
+    return 0;
+  }
+
   if (dadas === 1) return intencion === 'se_despide' || intencion === 'corrige' ? 0 : 2;
   return 0; // las seis ya salieron; a partir de aquí, prosa
 }

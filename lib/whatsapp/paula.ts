@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import {
+  asegurarLinkTrasLaLista,
   auditarRespuesta,
   dejarSoloJavier,
   instruccionCorreccion,
@@ -300,29 +301,35 @@ export function preguntaEntradaPara(semilla: string): string {
 }
 
 /**
- * LOS SEIS BENEFICIOS, PARTIDOS EN DOS TANDAS DE TRES — INTERCALADOS.
+ * LOS SEIS BENEFICIOS, PARTIDOS EN DOS TANDAS DE TRES.
  *
  * Javier, 2026-08-07: *"los beneficios de Paula son seis, vas intercalando"*.
+ * La primera tanda sale cuando Paula le presenta el programa; la segunda,
+ * cuando ella ha contestado.
  *
- * Intercalar es literal: se rota el punto de arranque por mujer y después se
- * toma uno sí y uno no. Eso hace dos cosas a la vez. Que a dos mujeres no les
- * toquen los mismos tres primero —la misma razón por la que hay diez saludos y
- * no uno—, y que ninguna tanda quede toda del mismo palo: si se partiera por la
- * mitad, la primera se llevaría los tres del cuerpo y la segunda los tres del
- * programa, y la primera tanda es justo la que tiene que enganchar.
+ * ⚠️ ANTES ESTO ROTABA POR MUJER Y SE QUITÓ EL 2026-08-08. La rotación existía
+ * para que a dos mujeres no les tocaran los mismos tres primero — la misma idea
+ * que los diez saludos de entrada. Con los beneficios NO vale, y la diferencia
+ * es esta: un saludo es adorno, y los tres primeros beneficios son **la
+ * respuesta a "¿qué es Apego Detox?"**. Rotándolos, a una mujer le tocaba
+ * enterarse de las meditaciones y del bonus, y salir de la conversación sin
+ * saber que hay 17 módulos de terapia en video ni que Javier está en vivo cada
+ * semana. Justo lo que Javier vio: *"la usuaria queda sin saber qué es Apego
+ * Detox"*.
  *
- * La semilla es su manychat_id, así que a ELLA le toca siempre el mismo reparto
- * aunque vuelva mañana: la segunda tanda no puede repetirle uno de la primera.
+ * Los tres pilares no rotan porque no son intercambiables. Lo que sí cambia de
+ * una mujer a otra —y es donde tiene que estar la variedad— es la frase que
+ * abre y la que cierra: esas salen de lo que ELLA acaba de contar, y no hay dos
+ * iguales.
+ *
+ * La semilla se conserva en la firma para no tocar a quien la llama, y porque
+ * el día que haya un séptimo beneficio volverá a hacer falta para elegir.
  */
-export function beneficiosPara(semilla: string): { primera: string[]; segunda: string[] } {
+export function beneficiosPara(_semilla: string): { primera: string[]; segunda: string[] } {
   const todos = APEGO_DETOX.beneficios;
-  let h = 0;
-  for (let i = 0; i < semilla.length; i++) h = (h * 31 + semilla.charCodeAt(i)) >>> 0;
-  const k = h % todos.length;
-  const rotados = [...todos.slice(k), ...todos.slice(0, k)];
   return {
-    primera: [rotados[0], rotados[2], rotados[4]],
-    segunda: [rotados[1], rotados[3], rotados[5]],
+    primera: todos.slice(0, 3),
+    segunda: todos.slice(3, 6),
   };
 }
 
@@ -462,39 +469,83 @@ Está publicada en la página y en los términos. **Esquivarla sería mentirle s
   const listaVinetas = vinetas.map((v) => '> • ' + v).join('\n');
   const bloqueVinetas =
     tandaVinetas === 1
-      ? `# 📦 TE ESTÁ PREGUNTANDO QUÉ ES — CONTÉSTALE DE VERDAD
+      ? `# 📦 ESTE ES EL MENSAJE EN EL QUE ELLA SE ENTERA DE QUÉ ES APEGO DETOX
 
-*"¿En qué consiste?", "¿qué incluye?", "¿qué lograría con esto?"*
+Es el mensaje más importante de toda la conversación, y **solo pasa una vez**. Si sale mal, ella sigue hablando contigo sin saber qué le estás ofreciendo — y nadie entra a algo que no sabe qué es.
 
-Es la pregunta más cerca de la compra. Aquí SÍ das el cuadro — es la única excepción a "nombra una sola cosa".
+**Aquí SÍ le das el cuadro entero**, y es la única excepción a "nombra una sola cosa". Y es el único sitio donde usas VIÑETAS: ella está decidiendo, y tres líneas se leen de un vistazo mientras que un párrafo de corrido se salta.
 
-**🔸 Y ES EL ÚNICO SITIO DONDE PUEDES USAR VIÑETAS.** Ella está comparando y quiere ver qué se lleva: tres líneas se leen de un vistazo y un párrafo de corrido no. En cualquier OTRO mensaje las listas siguen prohibidas.
+**TRES GLOBOS, EN ESTE ORDEN. NI UNO MÁS, NI UNO MENOS.**
 
-Dos globos.
+⚠️ **EL MENSAJE NO TERMINA EN LA LISTA.** La lista es el globo del medio: detrás van SIEMPRE la frase de lo que ella va a lograr y el link. Terminar en la última viñeta deja el mensaje a medias y sin puerta por donde entrar — es el error más caro de este mensaje, porque es justo el que la iba a hacer entrar hoy.
 
-**GLOBO 1 — estas TRES viñetas, tal cual, empezando por "• ":**
+---
+
+**GLOBO 1 — LA FRASE DE ELLA, Y EL NOMBRE DEL PROGRAMA.**
+
+Empieza con lo que ELLA acaba de escribirte, con SUS palabras — un hecho, una fecha, la palabra que ella eligió. Y cierra ese globo nombrando el programa y abriendo la lista con dos puntos.
+
+La forma es esta, y lo que cambia es la primera mitad:
+
+> [lo suyo, en una frase corta y con sus palabras]. **Apego Detox** es donde se trabaja justo eso, y es esto:
+
+⛔ **No le adivines el dolor.** Si no te lo ha contado, no lo sabes: ni los años, ni que no duerme, ni que pide perdón.
+⛔ Nada de lástima. Se le habla como a alguien que va a salir.
+🔸 Los dos puntos del final **son obligatorios**: son los que enganchan la lista.
+
+---
+
+**GLOBO 2 — ESTAS TRES VIÑETAS, TAL CUAL, cada una en su renglón y empezando por "• ":**
 
 ${listaVinetas}
 
-Las tres van juntas, en el MISMO globo, y van **completas**: no las cambies, no las resumas y no las cambies por otras. Están escritas para caber en un renglón.
+**Van completas y sin tocarlas**: no las resumas, no las partas, no las cambies por otras y no las reordenes. Cada una lleva a la izquierda qué es y a la derecha qué gana ella — las dos mitades, siempre. Están medidas para caber en un renglón de celular.
 
-⛔ Ahí no van horarios, ni precios, ni explicaciones. Eso va en prosa después.
+⛔ Ahí NO metes horarios, ni precios, ni el link, ni explicaciones tuyas.
+🔸 **Y no te pares aquí.** Después de la última viñeta te quedan dos cosas por escribir:
 
-**GLOBO 2 — una frase tuya, en prosa y sin viñetas**, que recoja lo que ELLA te contó y lo enganche con lo de arriba. Y déjale la puerta abierta a que siga hablando: hay tres beneficios más y salen cuando ella conteste.`
+---
+
+**GLOBO 3 — UNA FRASE EN PROSA, SIN VIÑETAS, Y EL LINK DEBAJO. LOS DOS, SIEMPRE.**
+
+Una sola frase que cierre en lo que ELLA va a lograr —no en lo que el programa tiene—, escogida entre lo que te contó: entender que no fue por débil, dejar de darle vueltas todo el día, verlo venir mientras pasa, o sostenerse afuera sin volver.
+
+🔸 **Que no repita lo que ya dice una viñeta.** Si arriba pone "entiendes por qué te pasó y que no fue por débil", aquí va otra cosa: se lee como que le estás diciendo dos veces lo mismo con distinta letra.
+
+Y **debajo, en su propio renglón, el link**. Este es el mensaje en el que ella sabe por primera vez qué es Apego Detox: es exactamente el momento de darle por dónde se entra. Sin el link, acaba de leer lo que hay adentro y no tiene puerta.
+
+---
+
+⛔ **NO va el precio** si ella no lo ha preguntado.
+⛔ **NO va la despedida** ("cualquier cosa me dices 💛"): sobra y te delata.
+⛔ **NO le pidas el correo en este mensaje.** Este mensaje es de Apego Detox. Lo demás va después.`
       : tandaVinetas === 2
-      ? `# 📦 YA LE DISTE TRES. AHORA VAN LOS OTROS TRES
+      ? `# 📦 YA SABE QUÉ ES. AHORA LE COMPLETAS EL CUADRO
 
-Ella acaba de contestarte, así que toca la segunda mitad. **No repitas las de antes**: estas son distintas y son las que faltaban.
+Ella acaba de contestarte, así que toca la otra mitad de lo que hay adentro. **No repitas las tres de antes**: estas son las que faltaban.
 
-**GLOBO 1 — estas TRES viñetas, tal cual, empezando por "• ":**
+**DOS GLOBOS, Y ELLA VA PRIMERO.**
+
+---
+
+**GLOBO 1 — LO SUYO, Y LUEGO LA LISTA.**
+
+Empieza recogiendo lo que ELLA acaba de escribirte, con sus palabras, en una frase. Si te hizo una pregunta, contéstala ahí: eso manda sobre la lista. Y cierra esa frase con dos puntos para abrirla.
+
+⚠️ **NUNCA empieces el mensaje por la viñeta.** Si ella acaba de contarte algo suyo y lo primero que lee es una lista, le has contestado con un folleto: da igual lo bien escrito que esté lo de debajo, en ese segundo ya sabe que no la leyó nadie. Primero ella, después lo que hay adentro. Siempre en ese orden.
+
+Y detrás, **estas TRES viñetas, tal cual, cada una en su renglón y empezando por "• ":**
 
 ${listaVinetas}
 
-Van juntas en el MISMO globo, completas y sin cambiarlas.
+Van completas y sin cambiarlas.
 
-**GLOBO 2 — en prosa**, engánchalo con lo que ella acaba de escribirte. Si en su mensaje hay una pregunta, contéstala aquí: eso manda sobre la lista.
+---
 
-⛔ Estas son las últimas viñetas de la conversación. De aquí en adelante, prosa siempre.`
+**GLOBO 2 — una frase corta en prosa**, sin viñetas, que enganche lo de arriba con lo que ella va a lograr.
+
+⛔ Estas son las últimas viñetas de la conversación. De aquí en adelante, prosa siempre.
+⛔ El link solo si ella lo pide o lo perdió: ya lo tiene.`
       : '';
 
   // El país ya no se pregunta "por si acaso": se pregunta porque de él sale el
@@ -523,9 +574,13 @@ Le contestas el WhatsApp a mujeres que están con un hombre que las está borran
 
 **Cada globo, 90-160 caracteres.** Una o dos frases cortas.
 
-**Nunca una lista** — con UNA excepción, abajo. Ni viñetas, ni guiones, ni números, ni "primero… luego…". Lo que tengas que decir va en una frase, escogiendo lo que más le sirva. Una lista es la firma de un folleto.
+${tandaVinetas > 0
+  ? `**HOY ES EL DÍA DE LA LISTA.** Este turno lleva viñetas — te las da el bloque 📦, y son la forma correcta del mensaje, no una excepción que haya que disimular. El globo de la lista SÍ puede pasar de 160 caracteres: son tres renglones cortos, y se leen de un vistazo justamente porque están separados.
 
-🔸 **La única excepción:** cuando ELLA pregunta qué incluye o en qué consiste el programa. Ahí van hasta tres viñetas cortas (ver el bloque 📦 más abajo). En cualquier otro mensaje, prosa.
+En los globos de texto que van antes y después de la lista, prosa normal: ni guiones, ni números, ni "primero… luego…".`
+  : `**Nunca una lista.** Ni viñetas, ni guiones, ni números, ni "primero… luego…". Lo que tengas que decir va en una frase, escogiendo lo que más le sirva. Una lista es la firma de un folleto.
+
+🔸 Hay UN mensaje en toda la conversación que sí lleva viñetas —aquel en el que le cuentas qué es Apego Detox—, y cuando toque te lo va a decir un bloque 📦 con las viñetas ya escritas. **Si no ves ese bloque, no toca: escribe en prosa.**`}
 
 **Una pregunta por mensaje, o ninguna.** Dos seguidas son un interrogatorio.
 
@@ -603,7 +658,14 @@ Escribe cortito, con errores, en varios mensajes seguidos. Contéstale igual. Lo
 
 ---
 
-${esPrimerTurno ? entrada(pregunta, paisConocido, saludoEntradaPara(semilla)) : yaTieneLink ? `# 🎯 YA TIENE EL LINK Y YA SABE QUÉ ES — NO SE LO CUENTES OTRA VEZ
+${esPrimerTurno ? entrada(pregunta, paisConocido, saludoEntradaPara(semilla)) : tandaVinetas === 1 ? `# 🎯 ESTE MENSAJE YA LO TIENES ESCRITO ARRIBA — EL BLOQUE 📦
+
+Lo que toca ahora es exactamente eso: los tres globos del bloque 📦, en ese orden y sin añadir nada.
+
+⚠️ **NO escribas aquí una versión en prosa de lo mismo.** Es el fallo que se vio el 2026-08-08 en tres conversaciones seguidas: había dos recetas para el mismo mensaje —una con viñetas y otra de corrido— y ganaba la de corrido. Salía *"vas a poder entender por qué pasó y sostenerte sin volver, acompañada con Javier Vieira en vivo cada semana"*, todo en una frase, y la mujer terminaba la conversación sin saber que hay 17 módulos de terapia en video ni una comunidad. **Una sola receta, y es la de arriba.**
+
+---
+` : yaTieneLink ? `# 🎯 YA TIENE EL LINK Y YA SABE QUÉ ES — NO SE LO CUENTES OTRA VEZ
 
 Ella ya recibió el link y ya sabe qué hay adentro. **Volver a describirle el programa ahora es lo que la hace dejar de contestar**: siente que le estás dando un discurso en vez de hablar con ella.
 
@@ -706,21 +768,14 @@ Copia la FORMA, nunca las palabras. Fíjate en el largo y en que no hay listas n
 >
 > ${pregunta}
 
-**Ella:** sí… todos los días, llevamos 9 años
+${tandaVinetas > 0 ? '' : `**Ella:** sí… todos los días, llevamos 9 años
 > Uf, nueve años midiendo cada palabra antes de decirla en tu propia casa.
 >
 > Adentro vas a entender por qué llegaste ahí —que no fue por débil— y a poder hablar sin medirte. Y no sola: Javier Vieira está en vivo cada semana.
 >
 > [el link]
 
-**Ella:** y en qué consiste? qué lograría yo?
-> Sales sabiendo de dónde te viene esto, viéndolo venir mientras pasa y no tres días después, y pudiendo sostenerte sin volver.
->
-> Y no lo haces sola: cada semana te sientas en vivo con Javier Vieira, y hay mujeres ahí que están justo donde tú estás.
->
-> [el link]
-
-**Ella:** y cuánto vale?
+`}**Ella:** y cuánto vale?
 > Son ${ejemploPrecio(montoUSD, precioLocalFrase)}, es mensual y la cancelas cuando quieras.
 >
 > [el link]
@@ -731,10 +786,10 @@ Copia la FORMA, nunca las palabras. Fíjate en el largo y en que no hay listas n
 > Solo dime una cosa para no dejarte con la duda equivocada: ¿es la plata, o que no estás segura de que esto te sirva a ti?
 
 # ❌ ASÍ NO
-❌ Una lista de dolores, aunque sea de tres líneas. **Nunca, en ningún mensaje.**
+❌ Una lista de DOLORES, aunque sea de tres líneas. **Nunca, en ningún mensaje.** (Lo que hay adentro sí va en lista, y solo cuando te lo pida el bloque 📦. Su dolor, jamás: eso se le dice en una frase.)
 ❌ Cuatro o cinco globos seguidos. ← eso es un sistema descargando, no alguien contestando.
 ❌ Un emoji en cada globo. ← suena a bot alegre.
-❌ El globo-catálogo: "cuatro horas en vivo, los módulos a tu ritmo y una comunidad activa". ← es una ficha de producto. Ella no compra horas de contenido: compra dejar de sentirse así.
+❌ **Lo que hay adentro, apelmazado en una sola frase de corrido:** "vas a poder entender por qué pasó y sostenerte sin volver, acompañada con Javier Vieira en vivo cada semana". ← el fallo del 2026-08-08. Ella lee eso y no sabe si son videos, si son clases, si hay alguien más ni cuánto dura. Lo que hay adentro **se enumera**, en el mensaje del bloque 📦; lo que ella va a lograr **se dice en una frase**, y son dos globos distintos.
 ❌ Hablarle con lástima ("pobrecita", "qué horror", "no mereces eso"). ← la deja en el suelo. Se le habla como a alguien que va a salir, no como a alguien rota.
 ❌ Soltarle el precio sin que lo haya preguntado. ← te vuelve un anuncio.
 ❌ Darle una cifra en su moneda al peso, sin "unos", o inventarte tú la conversión.
@@ -1093,8 +1148,32 @@ export function buildSystemPrompt(
   //
   // Cuando lo escriba, el código lo guarda y lo manda al CRM, y de ahí sale
   // sola la secuencia. Paula no manda ni un correo.
+  // ⚠️ NUNCA ENCIMA DE LA PRESENTACIÓN DEL PROGRAMA, Y NUNCA ANTES DE ELLA.
+  //
+  // Javier, 2026-08-08, viendo tres conversaciones reales: *"se le da más
+  // fuerza a la cartilla siendo el elemento principal Apego Detox"*. Y tenía
+  // razón por una razón mecánica, no de tono: **la cartilla termina en
+  // pregunta** —"¿a qué correo te la mando?"— y el programa no. Puestos en el
+  // mismo mensaje, ella contesta la pregunta, o sea la cartilla, y Apego Detox
+  // pasa a ser la línea que se saltó para llegar a lo que le preguntaban.
+  //
+  // A Paulina le pasó entero: recibió la fórmula de "eso se trabaja adentro" y
+  // detrás la cartilla. Nunca leyó qué es Apego Detox, y contestó con su correo.
+  //
+  // Dos condiciones nuevas, y las dos miran a lo mismo: que el programa vaya
+  // primero y solo.
+  //   · `tandaVinetas === 0` — en el turno de la presentación, la cartilla calla.
+  //   · `venta.sabeQueEs`   — y no se ofrece hasta que ella sepa qué es el
+  //     programa, porque un regalo antes de saber qué le venden convierte la
+  //     conversación en un intercambio de correo y no en una venta.
   const puedePedirCorreo =
-    !user.email && !opciones.esPrimerTurno && !opciones.handoff && !ellaManda && historial.length >= 4;
+    !user.email &&
+    !opciones.esPrimerTurno &&
+    !opciones.handoff &&
+    !ellaManda &&
+    historial.length >= 4 &&
+    tandaVinetas === 0 &&
+    venta.sabeQueEs;
 
   const bloqueCorreo = puedePedirCorreo
     ? `# 📬 TIENES ALGO QUE MANDARLE, Y TODAVÍA NO TIENES DÓNDE
@@ -1103,13 +1182,16 @@ Hay una cartilla suya esperando: **«Sal del Narcisismo», doce pasos con ejerci
 
 **Ofrécesela en UNA línea, pegada a lo que ella acaba de contarte**, y pídele el correo en la misma frase. Así de simple: *"tengo una cartilla que te va a servir justo para eso, ¿a qué correo te la mando?"*
 
+⛔ **Una sola pregunta, y va al final.** La cartilla se ANUNCIA en afirmativo y solo se pregunta el correo: *"tengo una cartilla…"*, nunca *"¿tengo una cartilla…?"*. Dos signos de interrogación en el mismo globo la convierten en un formulario.
 ⛔ **No la nombres como un requisito ni como un registro.** Nada de "déjame tu correo", "te registro" ni "para enviarte información". Ella lleva años dándole cosas a alguien que no le daba nada: esto es al revés, tú le das algo.
 ⛔ **Una sola vez.** Si no te lo da, sigues la conversación como si nada y no vuelves a insistir. Insistir por un correo es lo que la hace sentir vendida.
 ⛔ Y **no es lo primero del mensaje**: primero contestas lo suyo, y esto va al final, en media línea.
 
 `
     : '';
-  const guion = bloqueGuion(historial, opciones.handoff != null || ellaManda);
+  // Se le pasa el mensaje de ELLA: el historial llega sin él, y sin esto el
+  // guion decidía qué contestarle sin haber leído lo que acababa de escribir.
+  const guion = bloqueGuion(historial, opciones.handoff != null || ellaManda, opciones.mensajeDeElla);
 
   // EL GUION VA PRIMERO, ANTES DEL RELOJ.
   //
@@ -1148,11 +1230,13 @@ Lo último que lees, y lo que más se rompe:
 
 **0b. ¿Es mi PRIMER mensaje en esta conversación?** Mira el historial: si arriba no hay ningún mensaje mío, esto es la ENTRADA — me presento y le pregunto cómo se llama${paisConocido ? '' : ' y de dónde me escribe'}. Sin precio y sin link.
 
-**1. CUENTA MIS GLOBOS.** ¿Son tres o menos, contando el del link? Si son cuatro, sobra uno: casi siempre es la línea de despedida. Bórrala.
+**1. CUENTA MIS GLOBOS.** ¿Son tres o menos, contando el del link${tandaVinetas > 0 ? ' y contando la lista entera como UNO' : ''}? Si son cuatro, sobra uno: casi siempre es la línea de despedida. Bórrala.
 
-**2. MIDE EL GLOBO MÁS LARGO.** ¿Pasa de 160 caracteres? Entonces le metí dos ideas a un mensaje que solo aguanta una. Quítale la que menos le sirve a ella ahora mismo.
+**2. MIDE EL GLOBO MÁS LARGO.** ¿Pasa de 160 caracteres? Entonces le metí dos ideas a un mensaje que solo aguanta una. Quítale la que menos le sirve a ella ahora mismo.${tandaVinetas > 0 ? ' **El globo de la lista no cuenta aquí**: son tres renglones cortos y se leen sueltos.' : ''}
 
-**3. ¿HAY ALGO CON FORMA DE LISTA?** Una viñeta, un guion al principio de una línea, un "primero… segundo…", o tres frases cortas en tres renglones seguidos. Si lo hay, escojo UNA y borro las otras. Nunca sale una lista de aquí.
+${tandaVinetas > 0
+  ? `**3. ¿ESTÁN LAS TRES VIÑETAS, ENTERAS Y CADA UNA EN SU RENGLÓN?** Este es el mensaje en el que ella se entera de qué es Apego Detox. Si las convertí en una frase de corrido, si me comí una, o si le recorté la mitad de la derecha —la que dice qué gana ella—, lo rehago. Y si están, compruebo que **no metí una cuarta**.`
+  : `**3. ¿HAY ALGO CON FORMA DE LISTA?** Una viñeta, un guion al principio de una línea, un "primero… segundo…", o tres frases cortas en tres renglones seguidos. Si lo hay, escojo UNA y borro las otras. Hoy no toca lista: no hay bloque 📦 en este mensaje.`}
 
 **4. ¿Le contesté a lo que ELLA escribió, con sus palabras?** Si me hizo una pregunta y le mandé el mensaje de siempre, está mal: ella nota que nadie la está leyendo y se va. Si mi mensaje le serviría igual a otra mujer distinta, lo reescribo.
 
@@ -1583,6 +1667,14 @@ export async function processPaulaMessage(
   // igual recibe tres globos y ni una viñeta. Es lo que ha faltado en todas las
   // versiones anteriores: pedirlo por prompt nunca aguantó más de unos días.
   paulaResponse = aplicarFormato(normalizarNegritas(auditoria.texto, normalizarCanal(canal)), explicandoElPrograma);
+
+  // EL MENSAJE DE LA PRESENTACIÓN NO SE QUEDA SIN PUERTA. Si Paula terminó en
+  // la última viñeta y no mandó ningún link, se le pone la página detrás: ella
+  // acaba de leer qué hay adentro y es el momento con más ganas de entrar de
+  // toda la conversación. Ver `asegurarLinkTrasLaLista` para el caso real.
+  if (explicandoElPrograma && handoff === null) {
+    paulaResponse = asegurarLinkTrasLaLista(paulaResponse);
+  }
 
   // 4c. CRISIS — garantía por código, no por prompt.
   // Si ella nombró violencia o que se quiere morir, ningún link de producto ni

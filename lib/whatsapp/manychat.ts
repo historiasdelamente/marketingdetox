@@ -184,15 +184,73 @@ function tiempoDeTecleo(texto: string): number {
  * verde y el reintento nunca se disparaba. Quien quiera MEDIR usa esta; quien
  * quiera ENVIAR usa la de abajo.
  */
+/**
+ * LOS BLOQUES DEL MENSAJE, CON LAS LISTAS DE UNA SOLA PIEZA.
+ *
+ * ╔═══════════════════════════════════════════════════════════════════════════╗
+ * ║ ⚠️ ESTE ERA EL FALLO QUE HACÍA IMPOSIBLE MANDAR UNA LISTA. 2026-08-08.     ║
+ * ║                                                                           ║
+ * ║ El corte de aquí abajo parte por CUALQUIER salto de línea, y una lista de  ║
+ * ║ tres viñetas son tres líneas. O sea que la lista salía convertida en TRES  ║
+ * ║ globos —tres notificaciones seguidas en su celular—, se pasaba del tope de ║
+ * ║ tres, y `comprimirGlobos` las volvía a pegar con un espacio: las tres      ║
+ * ║ viñetas en un solo renglón corrido. El folleto que se quería evitar, con   ║
+ * ║ la agravante de llegar troceado.                                          ║
+ * ║                                                                           ║
+ * ║ `formato.globosConListas` ya cosía la lista en un bloque… y esta función   ║
+ * ║ la volvía a partir tres líneas después. Las viñetas llevaban desde el      ║
+ * ║ 2026-08-06 en el código sin haber podido llegar bien ni una vez.           ║
+ * ╚═══════════════════════════════════════════════════════════════════════════╝
+ *
+ * Una tirada de viñetas —con la línea que la abre, si termina en dos puntos—
+ * es UN bloque, y se marca como `lista` para que el corte por frases de más
+ * abajo tampoco la parta.
+ */
+function bloquesDe(texto: string): Array<{ valor: string; lista: boolean }> {
+  const bloques: Array<{ valor: string; lista: boolean }> = [];
+
+  for (const linea of texto.split('\n').map((l) => l.trim())) {
+    if (!linea) continue;
+
+    const ultimo = bloques[bloques.length - 1];
+    const ultimaDelUltimo = ultimo?.valor.split('\n').pop() ?? '';
+
+    // Una viñeta se cose a lo anterior si lo anterior es otra viñeta, o si es
+    // la frase que abre la lista (la que termina en dos puntos).
+    if (esLineaVineta(linea) && ultimo && (esLineaVineta(ultimaDelUltimo) || /:\s*$/.test(ultimo.valor))) {
+      ultimo.valor = `${ultimo.valor}\n${linea}`;
+      ultimo.lista = true;
+      continue;
+    }
+
+    bloques.push({ valor: linea, lista: esLineaVineta(linea) });
+  }
+
+  return bloques;
+}
+
 export function globosDe(texto: string, maxChars = MAX_CHARS_GLOBO): string[] {
   // Se parte por CUALQUIER salto de línea, no solo por la línea en blanco. El
   // modelo mezcla los dos —a veces separa dos ideas con un `\n` suelto— y con
   // el corte antiguo esas dos ideas salían pegadas en un globo de 260
-  // caracteres: justo el ladrillo que no queremos que ella reciba.
-  const bloques = texto.split(/\n+/).map((b) => b.trim()).filter(Boolean);
-  const piezas: Array<{ url: boolean; valor: string }> = [];
+  // caracteres: justo el ladrillo que no queremos que ella reciba. La única
+  // excepción son las listas, que `bloquesDe` mantiene enteras.
+  const bloques = bloquesDe(texto);
+  const piezas: Array<{ url: boolean; lista: boolean; valor: string }> = [];
 
-  for (const bloque of bloques) {
+  for (const { valor: bloque, lista } of bloques) {
+    // UNA LISTA VIAJA ENTERA. No se le busca la URL por dentro ni se le corta
+    // por frases: un punto dentro de una viñeta no es un fin de globo. Si
+    // alguna trae link (no debería: el link va en su propio globo), se saca al
+    // final en vez de recomponer la frase, que aquí destrozaría los renglones.
+    if (lista) {
+      const urls = [...bloque.matchAll(/https?:\/\/\S+/g)].map((m) => m[0]);
+      const sinUrls = bloque.replace(/https?:\/\/\S+/g, '').replace(/[ \t]+$/gm, '').trim();
+      if (sinUrls) piezas.push({ url: false, lista: true, valor: sinUrls });
+      for (const url of urls) piezas.push({ url: true, lista: false, valor: url });
+      continue;
+    }
+
     // Las URLs se AÍSLAN ANTES de cortar por frases. Si no, el punto de
     // "historiasdelamente.com" se lee como fin de oración y el link sale
     // partido en dos mensajes — con eso deja de ser clicable.
@@ -212,8 +270,8 @@ export function globosDe(texto: string, maxChars = MAX_CHARS_GLOBO): string[] {
       const despues = bloque.slice(inicio + m[0].length).trim();
 
       if (antes && despues) {
-        piezas.push({ url: false, valor: `${sinConectorFinal(antes)} ${despues}`.trim() });
-        piezas.push({ url: true, valor: m[0] });
+        piezas.push({ url: false, lista: false, valor: `${sinConectorFinal(antes)} ${despues}`.trim() });
+        piezas.push({ url: true, lista: false, valor: m[0] });
         continue;
       }
     }
@@ -221,17 +279,20 @@ export function globosDe(texto: string, maxChars = MAX_CHARS_GLOBO): string[] {
     let cursor = 0;
     for (const m of urls) {
       const antes = bloque.slice(cursor, m.index).trim();
-      if (antes) piezas.push({ url: false, valor: antes });
-      piezas.push({ url: true, valor: m[0] });
+      if (antes) piezas.push({ url: false, lista: false, valor: antes });
+      piezas.push({ url: true, lista: false, valor: m[0] });
       cursor = (m.index ?? 0) + m[0].length;
     }
     const resto = bloque.slice(cursor).trim();
-    if (resto) piezas.push({ url: false, valor: resto });
+    if (resto) piezas.push({ url: false, lista: false, valor: resto });
   }
 
   const globos: string[] = [];
   for (const pieza of piezas) {
-    if (pieza.url || pieza.valor.length <= maxChars) {
+    // Una lista pasa entera aunque se pase de largo: son tres renglones cortos
+    // y el ojo los lee sueltos. Medirla como un párrafo y trocearla es lo que
+    // la convertía en tres mensajes.
+    if (pieza.url || pieza.lista || pieza.valor.length <= maxChars) {
       globos.push(pieza.valor);
       continue;
     }

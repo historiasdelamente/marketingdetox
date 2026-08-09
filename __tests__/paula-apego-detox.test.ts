@@ -8,8 +8,8 @@ import {
 } from '@/lib/whatsapp/blindaje';
 import { APEGO_DETOX, precioApego, proximoEncuentro } from '@/lib/whatsapp/programa';
 import { precioLocal } from '@/lib/whatsapp/moneda';
-import { aplicarFormato } from '@/lib/whatsapp/formato';
-import { SALUDOS_ENTRADA, buildSystemPrompt, preguntaEntradaPara, saludoEntradaPara } from '@/lib/whatsapp/paula';
+import { MAX_CHARS_VINETA, aplicarFormato } from '@/lib/whatsapp/formato';
+import { SALUDOS_ENTRADA, beneficiosPara, buildSystemPrompt, preguntaEntradaPara, saludoEntradaPara } from '@/lib/whatsapp/paula';
 
 /**
  * ⚰️ LAS VEINTE FRASES DEL BANCO DE DOLORES QUE SE BORRO EL 2026-08-06.
@@ -574,12 +574,42 @@ describe('el prompt que se arma en cada turno', () => {
     expect(p.split('\n').filter(esVineta)).toEqual([]);
   });
 
-  it('ninguna viñeta pasa de nueve palabras', () => {
-    // Una viñeta que no cabe en un renglón es un párrafo con un punto delante,
-    // que es justo lo que Javier llamó "hacerle un flyer a las personas".
+  it('ninguna viñeta se pasa del tope que las recorta', () => {
+    // ⚠️ ESTE TEST MEDÍA PALABRAS (menos de diez) Y AHORA MIDE CARACTERES.
+    //
+    // El tope viejo hacía imposible lo que Javier pidió el 2026-08-08:
+    // *"viñetas con transformación e información"*. Las dos mitades —qué es a la
+    // izquierda, qué gana ella a la derecha— no caben en nueve palabras, y el
+    // resultado de forzarlas eran viñetas de pura transformación que dejaban a
+    // la mujer sin saber qué compraba.
+    //
+    // El número que manda de verdad es `MAX_CHARS_VINETA` de `formato.ts`, que
+    // es quien recorta con puntos suspensivos. Si una viñeta se pasa de ahí, no
+    // se rechaza: llega mutilada. Por eso se mide contra ese mismo número.
     for (const b of APEGO_DETOX.beneficios) {
-      expect(b.split(/\s+/).length, `demasiado larga: «${b}»`).toBeLessThan(10);
+      expect(b.length, `se va a recortar en producción: «${b}»`).toBeLessThanOrEqual(MAX_CHARS_VINETA);
     }
+  });
+
+  it('cada viñeta lleva las DOS mitades: qué es y qué gana ella', () => {
+    // Los dos puntos son la bisagra: a la izquierda el entregable, a la derecha
+    // lo que ella saca. Una viñeta sin ":" volvió a ser solo una de las dos.
+    for (const b of APEGO_DETOX.beneficios) {
+      expect(b, `sin bisagra: «${b}»`).toContain(':');
+      const [queEs, queGana] = b.split(':');
+      expect(queEs.trim().length, `mitad izquierda vacía: «${b}»`).toBeGreaterThan(3);
+      expect(queGana.trim().length, `mitad derecha vacía: «${b}»`).toBeGreaterThan(3);
+    }
+  });
+
+  it('las tres primeras son los pilares, y no rotan por mujer', () => {
+    // Rotarlas era el fallo: a unas mujeres les tocaba enterarse del bonus y no
+    // de los 17 módulos. Los tres pilares son la respuesta a "¿qué es esto?".
+    const aUna = beneficiosPara('mujer-a').primera;
+    const aOtra = beneficiosPara('mujer-z').primera;
+    expect(aUna).toEqual(aOtra);
+    expect(aUna.join(' ')).toMatch(/17 módulos de terapia en video/);
+    expect(aUna.join(' ')).toMatch(/en vivo con Javier Vieira/);
   });
 
   it('fuera de ese caso, el código sigue matando las viñetas', () => {
