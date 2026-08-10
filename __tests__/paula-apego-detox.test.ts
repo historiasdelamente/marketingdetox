@@ -533,8 +533,13 @@ describe('el prompt que se arma en cada turno', () => {
     }
   });
 
-  it('cuando pregunta qué incluye salen TRES, y las otras tres cuando contesta', () => {
+  it('cuando pregunta qué incluye salen TRES, y las otras tres cuando pide más', () => {
     // Los seis de Javier, en dos tandas con ella hablando en medio.
+    //
+    // ⚠️ LA SEGUNDA TANDA YA NO SALE SOLA — 2026-08-09. Salía en cuanto ella
+    // contestara cualquier cosa, y en producción eso fue dos folletos seguidos:
+    // Nidia abrió su dolor («me dijo que quería estar solo») y recibió la
+    // segunda mitad del catálogo. Ahora hay que pedirla.
     const pide = { role: 'user' as const, content: '¿qué incluye?' };
     const conVinetas = { role: 'assistant' as const, content: '• una\n• dos\n• tres' };
 
@@ -546,10 +551,20 @@ describe('el prompt que se arma en cada turno', () => {
     const v1 = primera.split('\n').filter(esVineta);
     expect(v1.length, 'la primera tanda son tres').toBe(3);
 
-    const segunda = buildSystemPrompt(usuaria, 'tiktok_live', '+521234567890', {
+    const abriendoSuDolor = buildSystemPrompt(usuaria, 'tiktok_live', '+521234567890', {
       ahora: VIERNES_31,
       historial: [pide, conVinetas],
       mensajeDeElla: 'ay, sí, eso me pasa igualito',
+    });
+    expect(
+      abriendoSuDolor.split('\n').filter(esVineta),
+      'encima de lo que ella cuenta no va otra lista',
+    ).toEqual([]);
+
+    const segunda = buildSystemPrompt(usuaria, 'tiktok_live', '+521234567890', {
+      ahora: VIERNES_31,
+      historial: [pide, conVinetas],
+      mensajeDeElla: '¿y qué más incluye?',
     });
     const v2 = segunda.split('\n').filter(esVineta);
     expect(v2.length, 'la segunda tanda son otras tres').toBe(3);

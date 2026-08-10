@@ -103,19 +103,58 @@ describe('cuándo le pide el correo', () => {
   // entero: nunca leyó qué es Apego Detox y contestó con su Gmail.
   // ═══════════════════════════════════════════════════════════════════════════
 
-  it('NO se lo pide antes de que ella sepa qué es Apego Detox', () => {
-    const p = prompt(ella, { historial: charlaSinPresentar, mensajeDeElla: 'llevo dos años así' });
-    expect(p).not.toContain('TIENES ALGO QUE MANDARLE');
-  });
+  // ═══════════════════════════════════════════════════════════════════════════
+  // LA CARTILLA SE ADELANTÓ AL PROGRAMA — 2026-08-09
+  //
+  // La regla del 08 se cumplía a la letra y el resultado fue que **el correo no
+  // se pedía casi nunca**: el turno en que `sabeQueEs` se pone en true es justo
+  // el de la presentación, donde la cartilla calla; al siguiente saltaba la
+  // segunda tanda de viñetas y volvía a callar; al tercero, cualquier pregunta
+  // suya lo apagaba. Cinco conversaciones seguidas de la noche del 9 al 10 de
+  // agosto terminaron sin correo. Javier: *"tampoco le manda el correo"*.
+  //
+  // Su regla del 08 era MECÁNICA —*la cartilla termina en pregunta y el
+  // programa no; en el mismo mensaje ella contesta la cartilla y se salta el
+  // programa*— y sigue en pie: nunca van juntas. Lo que cambia es el orden.
+  // ═══════════════════════════════════════════════════════════════════════════
 
-  it('NO se lo pide en el mismo mensaje en que le presenta el programa', () => {
-    // El turno exacto de las capturas: ella contesta la pregunta de entrada, y
-    // ese mensaje es el de la presentación (bloque 📦). Ahí la cartilla calla.
+  it('ahora SÍ se lo pide antes del programa: ese es el turno de escucha', () => {
     const p = prompt(ella, {
       historial: charlaSinPresentar,
       mensajeDeElla: 'ya salí y quiero recuperarme',
     });
+    expect(p).toContain('TIENES ALGO QUE MANDARLE');
+    // …y en ese mismo mensaje el programa NO va. Esa es la regla de Javier.
+    expect(p).not.toContain('ELLA SE ENTERA DE QUÉ ES APEGO DETOX');
+  });
+
+  it('NO se lo pide a quien solo ha dicho «hola» y su nombre', () => {
+    const p = prompt(ella, { historial: charlaSinPresentar, mensajeDeElla: 'ok' });
+    expect(p).not.toContain('TIENES ALGO QUE MANDARLE');
+  });
+
+  it('NO se lo pide en el mismo mensaje en que le presenta el programa', () => {
+    // Un turno después: la cartilla ya salió, así que ahora toca el bloque 📦 —
+    // y ahí la cartilla calla. Las dos piezas nunca coinciden en un mensaje.
+    const yaOfrecida = [
+      ...charlaSinPresentar,
+      { role: 'user' as const, content: 'ya salí y quiero recuperarme' },
+      { role: 'assistant' as const, content: 'Tengo una cartilla que te va a servir, ¿a qué correo te la mando?' },
+    ];
+    const p = prompt(ella, { historial: yaOfrecida, mensajeDeElla: 'ana@gmail.com' });
     expect(p).toContain('ELLA SE ENTERA DE QUÉ ES APEGO DETOX');
+    expect(p).not.toContain('TIENES ALGO QUE MANDARLE');
+  });
+
+  it('y no la vuelve a pedir si ya se la ofreció y ella no contestó', () => {
+    // «Una sola vez» dejó de ser una frase del prompt y pasó a ser código: el
+    // bloque desaparece en cuanto Paula ya nombró la cartilla.
+    const yaOfrecida = [
+      ...charla,
+      { role: 'user' as const, content: 'llevo dos años así' },
+      { role: 'assistant' as const, content: 'Tengo una cartilla que te va a servir, ¿a qué correo te la mando?' },
+    ];
+    const p = prompt(ella, { historial: yaOfrecida, mensajeDeElla: 'no sé si me sirva' });
     expect(p).not.toContain('TIENES ALGO QUE MANDARLE');
   });
 });

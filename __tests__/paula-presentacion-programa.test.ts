@@ -58,7 +58,20 @@ const LO_QUE_CONTESTARON = [
   'Quiero dejarlo. Pero quiero saber si el problema soy yo',
 ];
 
-const prompt = (mensajeDeElla: string, historial = ANTES_DE_CONTESTAR) =>
+/**
+ * LO QUE HAY EN EL CHAT UN TURNO DESPUÉS: ella contestó el carril y Paula ya le
+ * ofreció la cartilla. **Aquí es donde va la presentación desde el 2026-08-09.**
+ */
+const TRAS_EL_TURNO_DE_ESCUCHA: Turno[] = [
+  ...ANTES_DE_CONTESTAR,
+  { role: 'user', content: 'Quiero dejarlo' },
+  {
+    role: 'assistant',
+    content: 'Decidirlo y sostenerlo son dos cosas distintas, y la segunda pesa más.\n\nTengo una cartilla que te va a servir justo para eso, ¿a qué correo te la mando?',
+  },
+];
+
+const prompt = (mensajeDeElla: string, historial = TRAS_EL_TURNO_DE_ESCUCHA) =>
   buildSystemPrompt(ella, 'tiktok_live', '+573001112233', {
     ahora: VIERNES_31,
     historial,
@@ -69,11 +82,33 @@ const prompt = (mensajeDeElla: string, historial = ANTES_DE_CONTESTAR) =>
 const vinetasDe = (texto: string) => texto.split('\n').filter((l) => /^\s*>?\s*•/.test(l));
 
 describe('1. las viñetas se disparan cuando ella contesta, no solo cuando pregunta', () => {
-  it.each(LO_QUE_CONTESTARON)('«%s» abre la presentación con viñetas', (mensaje) => {
-    // ⚠️ ESTO DEVOLVÍA 0 EN LAS TRES. Medido el 2026-08-08 contra el código de
-    // producción: `preguntaQueIncluye` no casa con ninguna, así que la lista no
-    // salía nunca y ellas terminaban la conversación sin saber qué se vendía.
-    expect(tandaDeVinetas(ANTES_DE_CONTESTAR, mensaje, null)).toBe(1);
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ⚠️ ESPERAN UN TURNO — 2026-08-09. Este bloque nació el 08 porque las viñetas
+  // no salían NUNCA, y el arreglo se pasó al otro lado: salían en el segundo
+  // mensaje de la conversación, contra tres palabras suyas. La noche del 9,
+  // cuatro mujeres contestaron «Quiero dejarlo» y recibieron 450 caracteres de
+  // catálogo sin una sola pregunta; tres no volvieron a escribir. Javier: *"es
+  // como una prosa larga, no la deja ni hablar"*.
+  //
+  // La presentación no se pierde: se corre UN turno, y en medio va el mensaje
+  // corto que le devuelve la palabra (la cartilla). Los dos tests de abajo son
+  // las dos mitades de esa regla y hay que leerlos juntos.
+  // ═══════════════════════════════════════════════════════════════════════════
+  it.each(LO_QUE_CONTESTARON)('«%s» NO abre el catálogo de golpe: primero se la escucha', (mensaje) => {
+    expect(tandaDeVinetas(ANTES_DE_CONTESTAR, mensaje, null)).toBe(0);
+  });
+
+  it.each(LO_QUE_CONTESTARON)('pero al turno siguiente sí, conteste ella lo que conteste: «%s»', (mensaje) => {
+    // Lo que protege este test: que retrasar la presentación no se convierta en
+    // no presentarla nunca. Da igual lo que ella escriba en ese turno.
+    expect(tandaDeVinetas(TRAS_EL_TURNO_DE_ESCUCHA, mensaje, null)).toBe(1);
+    expect(tandaDeVinetas(TRAS_EL_TURNO_DE_ESCUCHA, 'ok', null)).toBe(1);
+  });
+
+  it('y si ELLA lo pide, no espera nada: sale en ese mismo mensaje', () => {
+    // La puerta de `preguntaQueIncluye` manda sobre el turno de escucha: a una
+    // mujer que pregunta por el producto no se le aplaza la respuesta.
+    expect(tandaDeVinetas(ANTES_DE_CONTESTAR, 'cuéntame del programa', null)).toBe(1);
   });
 
   it('en el saludo de entrada NO, que ahí solo se pregunta', () => {

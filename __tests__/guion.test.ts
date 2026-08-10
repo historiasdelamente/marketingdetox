@@ -34,8 +34,28 @@ describe('el guion de venta — para que Paula deje de repetirse', () => {
     expect(e.sabePrecio).toBe(false);
   });
 
-  it('si todavía no sabe qué es, el paso es contárselo', () => {
+  // ═════════════════════════════════════════════════════════════════════════
+  // EL TURNO DE ESCUCHA — 2026-08-09.
+  //
+  // Antes, en cuanto ella contaba algo salía «CONTARLE QUÉ ES» y con él las
+  // tres viñetas y el link. En producción eso significó que a «Quiero dejarlo»
+  // se le contestaba con 450 caracteres de catálogo. Javier: *"es como una
+  // prosa larga, no la deja ni hablar"*. Ahora entre lo uno y lo otro va un
+  // mensaje corto que le devuelve la palabra (y que es el de la cartilla).
+  // ═════════════════════════════════════════════════════════════════════════
+  it('lo primero que toca cuando ella se abre es recogerla, no el catálogo', () => {
     const g = bloqueGuion([ella('hola'), paula('Hola, soy Paula. ¿Cómo te llamas?'), YA_CONTO]);
+    expect(g).toMatch(/RECOGERLA A ELLA Y DEVOLVERLE LA PALABRA/);
+    expect(g).not.toMatch(/CONTARLE QUÉ ES/);
+  });
+
+  it('y en el turno siguiente, con la cartilla ya ofrecida, el paso es contárselo', () => {
+    const g = bloqueGuion([
+      ella('hola'),
+      paula('Hola, soy Paula. ¿Cómo te llamas?'),
+      YA_CONTO,
+      paula('Eso desgasta de una forma que no se ve. Tengo una cartilla, ¿a qué correo te la mando?'),
+    ]);
     expect(g).toMatch(/CONTARLE QUÉ ES/);
     expect(g).toMatch(/Todavía no le has dado nada del programa/);
   });

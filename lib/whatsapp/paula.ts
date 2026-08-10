@@ -324,11 +324,11 @@ Se contesta en tres palabras, así que casi todas contestan, y una conversación
 
 Ella acaba de escribirte. Soltarle aquí el programa, el precio y el link la deja leyendo un volante. Una conversación empieza cuando ella contesta.
 
-**GLOBO 1 — te presentas con ESTA frase, tal cual está escrita:**
+**GLOBO 1 — abres con ESTA frase, tal cual está escrita, sin una palabra delante:**
 
 > ${saludo}
 
-Es la que le toca a ella. No la cambies, no la resumas y no le añadas nada: está medida para que suene a persona y no a ventanilla.
+Es la que le toca a ella. **No la cambies, no la resumas, no la reordenes y no le pegues un "Hola" delante.** Está escrita para que lo primero que lea sea algo suyo y no nuestro currículum: si le mueves el orden, vuelve a ser la respuesta automática de un negocio.
 
 ${segundoGlobo}
 ${siYaConto}
@@ -382,38 +382,113 @@ export function beneficiosPara(_semilla: string): { primera: string[]; segunda: 
 }
 
 /**
- * CÓMO SE PRESENTA PAULA — una distinta para cada mujer.
+ * LA PRIMERA FRASE. Lo único que decide si hay conversación o no.
  *
- * ⚠️ POR QUÉ HACE FALTA. Javier, 2026-08-06: *"la frase inicial debe ser más
- * incluyente en el programa, más sentida, no siempre la misma, como si se
- * notara que fuera un robot"*. Y tenía razón: el prompt describía UNA forma y
- * ponía UN ejemplo, así que a las 878 mujeres les llegó la misma línea calcada,
- * palabra por palabra, durante meses.
+ * ╔═══════════════════════════════════════════════════════════════════════════╗
+ * ║  📌 REESCRITAS ENTERAS EL 2026-08-10. Javier: *"cambia la primera frase,   ║
+ * ║  rompe las reglas, haz algo realmente épico como un experto en ventas por  ║
+ * ║  WhatsApp para este tipo de producto"*.                                   ║
+ * ║                                                                           ║
+ * ║  LO QUE HABÍA, Y POR QUÉ NO SERVÍA. Las diez anteriores eran variaciones   ║
+ * ║  de una tarjeta de presentación: *"Hola 💛 Soy Paula, del equipo de Javier ║
+ * ║  Vieira, Psicólogo Especialista. Aquí adentro hay mujeres que llegaron     ║
+ * ║  justo como llegas tú hoy."* Bien escrita y perfectamente inútil, por      ║
+ * ║  tres motivos que se ven al leerla como la lee ella:                      ║
+ * ║                                                                           ║
+ * ║   1. **Habla de nosotros.** Las diez primeras palabras —Paula, el equipo,  ║
+ * ║      el cargo— son currículum. Ella no llegó por nosotros.                ║
+ * ║   2. **Es lo que hace un negocio, no una persona.** Presentarse con el     ║
+ * ║      cargo por delante es la firma exacta de una respuesta automática, y   ║
+ * ║      ella lleva media vida distinguiendo lo automático de lo real.        ║
+ * ║   3. **No reconoce nada.** Es la única frase de toda la conversación que   ║
+ * ║      le llega con la atención al 100%, y se gastaba sin decirle una sola   ║
+ * ║      cosa que ella reconociera como suya.                                ║
+ * ╚═══════════════════════════════════════════════════════════════════════════╝
  *
- * Se escriben a mano y se reparten por su `manychat_id` en vez de pedirle al
- * modelo que improvise: una frase de apertura es lo primero que ella lee, y ahí
- * `gpt-4.1-mini` improvisando suena peor que una frase curada. Aquí copiar es
- * exactamente lo que queremos — por eso hay diez.
+ * ── LO QUE DICE EL MATERIAL DEL NICHO ──────────────────────────────────────
  *
- * LO QUE TIENE QUE HACER CADA UNA:
- *   1. Decir quién es, con Javier Vieira y **"Psicólogo Especialista"** — nunca
- *      "clínico", en ningún caso.
- *   2. Meterla ya dentro: que se note que hay un sitio y otras mujeres, sin
- *      vender nada, sin precio y sin link.
- *   3. Una línea. Si ocupa dos renglones, sobra media.
- *   4. Nada de "¿en qué te puedo ayudar?": eso es una ventanilla.
+ * En el corpus de TikTok de la casa (58 videos, 30 creadores; ver
+ * `docs/knowledge-base/tiktok-supadata/transcripciones-tiktok-virales.md` en
+ * business-os) el patrón de mayor identificación está anotado con todas las
+ * letras: **empezar por la frase del agresor genera reconocimiento inmediato**.
+ * Lo que para en seco a esta mujer no es una promesa ni una credencial: es leer
+ * la frase que a ella le dijeron mil veces.
+ *
+ * Y las frases son siempre las mismas cuatro: *"estás exagerando"*, *"eres muy
+ * sensible"*, *"estás loca"*, *"el problema eres tú"*. Están literales en el
+ * corpus, escritas por mujeres reales: *"me dice que exagero y termino
+ * pidiéndole perdón yo"*, *"¿soy yo la tóxica?"*, *"dudo de todo lo que veo con
+ * mis ojos"*.
+ *
+ * ── LA REGLA NUEVA, Y ES UNA SOLA ──────────────────────────────────────────
+ *
+ * **La primera frase no se presenta: reconoce.** Se abre por lo que a ella le
+ * dijeron —o por lo que acaba de hacer al escribir— y el quiénes somos va
+ * detrás, de pasada.
+ *
+ * ── POR QUÉ ESTO NO RESUCITA LA PREGUNTA-ESPEJO QUE JAVIER MATÓ ────────────
+ *
+ * El 2026-08-05 se retiraron las preguntas-espejo («escribes el mensaje y
+ * borras la mitad… ¿te sigue pasando?») porque abrían el desahogo, y una mujer
+ * que se desahoga se va satisfecha sin comprar. La diferencia es exacta y es la
+ * que hace que esto sea legal aquí: **aquella PREGUNTABA por la herida; estas
+ * AFIRMAN y no preguntan nada.** La única pregunta del turno sigue siendo la
+ * del carril, que es de decisión y no de herida. Reconocer no abre diván;
+ * preguntar por el dolor, sí.
+ *
+ * ── Y NO ROMPE LA REGLA DE YENY ────────────────────────────────────────────
+ *
+ * Ninguna afirma un hecho suyo. Ni años, ni que no duerme, ni que pide perdón.
+ * Hablan de lo que se dice en este sitio, o de lo que ella acaba de hacer al
+ * escribir — que es lo único que sabemos con certeza. Un dato inventado costó
+ * una conversación entera el 2026-08-06 y eso no se repite.
+ *
+ * ── LO QUE TIENE QUE CUMPLIR CADA UNA ──────────────────────────────────────
+ *   1. **El golpe en las primeras seis palabras.** Es lo único que se ve en la
+ *      notificación, y ahí se decide si abre el chat.
+ *   2. Javier Vieira y **"Psicólogo Especialista"** — nunca "clínico" — pero
+ *      DETRÁS del golpe, nunca delante. (Hay un test que lo exige.)
+ *   3. Ni una pregunta: la pregunta es el globo 2.
+ *   4. Ni un dato suyo inventado, y ni una palabra sobre él como diagnóstico.
+ *   5. Que le sirva igual a la que sigue con él y a la que ya salió.
+ *   6. Una línea. Máximo 190 caracteres, y cuanto más corta, más fuerte.
+ *
+ * Se escriben a mano y se reparten por su `manychat_id`: una apertura curada le
+ * gana siempre a `gpt-4.1-mini` improvisando, y hacen falta diez para que a
+ * ochocientas mujeres no les llegue la misma línea calcada.
  */
 export const SALUDOS_ENTRADA = [
-  'Hola 💛 Soy Paula, del equipo de Javier Vieira, Psicólogo Especialista. Aquí acompañamos a mujeres que están saliendo de una relación que las fue apagando.',
-  'Hola 💛 Soy Paula. Trabajo con Javier Vieira, Psicólogo Especialista, y este es un sitio donde ninguna tiene que explicar mucho para que la entiendan.',
-  'Hola 💛 Me llamo Paula y trabajo con Javier Vieira, Psicólogo Especialista. Que hayas escrito ya es algo: muchas se quedan mirando el chat sin atreverse.',
-  'Hola 💛 Soy Paula, del equipo de Javier Vieira, Psicólogo Especialista. Aquí adentro hay mujeres que llegaron justo como llegas tú hoy.',
-  'Hola 💛 Soy Paula y trabajo con Javier Vieira, Psicólogo Especialista. Este es un espacio de mujeres rearmándose, y nadie juzga por dónde va cada una.',
-  'Hola 💛 Soy Paula, del equipo de Javier Vieira, Psicólogo Especialista. Me alegra que estés aquí; escribir cuesta más de lo que parece.',
-  'Hola 💛 Soy Paula. Acompaño a Javier Vieira, Psicólogo Especialista, y algo que se dice mucho por aquí es que no hay que llegar entera para empezar.',
-  'Hola 💛 Soy Paula, del equipo de Javier Vieira, Psicólogo Especialista. Lo que traes lo están viviendo otras mujeres ahora mismo, aquí dentro.',
-  'Hola 💛 Soy Paula y trabajo con Javier Vieira, Psicólogo Especialista. Aquí se habla claro y sin rodeos, que es lo que a la mayoría le hacía falta.',
-  'Hola 💛 Soy Paula, del equipo de Javier Vieira, Psicólogo Especialista. Llegar hasta aquí ya es haber decidido algo, aunque todavía no sepas qué.',
+  // El contra-gaslighting puro. La frase que lleva años esperando oír.
+  'Aquí nadie te va a decir que exageras. Soy Paula, trabajo con Javier Vieira, Psicólogo Especialista, y esto que traes lo leemos todos los días.',
+
+  // La frase del agresor, entrecomillada. El patrón exacto del corpus.
+  '«Estás exagerando» es de las frases que más nos escriben aquí. Y no, no estabas exagerando. Soy Paula, trabajo con Javier Vieira, Psicólogo Especialista.',
+
+  // La duda de sí misma, que es la herida de fondo del narcisismo encubierto.
+  'Si llevas tiempo pensando que el problema eres tú, aquí vas a ver que no. Soy Paula, del equipo de Javier Vieira, Psicólogo Especialista.',
+
+  // Reconoce lo que acaba de hacer. Cero riesgo de inventarle nada: es lo único
+  // que sabemos con certeza de ella.
+  'A esto casi nadie se atreve a ponerle palabras, y tú acabas de escribir. Soy Paula, trabajo con Javier Vieira, Psicólogo Especialista.',
+
+  // "Muy sensible" / "muy intensa" — la segunda frase más repetida del corpus.
+  'Aquí nadie te va a decir que eres demasiado sensible. Soy Paula, del equipo de Javier Vieira, Psicólogo Especialista, y lo que te pasa tiene nombre.',
+
+  // El momento exacto en que ella deja de creerle. Es lo que la trajo aquí.
+  'Que hayas escrito quiere decir que algo dentro de ti dejó de creerle. Eso es lo primero que vuelve. Soy Paula, trabajo con Javier Vieira, Psicólogo Especialista.',
+
+  // Quita el requisito de entrada: no hay que llegar ordenada para hablar.
+  'No hace falta que sepas explicarlo bien, ni que tengas la historia ordenada. Soy Paula, del equipo de Javier Vieira, Psicólogo Especialista.',
+
+  // Pertenencia + secreto: casi ninguna se lo ha contado a nadie de su casa.
+  'Hay más mujeres escribiendo esto mismo a esta hora, y casi ninguna se lo ha contado a nadie. Soy Paula, del equipo de Javier Vieira, Psicólogo Especialista.',
+
+  // Le devuelve la percepción: "dudo de todo lo que veo con mis ojos" (corpus).
+  'Lo que viste, lo viste. Aquí no vas a tener que demostrarlo. Soy Paula, trabajo con Javier Vieira, Psicólogo Especialista 💛',
+
+  // Le quita la culpa antes de que la pida — una de las tres cosas que el
+  // prompt le pide a Paula que haga siempre, puesta ya en la primera línea.
+  'Lo que sientes tiene explicación, y no es que seas débil. Soy Paula, del equipo de Javier Vieira, Psicólogo Especialista. De esto hablamos aquí todos los días.',
 ];
 
 /** El saludo que le toca a ELLA. Estable entre turnos, distinto por mujer. */
@@ -483,6 +558,17 @@ function estilo(
    * vuelve a preguntar lo que acaba de decir.
    */
   yaContoDeEntrada = false,
+  /**
+   * ESTE TURNO ES EL DE ESCUCHA: ella contestó la pregunta del carril y todavía
+   * no le toca el programa. Ver `unTurnoDeEscucha` en guion.ts.
+   *
+   * ⚠️ SIN ESTO EL BLOQUE NUEVO NO SIRVE DE NADA. La receta de abajo se elige en
+   * cascada, y sin esta rama el turno de escucha caía en «YA TE CONTESTÓ —
+   * AHORA LE CUENTAS QUÉ ES, Y AHÍ VA EL LINK»: tres globos, el catálogo y el
+   * link. O sea, el guion pidiendo un mensaje corto y la receta pidiendo el
+   * folleto, en el mismo prompt. Gana siempre la receta.
+   */
+  tocaEscuchar = false,
 ): string {
   // La misma pregunta en los tres sitios donde aparece (el bloque de entrada,
   // el ejemplo y la lista de antes de enviar). Si el ejemplo enseñara una
@@ -535,9 +621,11 @@ Es el mensaje más importante de toda la conversación, y **solo pasa una vez**.
 
 ---
 
-**GLOBO 1 — LA FRASE DE ELLA, Y EL NOMBRE DEL PROGRAMA.**
+**GLOBO 1 — LA FRASE DE ELLA, Y EL NOMBRE DEL PROGRAMA. UNA SOLA FRASE.**
 
 Empieza con lo que ELLA acaba de escribirte, con SUS palabras — un hecho, una fecha, la palabra que ella eligió. Y cierra ese globo nombrando el programa y abriendo la lista con dos puntos.
+
+🔸 **Una frase, no dos.** Detrás vienen tres viñetas: si aquí arriba pones dos frases, el mensaje entero se convierte en el ladrillo que la hace dejar de leer.
 
 La forma es esta, y lo que cambia es la primera mitad:
 
@@ -560,10 +648,11 @@ ${listaVinetas}
 
 ---
 
-**GLOBO 3 — UNA FRASE EN PROSA, SIN VIÑETAS, Y EL LINK DEBAJO. LOS DOS, SIEMPRE.**
+**GLOBO 3 — UNA LÍNEA CORTA Y EL LINK DEBAJO. LOS DOS, SIEMPRE.**
 
-Una sola frase que cierre en lo que ELLA va a lograr —no en lo que el programa tiene—, escogida entre lo que te contó: entender que no fue por débil, dejar de darle vueltas todo el día, verlo venir mientras pasa, o sostenerse afuera sin volver.
+Una sola frase, **de doce palabras como mucho**, que cierre en lo que ELLA va a lograr —no en lo que el programa tiene—: entender que no fue por débil, dejar de darle vueltas todo el día, verlo venir mientras pasa, o sostenerse afuera sin volver.
 
+🔸 **Corta de verdad.** Este mensaje ya lleva tres viñetas encima; si le pones detrás un párrafo, lo que ella ve al bajar el pulgar es un muro. Una línea, y el link.
 🔸 **Que no repita lo que ya dice una viñeta.** Si arriba pone "entiendes por qué te pasó y que no fue por débil", aquí va otra cosa: se lee como que le estás diciendo dos veces lo mismo con distinta letra.
 
 Y **debajo, en su propio renglón, el link**. Este es el mensaje en el que ella sabe por primera vez qué es Apego Detox: es exactamente el momento de darle por dónde se entra. Sin el link, acaba de leer lo que hay adentro y no tiene puerta.
@@ -639,6 +728,8 @@ En los globos de texto que van antes y después de la lista, prosa normal: ni gu
 **Una pregunta por mensaje, o ninguna.** Dos seguidas son un interrogatorio.
 
 **No sueltes tres datos juntos.** Escoge los dos que le sirven ahora.
+
+**DÉJALA HABLAR.** Esto es una conversación de dos, no una presentación. Si tus dos últimos mensajes no le dejaron nada que contestar, el siguiente tiene que devolverle la palabra: una pregunta corta —de las que se contestan en una línea— o una frase que ella pueda recoger. Dos mensajes tuyos seguidos sin nada que contestar y ella deja de escribir. Pasó cuatro veces la noche del 9 de agosto.
 
 ---
 
@@ -717,6 +808,25 @@ ${esPrimerTurno ? entrada(pregunta, paisConocido, saludoEntradaPara(semilla), Bo
 Lo que toca ahora es exactamente eso: los tres globos del bloque 📦, en ese orden y sin añadir nada.
 
 ⚠️ **NO escribas aquí una versión en prosa de lo mismo.** Es el fallo que se vio el 2026-08-08 en tres conversaciones seguidas: había dos recetas para el mismo mensaje —una con viñetas y otra de corrido— y ganaba la de corrido. Salía *"vas a poder entender por qué pasó y sostenerte sin volver, acompañada con Javier Vieira en vivo cada semana"*, todo en una frase, y la mujer terminaba la conversación sin saber que hay 17 módulos de terapia en video ni una comunidad. **Una sola receta, y es la de arriba.**
+
+---
+` : tocaEscuchar ? `# 🎯 ESTE MENSAJE ES CORTO Y ES DE ELLA
+
+Acaba de decirte en qué punto está. **Todavía no le toca el programa** — eso es el mensaje siguiente, entero y con su lista.
+
+**DOS GLOBOS. Ni uno más.**
+
+**1. UNA frase con SUS palabras.** Coge lo que acaba de escribirte y dile lo que eso cuesta, o lo que suele venir después. Que se note que hay alguien leyendo, no un sistema contestando.
+
+Tiene que ser suya: si esa misma frase le sirviera igual a otra mujer, está mal y se reescribe.
+
+**2. La pregunta que le devuelve el turno.** Si más arriba hay un bloque 📬, la pregunta ya está escrita y es la cartilla. Si no lo hay, una pregunta corta, de una línea, que ella pueda contestar sin ponerse a redactar.
+
+⛔ **NADA del programa aquí:** ni qué incluye, ni los módulos, ni los talleres, ni el precio, ni el link. Ni siquiera "hay un lugar donde se trabaja eso". Todo eso es del mensaje siguiente.
+⛔ Nada de "¿qué te está pasando?", "cuéntame tu caso" ni "¿qué es lo que más te pesa?": eso es un formulario, y la pone a desahogarse gratis.
+⛔ Nada de qué la frena ni qué la hace dudar. Esa pregunta no existe en este chat.
+
+⚠️ **POR QUÉ EXISTE ESTE MENSAJE.** La noche del 9 de agosto, cuatro mujeres contestaron la pregunta del carril con tres palabras —«Quiero dejarlo»— y recibieron de vuelta 450 caracteres: una frase, tres viñetas, otra frase y el link. Sin una sola pregunta. Tres de las cuatro no volvieron a escribir. Javier: *"es como una prosa larga, no la deja ni hablar"*.
 
 ---
 ` : yaTieneLink ? `# 🎯 YA TIENE EL LINK Y YA SABE QUÉ ES — NO SE LO CUENTES OTRA VEZ
@@ -1222,20 +1332,82 @@ export function buildSystemPrompt(
   // A Paulina le pasó entero: recibió la fórmula de "eso se trabaja adentro" y
   // detrás la cartilla. Nunca leyó qué es Apego Detox, y contestó con su correo.
   //
-  // Dos condiciones nuevas, y las dos miran a lo mismo: que el programa vaya
-  // primero y solo.
-  //   · `tandaVinetas === 0` — en el turno de la presentación, la cartilla calla.
-  //   · `venta.sabeQueEs`   — y no se ofrece hasta que ella sepa qué es el
-  //     programa, porque un regalo antes de saber qué le venden convierte la
-  //     conversación en un intercambio de correo y no en una venta.
+  // La condición que SÍ se queda de aquel día:
+  //   · `tandaVinetas === 0` — en el turno de la presentación, la cartilla
+  //     calla. Nunca van en el mismo mensaje, que era el fondo de su queja.
+  //
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ⚠️ LA QUE SE FUE, Y POR QUÉ — 2026-08-09.
+  //
+  // Estaban además `venta.sabeQueEs` (no pedirle el correo hasta que supiera
+  // qué es el programa), `historial.length >= 4` y `!ellaManda`. Las tres juntas
+  // hacían que **el correo no se pidiera casi nunca**. Medido contra la noche
+  // del 9 al 10 de agosto, cinco conversaciones seguidas:
+  //
+  //   Erika    (6 mensajes)  — sin correo
+  //   Juliana  (6 mensajes)  — sin correo
+  //   Glenda   (4 mensajes)  — sin correo
+  //   María L. (8 mensajes)  — sin correo
+  //   Nidia    (12 mensajes) — el correo llegó en el mensaje 12, de milagro
+  //
+  // La mecánica: el turno en que `sabeQueEs` se pone en true es justo el de la
+  // presentación, y ahí `tandaVinetas` vale 1 y la cartilla calla. Al turno
+  // siguiente saltaba la SEGUNDA tanda de viñetas y volvía a callar. Y al
+  // tercero, cualquier pregunta de ella activaba `ellaManda`. Tres puertas en
+  // fila, y detrás de la tercera la conversación ya se había muerto.
+  //
+  // Javier, 2026-08-09: *"tampoco le manda el correo"*.
+  //
+  // AHORA LA CARTILLA VA EN EL TURNO DE ESCUCHA, ANTES DEL PROGRAMA. Y no
+  // rompe su regla del 8 de agosto, que era mecánica y sigue en pie: *la
+  // cartilla termina en pregunta y el programa no; en el MISMO mensaje ella
+  // contesta la cartilla y se salta el programa*. En mensajes distintos pasa lo
+  // contrario — ella contesta con su correo (queda capturada, y la secuencia
+  // del CRM arranca aunque no vuelva a escribir) y el mensaje siguiente es
+  // Apego Detox entero, con toda su atención encima.
+  //
+  // Lo único que hace falta es que ella haya contado algo: a un «hola» pelado
+  // no se le pide un correo.
+  // ═══════════════════════════════════════════════════════════════════════════
+  const ellaYaContoAlgo = venta.ellaYaConto || yaContoAlgo(opciones.mensajeDeElla ?? '');
+
+  // EL TURNO DE ESCUCHA — ella ya contestó, pero el catálogo todavía no toca.
+  // Es la misma condición que usa `tandaDeVinetas` para esperarse un turno, y
+  // aquí sirve para que la RECETA del mensaje diga lo mismo que el guion.
+  const tocaEscuchar =
+    !opciones.esPrimerTurno &&
+    !opciones.handoff &&
+    tandaVinetas === 0 &&
+    ellaYaContoAlgo &&
+    !venta.sabeQueEs &&
+    !venta.tieneLink;
+  // Si está corrigiendo, aceptando o despidiéndose, el embudo se calla: es la
+  // regla de una sola voz por turno. Una PREGUNTA suya ya no lo apaga — se le
+  // contesta primero y la cartilla va detrás, en media línea.
+  const noEsSuTurno =
+    intencion === 'corrige' || intencion === 'acepta' || intencion === 'se_despide';
+  //
+  // ⚠️ Y UNA VEZ ES UNA VEZ, POR CÓDIGO. El bloque le dice al modelo *"si no te
+  // lo da, sigues como si nada y no vuelves a insistir"*, pero eso es una
+  // prohibición dentro de un bloque que se volvía a renderizar al turno
+  // siguiente — y lo que el modelo tiene delante, lo usa. Al abrir las
+  // condiciones de arriba, la cartilla podía salir tres turnos seguidos.
+  // `venta.ofrecioCartilla` lee lo que Paula YA escribió: si ya se la ofreció,
+  // el bloque desaparece del prompt y no hay nada que insistir.
   const puedePedirCorreo =
     !user.email &&
     !opciones.esPrimerTurno &&
     !opciones.handoff &&
-    !ellaManda &&
-    historial.length >= 4 &&
+    !noEsSuTurno &&
+    !venta.ofrecioCartilla &&
+    historial.length >= 2 &&
     tandaVinetas === 0 &&
-    venta.sabeQueEs;
+    // O ella ya te contó algo —y entonces la cartilla es el turno de escucha—,
+    // o la conversación ya pasó por el programa. Lo segundo se queda porque
+    // «llevo dos años así» no llega al umbral de `yaContoAlgo` (18 caracteres)
+    // y aun así es una mujer contándote su vida: quitarlo dejaba sin cartilla
+    // a media conversación avanzada.
+    (ellaYaContoAlgo || venta.sabeQueEs);
 
   const bloqueCorreo = puedePedirCorreo
     ? `# 📬 TIENES ALGO QUE MANDARLE, Y TODAVÍA NO TIENES DÓNDE
@@ -1244,10 +1416,37 @@ Hay una cartilla suya esperando: **«Sal del Narcisismo», doce pasos con ejerci
 
 **Ofrécesela en UNA línea, pegada a lo que ella acaba de contarte**, y pídele el correo en la misma frase. Así de simple: *"tengo una cartilla que te va a servir justo para eso, ¿a qué correo te la mando?"*
 
+🔸 **Esta es la pregunta que le devuelve el turno.** Se contesta en tres segundos y no la obliga a contar nada: es lo contrario de un interrogatorio y lo contrario de un catálogo.
+
 ⛔ **Una sola pregunta, y va al final.** La cartilla se ANUNCIA en afirmativo y solo se pregunta el correo: *"tengo una cartilla…"*, nunca *"¿tengo una cartilla…?"*. Dos signos de interrogación en el mismo globo la convierten en un formulario.
 ⛔ **No la nombres como un requisito ni como un registro.** Nada de "déjame tu correo", "te registro" ni "para enviarte información". Ella lleva años dándole cosas a alguien que no le daba nada: esto es al revés, tú le das algo.
 ⛔ **Una sola vez.** Si no te lo da, sigues la conversación como si nada y no vuelves a insistir. Insistir por un correo es lo que la hace sentir vendida.
 ⛔ Y **no es lo primero del mensaje**: primero contestas lo suyo, y esto va al final, en media línea.
+
+`
+    : '';
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // ELLA ACABA DE ESCRIBIR SU CORREO.
+  //
+  // El código ya lo guardó y ya lo mandó al CRM (ver `suCorreo` más abajo), así
+  // que la cartilla le sale sola. Lo que falta es que Paula se lo diga: ella
+  // acaba de darte algo y quedarse sin respuesta es exactamente lo que hace que
+  // esto se sienta un formulario. Es media línea, no un globo.
+  //
+  // Se calcula aquí, y no se le pide al modelo que "se dé cuenta", por la regla
+  // de siempre: un correo se detecta con un regex, no con un modelo barato.
+  // ─────────────────────────────────────────────────────────────────────────
+  const bloqueCorreoRecibido = correoEn(opciones.mensajeDeElla ?? '')
+    ? `# ✅ ACABA DE DARTE SU CORREO
+
+Ya está guardado, y la cartilla **«Sal del Narcisismo»** le sale sola a ese correo.
+
+**Confírmaselo en media línea, al principio del mensaje** —*"listo, ya va en camino; míralo también en Promociones y Spam"*— y sigues con lo que toque.
+
+🔸 **Si en este mismo mensaje toca presentarle el programa** (bloque 📦), esta confirmación **ES** la frase de apertura del globo 1: media línea y enlazas con el nombre del programa. No escribas además otra frase de entrada — serían dos aperturas encima de una lista, y eso es el ladrillo que estamos quitando.
+
+⛔ No se lo vuelvas a pedir, no le prometas que se la mandas tú a mano y no le dediques un globo entero: es media línea, pegada a lo que sigue.
 
 `
     : '';
@@ -1263,11 +1462,11 @@ Hay una cartilla suya esperando: **«Sal del Narcisismo», doce pasos con ejerci
   // de máxima atención. Ahora lo primero que lee es qué toca AHORA.
   return `${handoff}${lectura}${guion ? guion + GUION_SEP : ""}${contextoVivo}${instruccionEscalon()}
 
-${bloqueCorreo}
+${bloqueCorreoRecibido}${bloqueCorreo}
 
 ---
 
-${estilo(semilla, paisConocido, opciones.esPrimerTurno ?? false, user.name, montoUSD, local, historial.length, venta.tieneLink, tandaVinetas, preguntaPorGarantia(opciones.mensajeDeElla ?? ''), yaContoAlgo(opciones.mensajeDeElla ?? ''))}
+${estilo(semilla, paisConocido, opciones.esPrimerTurno ?? false, user.name, montoUSD, local, historial.length, venta.tieneLink, tandaVinetas, preguntaPorGarantia(opciones.mensajeDeElla ?? ''), yaContoAlgo(opciones.mensajeDeElla ?? ''), tocaEscuchar)}
 # 📚 LO QUE PUEDES AFIRMAR — FUENTE ÚNICA
 Todo lo que Paula puede decir está aquí abajo. Si un dato no está, no existe: no lo afirmes, dile que lo confirmas con Javier.
 

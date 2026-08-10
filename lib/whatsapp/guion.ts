@@ -44,6 +44,13 @@ export type EstadoVenta = {
   citaFutura: string | null;
   /** ¿Ya te contó algo suyo de verdad, o solo ha dicho «hola» y su nombre? */
   ellaYaConto: boolean;
+  /**
+   * Paula ya le ofreció la cartilla (le pidió el correo).
+   *
+   * Marca el final del turno de escucha: hasta que no ha pasado, la
+   * presentación del programa no sale. Ver `tandaDeVinetas`.
+   */
+  ofrecioCartilla: boolean;
 };
 
 const SABE_QUE_ES = /taller|comunidad|m[óo]dulo|meditaci|en vivo|acompa[ñn]am/i;
@@ -69,6 +76,8 @@ const TIENE_LINK = new RegExp(
 const SABE_PRECIO = /\$\s?\d|\d+\s*d[óo]lares|al mes/i;
 const SABE_GARANTIA = /garant[íi]a|se te devuelve|devoluci[óo]n/i;
 const ES_HOY = /hoy mismo|entras hoy|sin esperar|no hay que esperar|apenas entras/i;
+/** «tengo una cartilla…», «¿a qué correo te la mando?» — lo escribió Paula. */
+const OFRECIO_CARTILLA = /cartilla|a qu[ée] correo/i;
 
 /**
  * Las objeciones que importan, en el idioma de ella. Se detectan para que Paula
@@ -145,6 +154,7 @@ export function analizarConversacion(historial: Turno[]): EstadoVenta {
     vecesQuePregunto: dePaula.filter((m) => PREGUNTA_FRENO.test(m)).length,
     citaFutura: conCita ? conCita.trim().slice(0, 120) : null,
     ellaYaConto: deElla.some((m) => YA_CONTO(m)),
+    ofrecioCartilla: OFRECIO_CARTILLA.test(todoPaula),
   };
 }
 
@@ -272,6 +282,16 @@ export function bloqueGuion(historial: Turno[], hayHandoff = false, mensajeDeEll
   // preguntar. A Nedith se lo preguntaron cuatro veces seguidas.
   const yaPregunteDemasiado = e.vecesQuePregunto >= 2;
 
+  // ¿ESTE TURNO ES EL DE LA PRESENTACIÓN? Se le pregunta a la MISMA función que
+  // arma el bloque 📦 del prompt, nunca se recalcula aquí: si las dos piezas no
+  // dicen lo mismo, el guion le pide prosa mientras el bloque le pide la lista,
+  // y con `gpt-4.1-mini` gana la que esté más abajo. Ya pasó el 2026-08-08.
+  //
+  // La intención va en null a propósito: solo se usa para decidir la SEGUNDA
+  // tanda, y cuando ella corrige, acepta, pregunta o se despide este guion
+  // entero se calla desde `hayHandoff` (la regla de una sola voz por turno).
+  const presentando = tandaDeVinetas(historial, mensajeDeElla ?? '', null) > 0;
+
   // ⚠️ ESTA RAMA VA PRIMERO Y NO ES NEGOCIABLE. Javier probó el bot el
   // 2026-08-09: escribió «podrías darme información del programa» y Paula
   // contestó «aquí estoy lista para contarte todo cuando me digas» — lo obligó
@@ -296,6 +316,22 @@ Aquí NO se vende. Le haces UNA pregunta corta que la invite a contarte dónde e
 **Un solo globo.** Es una pregunta, no un mensaje con una pregunta al final.
 
 ⚠️ Vender aquí es el error más caro que hay: quien recibe el catálogo en el segundo mensaje sabe que le está escribiendo un robot, y deja de contestar. La conversación se gana escuchando dos o tres mensajes primero.`;
+  } else if (!e.sabeQueEs && !presentando) {
+    // EL TURNO DE ESCUCHA. Ella acaba de decirte en qué carril está —«quiero
+    // dejarlo», «ya salí»— y el catálogo todavía no toca. Ver `unTurnoDeEscucha`.
+    paso = `**RECOGERLA A ELLA Y DEVOLVERLE LA PALABRA. Aquí NO va el programa.**
+
+Acaba de decirte en qué punto está, y eso es mucho para lo poco que le has preguntado. Lo que toca es **un mensaje corto que le demuestre que la leíste** — y que ella pueda contestar.
+
+**GLOBO 1 — UNA frase, con SUS palabras.** Lo que ella vive, dicho como se lo diría una mujer que ya ha visto esto muchas veces: qué cuesta vivir así, o qué suele venir después. Corta y cálida, sin lástima y sin diagnóstico.
+
+**GLOBO 2 — la pregunta que le devuelve el turno.** Si más abajo hay un bloque 📬, esa pregunta ya está escrita y es la cartilla. Si no lo hay, una pregunta corta que se conteste en una línea.
+
+⛔ **NADA del programa en este mensaje:** ni qué incluye, ni los módulos, ni los talleres, ni el precio, ni el link. Todo eso va entero en el mensaje siguiente, con su lista.
+⛔ Nada de "¿qué te está pasando?" ni "cuéntame tu caso": eso es un formulario, y la invita a desahogarse gratis.
+⛔ Y **nunca** qué la frena ni qué la hace dudar.
+
+⚠️ Este mensaje existe por lo que pasó la noche del 9 de agosto: cuatro mujeres contestaron la pregunta del carril con tres palabras y recibieron 450 caracteres de catálogo, sin una sola pregunta. Tres no volvieron a escribir. **Dos globos cortos, y se le devuelve la palabra.**`;
   } else if (!e.sabeQueEs) {
     paso = `**CONTARLE QUÉ ES.** Ya te contó algo suyo, así que ahora sí. Qué hay adentro y qué va a lograr, en una o dos frases —enganchado a lo que ELLA te dijo— y el link en su propio globo.`;
   } else if (!e.tieneLink) {
@@ -468,7 +504,7 @@ export function preguntaPorGarantia(mensaje: string): boolean {
  * pidiendo la presentación con viñetas.
  */
 const QUE_INCLUYE =
-  /qu[ée] (incluye|trae|hay|contiene|tiene|es lo que|voy a|me llevo|lograr[íi]a|gano|obtengo)|en qu[ée] consiste|c[óo]mo (es|funciona|va) (el|lo)|de qu[ée] (se )?trata|qu[ée] es (el|lo|eso|esto|apego)|(m[áa]s )?informaci[óo]n (del|de el|sobre|acerca del?) (programa|curso|detox)|(dame|darme|quiero|env[íi]ame|m[áa]ndame|p[áa]same|puedes darme|podr[íi]as darme)( m[áa]s)? informaci[óo]n|\bcu[ée]ntame\b|h[áa]blame del (programa|curso|detox)|qu[ée] (hacen|se hace|se trabaja) en el (programa|curso|detox)|explicame|expl[íi]came|(c[óo]mo|d[óo]nde|qu[ée] hago para|hago para)\s+(me uno|unirme|me inscribo|inscribirme|me suscribo|suscribirme|me registro|registrarme|ingreso|ingresar|entro|entrar|me meto|meterme|empiezo|empezar)|quiero (unirme|ser parte|pertenecer|inscribirme|saber (m[áa]s|del programa|qu[ée] es))|qu[ée] es (la comunidad|skool)|c[óo]mo (es|funciona) la comunidad/i;
+  /qu[ée] (m[áa]s )?(incluye|trae|hay|contiene|tiene|es lo que|voy a|me llevo|lograr[íi]a|gano|obtengo)|en qu[ée] consiste|c[óo]mo (es|funciona|va) (el|lo)|de qu[ée] (se )?trata|qu[ée] es (el|lo|eso|esto|apego)|(m[áa]s )?(informaci[óo]n|info) (del|de el|sobre|acerca del?) (programa|curso|detox)|(dame|darme|quiero|env[íi]ame|m[áa]ndame|p[áa]same|puedes darme|podr[íi]as darme)( m[áa]s)? (informaci[óo]n|info)\b|\bcu[ée]ntame\b|h[áa]blame del (programa|curso|detox)|qu[ée] (hacen|se hace|se trabaja) en el (programa|curso|detox)|explicame|expl[íi]came|(c[óo]mo|d[óo]nde|qu[ée] hago para|hago para)\s+(me uno|unirme|me inscribo|inscribirme|me suscribo|suscribirme|me registro|registrarme|ingreso|ingresar|entro|entrar|me meto|meterme|empiezo|empezar)|quiero (unirme|ser parte|pertenecer|inscribirme|saber (m[áa]s|del programa|qu[ée] es))|qu[ée] es (la comunidad|skool)|c[óo]mo (es|funciona) la comunidad/i;
 
 export function preguntaQueIncluye(mensaje: string): boolean {
   return QUE_INCLUYE.test(mensaje || '');
@@ -541,10 +577,68 @@ export function tandaDeVinetas(
     // diría que ella no ha contado nada — que es el fallo que veníamos a matar.
     const e = analizarConversacion(conSuMensaje(turnos, mensajeDeElla));
     // `e.turnos >= 1` deja fuera el saludo de entrada: ahí solo se pregunta.
-    if (e.turnos >= 1 && e.ellaYaConto && !e.sabeQueEs) return 1;
+    // `unTurnoDeEscucha` es la condición nueva del 2026-08-09 (ver arriba).
+    if (e.turnos >= 1 && e.ellaYaConto && !e.sabeQueEs && unTurnoDeEscucha(e)) return 1;
     return 0;
   }
 
-  if (dadas === 1) return intencion === 'se_despide' || intencion === 'corrige' ? 0 : 2;
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ⚠️ LA SEGUNDA TANDA YA NO SALE SOLA. 2026-08-09, viendo la noche entera.
+  //
+  // Salía en cuanto ella contestara CUALQUIER cosa, y el resultado en
+  // producción fue dos folletos seguidos. Nidia, textual:
+  //
+  //   PAULA: «…y es esto:» + tres viñetas + el link
+  //   NIDIA: «Que el dijo que quería estar solo por qué no tenía tiempo para mi»
+  //   PAULA: «Que te diga que "no tiene tiempo" duele mucho, Nidia:»
+  //          + OTRAS tres viñetas
+  //
+  // Ella abrió su dolor y recibió la segunda mitad del catálogo. Javier,
+  // 2026-08-09: *"es como una prosa larga, no la deja ni hablar"*. Seis
+  // viñetas en dos mensajes seguidos son un folleto en dos entregas.
+  //
+  // Los otros tres beneficios no se pierden: salen cuando ELLA pregunta qué
+  // más hay, que es cuando una lista se lee como una respuesta y no como un
+  // volante.
+  // ═══════════════════════════════════════════════════════════════════════════
+  if (dadas === 1) {
+    if (intencion === 'se_despide' || intencion === 'corrige') return 0;
+    return preguntaQueIncluye(mensajeDeElla) ? 2 : 0;
+  }
   return 0; // las seis ya salieron; a partir de aquí, prosa
+}
+
+/**
+ * ¿YA HUBO UN MENSAJE DE ESCUCHA ANTES DE SOLTARLE EL PROGRAMA?
+ *
+ * ╔═══════════════════════════════════════════════════════════════════════════╗
+ * ║  📌 2026-08-09, con la noche del 9 al 10 delante. Javier: *"es como una    ║
+ * ║  prosa larga, no la deja ni hablar (…) quiero que sea algo más humano,     ║
+ * ║  más emocional, no tan prosa larga"*.                                     ║
+ * ║                                                                           ║
+ * ║  Lo que pasaba, y pasó IGUAL en cuatro conversaciones seguidas: ella       ║
+ * ║  contestaba la pregunta del carril con tres palabras —«Quiero dejarlo»—    ║
+ * ║  y recibía de vuelta 450 caracteres: frase + tres viñetas + frase + link.  ║
+ * ║  Sin una sola pregunta. Tres de las cuatro no volvieron a escribir.        ║
+ * ║                                                                           ║
+ * ║  Y no era el modelo: era esta función. `ellaYaConto` da true con «quiero   ║
+ * ║  dejarlo» (está en RESPUESTA_DE_ENTRADA, y con razón), así que la          ║
+ * ║  presentación se disparaba en el turno 3 SIEMPRE.                          ║
+ * ╚═══════════════════════════════════════════════════════════════════════════╝
+ *
+ * Ahora el catálogo espera UN turno. Ese turno es el de la cartilla: Paula
+ * recoge lo suyo en una frase y le pide el correo, que es una pregunta que ella
+ * puede contestar en tres segundos — y así el correo se captura ANTES de que la
+ * conversación se muera, que era la otra mitad de la queja de Javier.
+ *
+ * Las dos puertas de salida, para que el programa no se quede sin contar nunca:
+ *   · `ofrecioCartilla` — ya hubo turno de escucha; toca presentar.
+ *   · `turnos >= 3`     — respaldo por si la cartilla no salió (ya teníamos su
+ *     correo, o hubo handoff): a la tercera vez que habla Paula, se presenta.
+ *
+ * (La tercera puerta está fuera: si ELLA lo pide, `preguntaQueIncluye` manda y
+ * el programa sale ya, sin esperar nada.)
+ */
+function unTurnoDeEscucha(e: EstadoVenta): boolean {
+  return e.ofrecioCartilla || e.turnos >= 3;
 }
