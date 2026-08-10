@@ -1696,9 +1696,34 @@ export async function callOpenRouter(systemPrompt: string, messages: Array<{ rol
   // queda no alcanza para el mensaje. No es que el modelo escriba mal — es que
   // se queda sin aire.
   //
-  // Se deja en 512 por defecto (es lo que corre hoy y no cambia el gasto) y se
-  // sube por entorno para poder comparar modelos con el simulador.
-  const maxTokens = Number(process.env.PAULA_MAX_TOKENS) || 512;
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ⚠️ EL DEFAULT SUBIÓ A 2048 EL 2026-08-10, Y ESTO YA LE PASÓ A UNA MUJER.
+  //
+  // El 08-08 esto se dejó en 512 «porque es lo que corre hoy», con la nota de
+  // subirlo por entorno para probar otros modelos. Después producción SÍ cambió
+  // de modelo —`PAULA_MODEL=google/gemini-3.6-flash` en el panel de EasyPanel—
+  // y nadie subió el tope, porque vivía en otro sitio.
+  //
+  // Lo que ella recibió, textual, en el mensaje 12184 del 2026-08-09:
+  //
+  //   PAULA: «Dar ese paso requiere mucha claridad, sobre todo cuando estar ahí
+  //           te agota. *Apego Detox* es donde se trabaja justo eso, y es esto:»
+  //
+  // Y ahí se acabó el mensaje. Los dos puntos abiertos, la lista nunca llegó, y
+  // Nidia se quedó mirando una frase cortada. En el simulador con 512 salió
+  // todavía peor: trozos del propio prompt («Ofrécesela en UNA línea…») como si
+  // fueran el mensaje.
+  //
+  // POR QUÉ 2048 NO CUESTA MÁS: `max_tokens` es un TECHO, no una compra. Solo se
+  // paga lo que el modelo genera, y Paula escribe ~150 tokens. Para gpt-4.1-mini
+  // el número es indiferente; para uno que razona antes de escribir, es la
+  // diferencia entre un mensaje entero y uno cortado a media palabra. Y el largo
+  // de lo que ella lee no depende de esto: lo fijan `blindaje.ts` y `formato.ts`.
+  //
+  // LA LECCIÓN: un default calibrado para UN modelo es una bomba de tiempo en
+  // cuanto el modelo se cambia desde el panel, que es donde no se lee el código.
+  // ═══════════════════════════════════════════════════════════════════════════
+  const maxTokens = Number(process.env.PAULA_MAX_TOKENS) || 2048;
   const body = JSON.stringify({
     model,
     messages: [{ role: 'system', content: systemPrompt }, ...messages],
