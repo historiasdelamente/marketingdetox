@@ -633,7 +633,57 @@ export function instruccionCorreccion(
 // 1) Pedir a Javier tiene MUCHAS formas: "quiero hablar con él", "me pasas su
 //    número", "tiene consulta?", "quiero una cita". Todas terminan igual: el
 //    link clicable de su WhatsApp, sin venta encima.
-const PIDE_HUMANO_RE = /(hablar|habla|comunicar|comunicarme|contactar|contacto|escribirle|conversar)\s+(con\s+|a\s+|al\s+)?(una?\s+)?(persona|humano|humana|asesor|asesora|alguien\s+real|javier|el\s+psic[óo]logo|[ée]l\s+directamente)|(?:n[uú]mero|whatsapp|celular|tel[ée]fono|contacto)\s+(de\s+|del\s+)?(javier|el\s+psic[óo]logo)|(?:cita|consulta|sesi[óo]n|terapia)\s+(?:privada|individual|personal|con\s+javier|con\s+el\s+psic[óo]logo)|eres\s+(un\s+)?(bot|robot|m[áa]quina|ia)|esto\s+es\s+(un\s+)?(bot|robot|autom[áa]tico)|no\s+quiero\s+(hablar\s+con\s+)?(un\s+)?(bot|robot|m[áa]quina)|atenci[óo]n\s+humana/i;
+//
+// ═══════════════════════════════════════════════════════════════════════════
+// ⚠️ AMPLIADO EL 2026-08-14, Y ESTABA SIN IMPLEMENTAR LO QUE JAVIER PIDIÓ.
+//
+// Él lo dictó así: *"si necesita terapia la rediriges conmigo"*. No estaba.
+// La única puerta era `(cita|consulta|sesión|terapia) + (privada|individual|
+// personal|con javier|con el psicólogo)`, o sea la frase de un folleto. Medido
+// contra 18 formas verosímiles de pedir terapia, **pasaban 5**. No pasaban:
+//
+//   «Es posible recibir terapia con el?»   ← ESTO LO ESCRIBIÓ UNA MUJER HOY
+//   «quiero terapia» · «necesito terapia» · «el da terapia?»
+//   «hace consultas?» · «atiende pacientes?» · «quiero una cita con el doctor»
+//   «necesito hablar con alguien de verdad» · «esto ya me supera, necesito ayuda»
+//
+// A Alejandra (`1273511096`, 2026-08-14) sí le llegó el WhatsApp de Javier, pero
+// **por casualidad**: el modelo lo leyó por su cuenta del bloque 10 de
+// PAULA-CONOCIMIENTO.md. Y con el peor efecto posible — como `motivoHandoff`
+// devolvió null, ningún candado se activó, así que ese mismo mensaje podía
+// haber llevado la venta encima de una petición de terapia.
+//
+// ⚠️ EL GUARDA DE `terapia` NO ES OPCIONAL. Apego Detox se describe a sí mismo
+// como *"17 módulos de terapia en video"*, así que «quiero la terapia en video»
+// o «cuánto cuesta la terapia del programa» son PRODUCTO, no petición de
+// consulta. Sin la negación de abajo, cada mujer preguntando por el programa
+// acabaría escalada a Javier — que es el fallo que se acaba de quitar en
+// `PREGUNTA_CLASE_RE`, con otra ropa.
+// ═══════════════════════════════════════════════════════════════════════════
+const PIDE_HUMANO_RE = new RegExp(
+  [
+    // Lo de siempre: pedir hablar con una persona / con él.
+    '(hablar|habla|comunicar|comunicarme|contactar|contacto|escribirle|conversar)\\s+(con\\s+|a\\s+|al\\s+)?(una?\\s+)?(persona|humano|humana|asesor|asesora|alguien\\s+real|alguien\\s+de\\s+verdad|javier|el\\s+psic[óo]logo|[ée]l\\s+directamente)',
+    '(?:n[uú]mero|whatsapp|celular|tel[ée]fono|contacto)\\s+(de\\s+|del\\s+)?(javier|el\\s+psic[óo]logo|[ée]l)',
+    '(?:cita|consulta|sesi[óo]n|terapia)\\s+(?:privada|individual|personal|con\\s+javier|con\\s+el\\s+psic[óo]logo)',
+    // NUEVO — pedir terapia con sus palabras. El `(?!...)` deja fuera el producto.
+    '(?:quiero|necesito|quisiera|busco|me\\s+gustar[íi]a|puedo|podr[íi]a|es\\s+posible)\\s+(?:(?:tener|tomar|hacer|recibir|agendar|programar|sacar)\\s+)?(?:una?\\s+)?(?:terapia|cita|consulta|sesi[óo]n)(?!\\s+(?:en\\s+v[íi]deo|en\\s+video|del\\s+programa|grupal|de\\s+los\\s+m[óo]dulos))',
+    // «¿él da terapia?», «¿hace consultas?», «¿atiende pacientes?»
+    '(?:da|dan|hace|hacen|ofrece|ofrecen|brinda|atiende|atienden)\\s+(?:terapias?|consultas?|citas?|pacientes)',
+    // «terapia con él», «cita con el doctor»
+    '(?:terapia|cita|consulta|sesi[óo]n)\\s+con\\s+(?:[ée]l|usted|el\\s+doctor|la\\s+doctora)',
+    // Que la atienda a ELLA, en persona.
+    '(?:me\\s+atienda|me\\s+atiende|me\\s+atendiera|atenderme)\\b',
+    // Pedir ayuda profesional explícitamente.
+    'ayuda\\s+(?:profesional|psicol[óo]gica)',
+    // Y lo de siempre: darse cuenta de que habla con un bot.
+    'eres\\s+(un\\s+)?(bot|robot|m[áa]quina|ia)',
+    'esto\\s+es\\s+(un\\s+)?(bot|robot|autom[áa]tico)',
+    'no\\s+quiero\\s+(hablar\\s+con\\s+)?(un\\s+)?(bot|robot|m[áa]quina)',
+    'atenci[óo]n\\s+humana',
+  ].join('|'),
+  'i',
+);
 
 // 2) Un fallo real de pago SIEMPRE nombra la cosa que falla (el link, la página,
 //    la tarjeta, el acceso). Sin esa exigencia, "¿y si no me funciona?" —la
@@ -790,9 +840,23 @@ export function quitarVentaEnCrisis(texto: string): string {
  * ⚠️ Busca la CLASE como producto, no la palabra "clase": "¿las clases en vivo
  * son todas las semanas?" es una pregunta legítima del programa y no puede
  * dispararlo.
+ *
+ * ⚠️ SE QUITÓ `la clase (de|del|que)` EL 2026-08-14, Y ERA UN ESCALADO CARO.
+ * Esa alternativa no nombraba el producto retirado: cazaba cualquier «la clase
+ * de X». Con ella, *"¿cómo entro a la clase de mañana?"* —que es la pregunta de
+ * una mujer con la tarjeta en la mano— se leía como problema del producto viejo
+ * y la conversación se le pasaba a Javier en vez de cerrarse. Está registrado
+ * como fallo real en `docs/PAULA-ESTADO-2026-08-06.md`: *"la mandó con Javier
+ * cuando estaba comprando"*.
+ *
+ * Lo que queda nombra el producto retirado y solo eso: su nombre, su precio, su
+ * plataforma, o que ella diga que lo compró. Esos casos sí son de él, porque
+ * hay dinero pagado por algo que ya no existe. Javier, 2026-08-14, al recortar
+ * los motivos de handoff: *"solo cuando veas algo crítico, con el link de
+ * WhatsApp"* — y una mujer que pagó y no tiene acceso lo es.
  */
 const PREGUNTA_CLASE_RE =
-  /clase\s+del\s+jueves|recuperando\s+mi\s+ser|volver\s+a\s+m[íi]\b|la\s+clase\s+(?:en\s+vivo\s+)?(?:de|del|que)\b|clase\s+suelta|(?:compr[ée]|pagu[ée]|inscrib[íi])\s+(?:la\s+)?clase|clase\s+de\s+25|clase\s+de\s+hotmart/i;
+  /clase\s+del\s+jueves|recuperando\s+mi\s+ser|volver\s+a\s+m[íi]\b|clase\s+suelta|(?:compr[ée]|pagu[ée]|inscrib[íi])\s+(?:la\s+)?clase|clase\s+de\s+25|clase\s+de\s+hotmart/i;
 
 /**
  * Deja SOLO el WhatsApp de Javier: quita el link del programa y el de la página.
