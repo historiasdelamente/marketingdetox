@@ -197,6 +197,63 @@ describe('v2 — el recorrido de venta viaja', () => {
   });
 });
 
+// ============================================================================
+// LA FORMA QUE PIDIÓ JAVIER VIENDO LAS CONVERSACIONES REALES — 2026-08-15 tarde
+//
+// *"se hicieron muchos globos y cuando ella pone varios renglones, sintetices
+// lo que quiere decir en una respuesta. No uses tantos globos porque se pierde
+// la claridad (…) el objetivo real es vender Apego Detox (…) si se motiva, pero
+// con el fin de mostrar los beneficios de este programa"*.
+//
+// Lo que se vio en producción: seis preguntas seguidas antes de nombrar el
+// programa, tres globos para contestar tres renglones de ella, y un link
+// entregado sin que ella supiera qué hay dentro.
+// ============================================================================
+describe('v2 — un globo, síntesis y beneficios', () => {
+  beforeEach(() => {
+    process.env.PAULA_PROMPT = 'v2';
+  });
+  afterEach(() => {
+    delete process.env.PAULA_PROMPT;
+  });
+
+  it('el default es UN globo, no tres', () => {
+    const p = promptV2(HISTORIAL_JENNIFER, 'hola');
+    expect(p).toMatch(/\*\*UN globo por turno\.\*\*/);
+    expect(p).toMatch(/El segundo, solo si lleva el link/i);
+  });
+
+  it('varios renglones de ella = UNA respuesta sintetizada', () => {
+    const p = promptV2(HISTORIAL_JENNIFER, 'me llama\ny me dice que me quiere\npero después me lastima');
+    expect(p).toMatch(/SI ELLA MANDÓ VARIOS RENGLONES, ES UN SOLO MENSAJE/i);
+    expect(p).toMatch(/Jamás renglón por renglón/i);
+  });
+
+  it('el interrogatorio tiene tope: dos preguntas y a presentar', () => {
+    const p = promptV2(HISTORIAL_JENNIFER, 'sigo con él');
+    expect(p).toMatch(/Como mucho DOS en toda la escucha/i);
+    expect(p).toMatch(/un interrogatorio no vende/i);
+    expect(p).toMatch(/nunca dos turnos seguidos terminados en pregunta/i);
+  });
+
+  it('motivar sin nombrar lo de dentro está prohibido: «se trabaja» a secas no vale', () => {
+    const p = promptV2(HISTORIAL_JENNIFER, 'ya no puedo más con esto');
+    expect(p).toMatch(/DÓNDE y CON QUÉ/);
+    expect(p).toMatch(/no puede comprar un «se trabaja»/i);
+  });
+
+  it('el link no viaja solo: detrás de qué es y qué gana', () => {
+    const p = promptV2(HISTORIAL_JENNIFER, 'cuéntame qué es el programa');
+    expect(p).toMatch(/EL LINK NUNCA VA SOLO NI EN MEDIO DEL MENSAJE/i);
+  });
+
+  it('la pregunta de control por el link está prohibida', () => {
+    const p = promptV2(HISTORIAL_JENNIFER, 'ok');
+    expect(p).toMatch(/¿pudiste ver el enlace\?/i);
+    expect(p).toMatch(/Prohibidas las preguntas de mostrador y las de control/i);
+  });
+});
+
 describe('v2 — los hechos de la venta: precio, puertas, pago y correo', () => {
   beforeEach(() => {
     process.env.PAULA_PROMPT = 'v2';
