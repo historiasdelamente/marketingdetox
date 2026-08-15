@@ -105,7 +105,7 @@ describe('v2 — el guion viejo no viaja en el prompt', () => {
     expect(p).toMatch(/9:00 PM.*ESA ES LA HORA DE ELLA/);
   });
 
-  it('el prompt renderizado respeta el fusible de tamaño (≤22.500 chars)', () => {
+  it('el prompt renderizado respeta el fusible de tamaño (≤23.200 chars)', () => {
     // El v1 medía 42.000-47.000 y traía TRES órdenes contradictorias en el
     // mismo prompt. El fusible no es una meta estética: es el freno para que
     // el estado no vuelva a crecer hasta ser guion — para añadir algo aquí,
@@ -129,8 +129,20 @@ describe('v2 — el guion viejo no viaja en el prompt', () => {
     // órdenes, y el prompt se comprimió 2.600 caracteres. La medida final del
     // fixture largo fue 22.089. La regla sigue viva desde este número nuevo:
     // lo siguiente que entre, saca algo.
+    //
+    // ⚠️ SEGUNDA SUBIDA, A 23.200 — misma tarde, leyendo la conversación de
+    // Jade. Ella escribió «sigo teniendo contacto» —una confesión, no un dato—
+    // y Paula le contestó con una frase de molde y el precio pegado. Javier
+    // pidió lo contrario: "algo afín a lo que ella te está diciendo (…) los
+    // beneficios que podría alcanzar (…) altamente emocional, que toque el
+    // corazón (…) luego ya sí pasas el link". Eso entró como la regla de LA
+    // CONFESIÓN (ese turno no lleva precio ni link) y como la regla de que la
+    // pieza del programa se elige por el MOMENTO que ella nombró, no del
+    // catálogo. El peaje se pagó igual: 350 caracteres de solapamiento fuera
+    // (la enumeración de casos, el checklist, el bloque del pago, el correo).
+    // Medida del fixture largo: 22.906. Total recortado en el día: 3.700.
     const p = promptV2(HISTORIAL_JENNIFER, 'cuéntame qué es el programa');
-    expect(p.length).toBeLessThanOrEqual(22500);
+    expect(p.length).toBeLessThanOrEqual(23200);
   });
 
   it('sin PAULA_PROMPT=v2, el prompt v1 sigue intacto (con su guion)', () => {
