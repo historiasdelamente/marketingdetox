@@ -501,8 +501,15 @@ export function auditarRespuesta(
     // 7') Javier no está disponible a cualquier hora — LA COMUNIDAD sí.
     // Atribuírselo a él en persona es una promesa que se rompe la primera
     // madrugada que ella escriba y él esté dormido. 2026-08-14.
+    //
+    // ⚠️ EL HUECO NO PUEDE LLEVAR OTRO SUJETO (2026-08-15). Con `[^.\n]{0,50}`
+    // a secas saltaba con *"talleres con Javier Vieira y una comunidad a
+    // cualquier hora"*, que es exactamente lo que Paula DEBE decir: ahí el
+    // "a cualquier hora" es de la comunidad, no de él. Cada falso positivo se
+    // come el único reintento que hay, y lo que sale es el segundo intento —
+    // así que un guarda que se equivoca no solo no arregla: empeora.
     const javier247 = out.match(
-      /javier[^.\n]{0,50}(?:a cualquier hora|24\s*\/\s*7|a las 3 de la ma|te contesta a cualquier|disponible siempre)/i,
+      /javier((?:(?!\b(?:comunidad|grupo|sala|mujeres|chat|foro)\b)[^.\n]){0,50})(?:a cualquier hora|24\s*\/\s*7|a las 3 de la ma|te contesta a cualquier|disponible siempre)/i,
     );
     if (javier247) hallazgos.push({ tipo: 'javier_a_toda_hora', detalle: javier247[0] });
   }

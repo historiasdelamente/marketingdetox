@@ -155,7 +155,7 @@ export async function GET() {
         : 'terminado',
       modulos: APEGO_DETOX.modulos,
       talleres: `${APEGO_DETOX.encuentros.horasSemana} h/semana (${APEGO_DETOX.encuentros.diasTexto})`,
-      proximo_encuentro: `${encuentro.frase} (${encuentro.fecha}, ${APEGO_DETOX.encuentros.horaTexto} Colombia)`,
+      proximo_encuentro: `${encuentro.frase} (${encuentro.fecha}, ${encuentro.horaTexto} Colombia)`,
       en_vivo_ahora: encuentro.enVivo,
       pago: 'Skool',
     },

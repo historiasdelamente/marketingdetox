@@ -75,6 +75,25 @@ const OFFSET_COLOMBIA = '-05:00';
 // ╚═══════════════════════════════════════════════════════════════════════════╝
 // ---------------------------------------------------------------------------
 
+/** Los días de la semana, empezando en domingo como `getUTCDay()`. */
+const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+
+/** "a la 1:00 PM" / "a las 8:00 PM" — el español no perdona ese singular. */
+export function aLaHora(hora: string): string {
+  return `${/^1:\d\d\s?(AM|PM)$/i.test(hora) ? 'a la' : 'a las'} ${hora}`;
+}
+
+/**
+ * LOS DOS TALLERES EN VIVO, cada uno con su día y SU hora (hora Colombia).
+ * Es el único sitio donde se tocan: todo lo demás —el texto del horario, el
+ * próximo encuentro, la conversión a la hora de ella y lo que el blindaje
+ * acepta como día válido— sale calculado de aquí.
+ */
+const SESIONES = [
+  { dia: 2, hora24: 13, horaTexto: '1:00 PM' },
+  { dia: 4, hora24: 20, horaTexto: '8:00 PM' },
+] as const;
+
 export const APEGO_DETOX = {
   nombre: 'Apego Detox',
 
@@ -86,14 +105,23 @@ export const APEGO_DETOX = {
 
   /**
    * EL LANZAMIENTO SE CERRÓ EL 2026-08-07, antes de tiempo (iba hasta el 15).
-   * Desde entonces son $40 al mes y Paula no puede nombrar ninguna promoción:
-   * `precioApego()` devuelve enLanzamiento=false y el bloque del reloj le dice
-   * explícitamente que ya terminó.
+   * Desde entonces Paula no puede nombrar ninguna promoción: `precioApego()`
+   * devuelve enLanzamiento=false y el bloque del reloj le dice explícitamente
+   * que ya terminó.
    *
    * A quien entró en lanzamiento el precio le quedó BLOQUEADO: mientras no
-   * cancele sigue pagando 20 aunque haya subido. Los números son los de Skool
-   * ("JOIN $40/month"), no 39.97: ella ve el de Skool al pagar y un centavo de
-   * diferencia se nota.
+   * cancele sigue pagando 20 aunque haya subido.
+   *
+   * ⚠️ EL NÚMERO ES EL DE SKOOL, VERIFICADO EN LA PÁGINA — NO EL DICTADO DE
+   * MEMORIA. El 2026-08-15 Skool mostraba "$38/month" y aquí decía 40: Paula
+   * le prometía a cada mujer dos dólares más de los que iba a pagar, y el que
+   * manda es el que ella ve en el botón. Antes de cambiarlo, se abre
+   * skool.com/historias-de-la-mente-4978/about y se lee el botón JOIN. Nunca
+   * decimales (39.97): ella ve el redondo al pagar y un centavo se nota.
+   *
+   * ⚠️ El mismo número vive en la web (`desing_web/src/config/apegoDetox.ts`,
+   * `PRECIO_REAL`). Si aquí dice uno y allá otro, ella lee un precio en la
+   * página y otro en el chat, y eso es lo que la hace cerrar.
    *
    * ⚠️ `finISO` YA PASÓ a propósito. Para abrir una campaña nueva se pone una
    * fecha futura aquí y el lanzamiento revive solo, en Paula y en la página.
@@ -102,7 +130,8 @@ export const APEGO_DETOX = {
     /** Último instante del 6 de agosto, hora Colombia: el último día a $20. */
     finISO: '2026-08-06T23:59:59-05:00',
     precioPromo: 20,
-    precioNormal: 40,
+    /** Verificado contra el botón JOIN de Skool el 2026-08-15: $38/month. */
+    precioNormal: 38,
   },
 
   /**
@@ -203,14 +232,29 @@ export const APEGO_DETOX = {
   angulo:
     'Siga con él o ya se haya ido, la cabeza todavía la tiene ocupada por él. Si está adentro: revisa su última conexión, justifica lo injustificable, vuelve aunque la esté destruyendo. Si ya salió: durmió sola meses y él sigue viviendo en su cabeza, preguntándose si con la otra sí cambió, si el problema fue ella. No es debilidad, y es lo que se trabaja adentro.',
 
-  /** Los dos encuentros en vivo con Javier. 2 = martes, 4 = jueves. */
+  /**
+   * Los dos talleres en vivo con Javier. 2 = martes, 4 = jueves.
+   *
+   * ⚠️ CADA UNO TIENE SU HORA, Y NO ES UN DETALLE (2026-08-15). Javier:
+   * *"las clases son el martes a la una pm hora Colombia, y los jueves a las
+   * 8 pm hora Colombia"*. Hasta ese día el modelo de datos tenía UNA hora para
+   * los dos (`hora24: 20`) y Paula citaba a todo el mundo a las 8: la mitad de
+   * las mujeres habría llegado siete horas tarde al taller del martes.
+   *
+   * Por eso el horario ya no es un número suelto sino una lista de SESIONES, y
+   * la conversión a la zona horaria de ella se hace por sesión: las 8 PM del
+   * jueves en Colombia son las 3 de la madrugada del VIERNES en Madrid, pero
+   * la 1 PM del martes sigue cayendo el martes. Con una sola conversión para
+   * las dos, uno de los dos días salía mal.
+   */
   encuentros: {
-    dias: [2, 4] as const,
-    diasTexto: 'martes y jueves',
-    hora24: 20,
-    horaTexto: '8:00 PM',
+    sesiones: SESIONES,
+    dias: SESIONES.map((s) => s.dia),
+    diasTexto: SESIONES.map((s) => DIAS[s.dia]).join(' y '),
+    /** "martes a la 1:00 PM y jueves a las 8:00 PM" — hora Colombia. */
+    horarioTexto: SESIONES.map((s) => `${DIAS[s.dia]} ${aLaHora(s.horaTexto)}`).join(' y '),
     duracionHoras: 2,
-    /** 2 encuentros × 2 h. Es el "4 horas cada semana" de la página. */
+    /** 2 talleres × 2 h. Es el "4 horas cada semana" de la página. */
     horasSemana: 4,
     plataforma: 'Google Meet',
   },
@@ -263,6 +307,8 @@ export type Ocurrencia = {
   fecha: string;
   /** La frase exacta que Paula usa: "es HOY", "es MAÑANA", "es el jueves…". */
   frase: string;
+  /** "8:00 PM" — la hora DE ESTA sesión en Colombia; el martes y el jueves no coinciden. */
+  horaTexto: string;
 };
 
 const diaSemanaEnColombia = (iso: string): number =>
@@ -304,18 +350,32 @@ export function proximaOcurrencia(
           ? 'es MAÑANA'
           : `es el ${fecha}`;
 
-    return { inicio, enVivo, fecha, frase };
+    return { inicio, enVivo, fecha, frase, horaTexto: hora12(inicio, TZ_COLOMBIA) };
   }
 
   // Inalcanzable con una ventana de 8 días. Está para que nunca devuelva undefined.
   const inicio = new Date(ahora.getTime() + 86_400_000);
-  return { inicio, enVivo: false, fecha: fechaLarga(inicio, TZ_COLOMBIA), frase: 'es esta semana' };
+  return {
+    inicio,
+    enVivo: false,
+    fecha: fechaLarga(inicio, TZ_COLOMBIA),
+    frase: 'es esta semana',
+    horaTexto: hora12(inicio, TZ_COLOMBIA),
+  };
 }
 
-/** El próximo encuentro en vivo de Apego Detox (martes o jueves). */
+/**
+ * El próximo taller en vivo de Apego Detox — el más cercano de los dos.
+ *
+ * ⚠️ Cada sesión tiene su propia hora desde el 2026-08-15, así que se calcula
+ * la próxima de CADA UNA y se devuelve la que llegue antes. Con una hora común
+ * (lo de antes) el martes salía citado a las 8 PM: siete horas tarde.
+ */
 export function proximoEncuentro(ahora: Date): Ocurrencia {
-  const { dias, hora24, duracionHoras } = APEGO_DETOX.encuentros;
-  return proximaOcurrencia(ahora, dias, hora24, duracionHoras);
+  const { sesiones, duracionHoras } = APEGO_DETOX.encuentros;
+  return sesiones
+    .map((s) => proximaOcurrencia(ahora, [s.dia], s.hora24, duracionHoras))
+    .sort((a, b) => a.inicio.getTime() - b.inicio.getTime())[0];
 }
 
 // ---------------------------------------------------------------------------
@@ -325,9 +385,9 @@ export function proximoEncuentro(ahora: Date): Ocurrencia {
 export type PrecioVigente = {
   /** true mientras el lanzamiento sigue vivo. */
   enLanzamiento: boolean;
-  /** El número que Paula puede afirmar hoy: 20 o 40. */
+  /** El número que Paula puede afirmar hoy: el de lanzamiento o el normal. */
   monto: number;
-  /** "$40 USD al mes" — armado una sola vez, para no armarlo mal en cada sitio. */
+  /** "$38 USD al mes" — armado una sola vez, para no armarlo mal en cada sitio. */
   frase: string;
   /** El precio tachado. `null` cuando ya no hay promoción que mostrar. */
   antes: number | null;
@@ -464,8 +524,6 @@ Su hora local en este momento son las ${hora12(ahora, pais.tz)}.${enSuHora} Cuan
 ⛔ Y NUNCA le cambies la etiqueta a una hora: coger la de Colombia y llamarla "hora de ${pais.ciudad}" la hace llegar tarde a todo. Si la hora que vas a decir no está calculada aquí arriba, no la digas.`;
 }
 
-const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-
 /**
  * EL HORARIO DE LOS TALLERES, EN LA SEMANA DE ELLA.
  *
@@ -476,25 +534,48 @@ const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', '
  * 8 PM de Colombia — o sea que habría llegado una hora tarde a cada taller. Se
  * vio en una prueba real el 2026-08-05.
  *
- * Y EL DÍA TAMBIÉN SE MUEVE, que es lo que casi nadie ve: las 8 PM del martes en
- * Colombia son las 3 de la MADRUGADA DEL MIÉRCOLES en Madrid. Decirle a una
- * española "los martes a las 3 AM" la cita el día equivocado.
+ * Y EL DÍA TAMBIÉN SE MUEVE, que es lo que casi nadie ve: las 8 PM del jueves en
+ * Colombia son las 3 de la MADRUGADA DEL VIERNES en Madrid. Decirle a una
+ * española "los jueves a las 3 AM" la cita el día equivocado.
  *
- * Se calcula sobre una ocurrencia real (no sobre una tabla de offsets) para que
+ * ⚠️ SE CONVIERTE SESIÓN POR SESIÓN (2026-08-15). Desde que el martes es a la
+ * 1 PM y el jueves a las 8 PM, una sola conversión para los dos días miente en
+ * uno de ellos: a Madrid, la 1 PM del martes le cae el martes por la tarde y
+ * las 8 PM del jueves le caen el viernes de madrugada. Días distintos y
+ * desplazamientos distintos, del mismo horario.
+ *
+ * Se calcula sobre ocurrencias reales (no sobre una tabla de offsets) para que
  * el horario de verano de Chile, España o Estados Unidos salga solo.
  */
-export function horarioParaElla(inicio: Date, tz: string): { dias: string; hora: string; cambiaDia: boolean } {
-  const desplazamiento = diasDeCalendario(
-    new Date(`${fechaISO(inicio, TZ_COLOMBIA)}T12:00:00Z`),
-    new Date(`${fechaISO(inicio, tz)}T12:00:00Z`),
-    'UTC',
-  );
+export type HorarioLocal = {
+  /** "martes a la 1:00 PM y viernes a las 3:00 AM" — ya en la hora de ella. */
+  texto: string;
+  /** Sus días, para el blindaje: ["martes", "viernes"]. */
+  dias: string[];
+  /** true si alguno de los talleres le cae en otro día que en Colombia. */
+  cambiaDia: boolean;
+};
 
-  const suyos = APEGO_DETOX.encuentros.dias
-    .map((d) => DIAS[(d + desplazamiento + 7) % 7])
-    .join(' y ');
+export function horarioParaElla(ahora: Date, tz: string): HorarioLocal {
+  const partes = APEGO_DETOX.encuentros.sesiones.map((s) => {
+    const inicio = proximaOcurrencia(ahora, [s.dia], s.hora24, APEGO_DETOX.encuentros.duracionHoras).inicio;
+    const desplazamiento = diasDeCalendario(
+      new Date(`${fechaISO(inicio, TZ_COLOMBIA)}T12:00:00Z`),
+      new Date(`${fechaISO(inicio, tz)}T12:00:00Z`),
+      'UTC',
+    );
+    return {
+      dia: DIAS[(s.dia + desplazamiento + 7) % 7],
+      hora: hora12(inicio, tz),
+      cambiaDia: desplazamiento !== 0,
+    };
+  });
 
-  return { dias: suyos, hora: hora12(inicio, tz), cambiaDia: desplazamiento !== 0 };
+  return {
+    texto: partes.map((p) => `${p.dia} ${aLaHora(p.hora)}`).join(' y '),
+    dias: partes.map((p) => p.dia),
+    cambiaDia: partes.some((p) => p.cambiaDia),
+  };
 }
 
 /**
@@ -526,7 +607,7 @@ export function diasTallerPara(
 ): string[] {
   const pais = paisDeElla(telefono, paisIso);
   if (!pais) return APEGO_DETOX.encuentros.dias.map((d) => DIAS[d]);
-  return horarioParaElla(proximoEncuentro(ahora).inicio, pais.tz).dias.split(' y ');
+  return horarioParaElla(ahora, pais.tz).dias;
 }
 
 /**
@@ -586,7 +667,7 @@ export function bloqueContexto(
   // EL HORARIO EN LA SEMANA DE ELLA, ya resuelto. Si no sabemos su país, se dice
   // "hora Colombia" explícito — que es lo honesto — y se le pregunta de dónde es.
   const suPais = paisDeElla(telefono, paisIso);
-  const suyo = suPais ? horarioParaElla(encuentro.inicio, suPais.tz) : null;
+  const suyo = suPais ? horarioParaElla(ahora, suPais.tz) : null;
 
   // ⛔ PAÍSES CON VARIAS ZONAS HORARIAS: no se afirma una hora.
   //
@@ -601,14 +682,14 @@ export function bloqueContexto(
   const variasZonas = Boolean(suPais?.zonaAmbigua);
 
   const horarioTexto = variasZonas
-    ? `⚠️ **EN ${(suPais?.nombre ?? '').toUpperCase()} HAY VARIAS ZONAS HORARIAS Y NO SABES EN CUÁL ESTÁ ELLA — NO le des una hora suya.** Los talleres son ${encuentros.diasTexto} a las ${encuentros.horaTexto} **hora de Colombia**: se lo dices así, explícito. Y le preguntas la ciudad para poder decírsela: *"¿en qué ciudad estás? así te digo a qué hora te queda"*. Darle una hora sin saber su ciudad la hace llegar tarde a todo.`
+    ? `⚠️ **EN ${(suPais?.nombre ?? '').toUpperCase()} HAY VARIAS ZONAS HORARIAS Y NO SABES EN CUÁL ESTÁ ELLA — NO le des una hora suya.** Los talleres son ${encuentros.horarioTexto} **hora de Colombia**: se lo dices así, explícito. Y le preguntas la ciudad para poder decírsela: *"¿en qué ciudad estás? así te digo a qué hora te queda"*. Darle una hora sin saber su ciudad la hace llegar tarde a todo.`
     : suyo
-    ? `**${suyo.dias}, ${suyo.hora} — ESA ES LA HORA DE ELLA, ya convertida.** Dísela así, sin nombrar la de Colombia.${
+    ? `**${suyo.texto} — ESA ES LA HORA DE ELLA, ya convertida.** Dísela así, sin nombrar la de Colombia. Los dos talleres NO son a la misma hora: cada uno lleva la suya.${
         suyo.cambiaDia
-          ? `\n⚠️ OJO: en Colombia son ${encuentros.diasTexto}, pero por la diferencia horaria a ELLA le caen en ${suyo.dias}. El día que le dices es el SUYO — si le dices el de Colombia, se conecta el día equivocado.`
+          ? `\n⚠️ OJO: en Colombia son ${encuentros.horarioTexto}, pero por la diferencia horaria a ELLA le caen en ${suyo.dias.join(' y ')}. El día que le dices es el SUYO — si le dices el de Colombia, se conecta el día equivocado.`
           : ''
       }`
-    : `${encuentros.diasTexto}, ${encuentros.horaTexto} **hora Colombia** — y como no sabes su país, se lo dices así de explícito y le preguntas de dónde te escribe. NUNCA le pongas la etiqueta de su país a la hora de Colombia.`;
+    : `${encuentros.horarioTexto} **hora Colombia** — y como no sabes su país, se lo dices así de explícito y le preguntas de dónde te escribe. NUNCA le pongas la etiqueta de su país a la hora de Colombia.`;
 
   const bloqueEncuentros = esMiembro
     ? `👉 SU PRÓXIMO ENCUENTRO EN VIVO CON JAVIER ${cuando(encuentro)}. Son SIEMPRE dos por semana, ${encuentros.duracionHoras} horas cada uno, por ${encuentros.plataforma}.

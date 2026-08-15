@@ -103,10 +103,14 @@ describe('blindaje — escalón de Apego Detox', () => {
     expect(auditar('Sale a poco más de medio dólar al día 💛').hallazgos).toHaveLength(0);
   });
 
-  it('después del 15 de agosto el precio bueno pasa a ser $40', () => {
+  it('cerrado el lanzamiento, el precio bueno es el normal y el de promo se marca', () => {
+    // El número sale de la configuración: cuando Skool pasó de 40 a 38
+    // (2026-08-15) este test se caía sin que hubiera ningún bug. Lo que prueba
+    // es que el blindaje sigue el precio VIGENTE, no una cifra escrita aquí.
     const DIECISEIS = new Date('2026-08-16T15:00:00Z');
+    const vigente = precioApego(DIECISEIS).monto;
     expect(auditarRespuesta('Son $20 al mes', DIECISEIS, 'apego').hallazgos.map((h) => h.tipo)).toContain('precio_falso');
-    expect(auditarRespuesta('Son $40 al mes 💛', DIECISEIS, 'apego').hallazgos).toHaveLength(0);
+    expect(auditarRespuesta(`Son $${vigente} al mes 💛`, DIECISEIS, 'apego').hallazgos).toHaveLength(0);
   });
 
   it('los encuentros son martes y jueves — cualquier otro día se marca', () => {
@@ -359,8 +363,10 @@ describe('reloj de los encuentros en vivo con Javier', () => {
     expect(martesTemprano.frase).toBe('es HOY');
     expect(martesTemprano.enVivo).toBe(false);
 
-    expect(proximoEncuentro(new Date('2026-08-05T01:30:00Z')).enVivo).toBe(true);
-    expect(proximoEncuentro(new Date('2026-08-05T03:30:00Z')).fecha).toBe('jueves 6 de agosto');
+    // Dentro de la franja del martes (1 a 3 PM Colombia = 18:00–20:00 UTC).
+    expect(proximoEncuentro(new Date('2026-08-04T19:00:00Z')).enVivo).toBe(true);
+    // Terminado el del martes, el próximo ya es el del jueves.
+    expect(proximoEncuentro(new Date('2026-08-05T01:30:00Z')).fecha).toBe('jueves 6 de agosto');
   });
 });
 
@@ -959,7 +965,7 @@ describe('el prompt que se arma en cada turno', () => {
     expect(p).toMatch(/Lo que NO le das es la FECHA del próximo/);
     // Pero sí sabe QUÉ incluye el programa, el horario EN SU HORA, y su país.
     expect(p).toContain('4 horas de acompañamiento cada semana');
-    expect(p).toContain('martes y jueves, 7:00 PM');
+    expect(p).toContain('martes a las 12:00 PM y jueves a las 7:00 PM');
     expect(p).toContain('ELLA TE ESCRIBE DESDE: México');
   });
 

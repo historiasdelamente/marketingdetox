@@ -105,7 +105,7 @@ describe('v2 — el guion viejo no viaja en el prompt', () => {
     expect(p).toMatch(/9:00 PM.*ESA ES LA HORA DE ELLA/);
   });
 
-  it('el prompt renderizado respeta el fusible de tamaño (≤20.500 chars)', () => {
+  it('el prompt renderizado respeta el fusible de tamaño (≤22.500 chars)', () => {
     // El v1 medía 42.000-47.000 y traía TRES órdenes contradictorias en el
     // mismo prompt. El fusible no es una meta estética: es el freno para que
     // el estado no vuelva a crecer hasta ser guion — para añadir algo aquí,
@@ -114,18 +114,141 @@ describe('v2 — el guion viejo no viaja en el prompt', () => {
     // ⚠️ EL NÚMERO SE MIDIÓ, NO SE ESTIMÓ (2026-08-15). El techo estuvo en
     // 20.000 con el contenido midiendo 20.071: se recortaron frases buenas dos
     // veces para ganar 20 caracteres, y aun así quedaba en rojo. El margen se
-    // fija ahora con holgura real (~400) sobre la medida del fixture largo —
-    // el de Jennifer, cuyo bloque 🧾 pesa 460 porque arrastra los últimos
-    // cuatro mensajes de Paula. Medir con un historial corto daba 19.6k y esa
-    // fue la estimación equivocada de la que salió el 20.000.
+    // fija con holgura real (~400) sobre la medida del fixture largo — el de
+    // Jennifer, cuyo bloque 🧾 pesa 460 porque arrastra los últimos cuatro
+    // mensajes de Paula.
+    //
+    // ⚠️ SUBIÓ DE 20.500 A 22.500 EL 2026-08-15 (segunda vez ese día), y por
+    // una razón, no por comodidad: Javier ordenó que Paula VENDA —«primero
+    // motivas y después vendes», «un paso a paso lógico»— y eso entró como
+    // doctrina nueva: el recorrido de cinco estaciones, la estación de
+    // motivación, el trato formal-cercano, la política de precio, el sello de
+    // pago y el correo como segunda puerta. Antes de subir el techo se pagó el
+    // peaje: el canon de conocimiento se recortó a la mitad (todo lo que
+    // también estaba en el prompt se borró de allí), el bloque 📊 se limpió de
+    // órdenes, y el prompt se comprimió 2.600 caracteres. La medida final del
+    // fixture largo fue 22.089. La regla sigue viva desde este número nuevo:
+    // lo siguiente que entre, saca algo.
     const p = promptV2(HISTORIAL_JENNIFER, 'cuéntame qué es el programa');
-    expect(p.length).toBeLessThanOrEqual(20500);
+    expect(p.length).toBeLessThanOrEqual(22500);
   });
 
   it('sin PAULA_PROMPT=v2, el prompt v1 sigue intacto (con su guion)', () => {
     delete process.env.PAULA_PROMPT;
     const p = promptV2(HISTORIAL_JENNIFER, '🙏🙏');
     expect(p).toContain('LO QUE TOCA AHORA');
+  });
+});
+
+// ============================================================================
+// EL CONTRATO DE VENTA — 2026-08-15
+//
+// Javier: *"el objetivo es que venda Apego Detox (…) eres el asistente del
+// psicólogo Javier Vieira (…) primero motivas y después vendes (…) un paso a
+// paso lógico, pero tampoco copiar y pegar siempre lo mismo"*.
+//
+// Estos tests fijan que esa doctrina VIAJA en el prompt. No prueban que el
+// modelo la cumpla — eso es el simulador (`_chat-manual.test.ts`) — sino que
+// nadie la borre por accidente al recortar para el fusible.
+// ============================================================================
+describe('v2 — el recorrido de venta viaja', () => {
+  beforeEach(() => {
+    process.env.PAULA_PROMPT = 'v2';
+  });
+  afterEach(() => {
+    delete process.env.PAULA_PROMPT;
+  });
+
+  it('la misión es vender, y en el orden motivar → presentar → precio', () => {
+    const p = promptV2(HISTORIAL_JENNIFER, 'cuéntame qué es el programa');
+    expect(p).toContain('TU TRABAJO ES QUE ENTRE A APEGO DETOX');
+    expect(p).toMatch(/motivando primero y vendiendo después/i);
+    // El orden de las tres condiciones de compra, en una sola frase:
+    expect(p).toMatch(/sabe qué le pasa[\s\S]{0,220}sabe cuánto vale/i);
+  });
+
+  it('las cinco estaciones viajan, con el tope de una por turno', () => {
+    const p = promptV2(HISTORIAL_JENNIFER, 'hola');
+    for (const estacion of ['RECIBIR', 'ESCUCHAR', 'MOTIVAR', 'PRESENTAR', 'CERRAR']) {
+      expect(p).toContain(estacion);
+    }
+    expect(p).toMatch(/Una estación por turno como máximo/i);
+    // …y sigue siendo un camino, no un libreto:
+    expect(p).toMatch(/No es un libreto/i);
+  });
+
+  it('la motivación es su propia estación y sigue prohibido explicar el mecanismo', () => {
+    const p = promptV2(HISTORIAL_JENNIFER, 'me dejó por otra y no puedo dormir');
+    expect(p).toMatch(/LA MOTIVACIÓN \(estación 3\)[\s\S]{0,700}Sin mecanismos/i);
+    expect(p).toMatch(/no es falta de carácter ni debilidad suya/i);
+  });
+
+  it('la regla vieja que impedía presentar el programa está muerta', () => {
+    const p = promptV2(HISTORIAL_JENNIFER, 'hola');
+    expect(p).not.toContain('Se presenta UNA sola vez por conversación, cuando ELLA abre la puerta');
+    expect(p).toMatch(/venta perdida por silencio/i);
+  });
+
+  it('el trato es el de una asistente formal y cercana, sin apodos', () => {
+    const p = promptV2(HISTORIAL_JENNIFER, 'hola');
+    expect(p).toContain('la asistente de Javier Vieira, Psicólogo Especialista');
+    expect(p).toMatch(/Cero apodos/i);
+    expect(p).toMatch(/si ella escribe de «usted», tú también/i);
+  });
+});
+
+describe('v2 — los hechos de la venta: precio, puertas, pago y correo', () => {
+  beforeEach(() => {
+    process.env.PAULA_PROMPT = 'v2';
+  });
+  afterEach(() => {
+    delete process.env.PAULA_PROMPT;
+  });
+
+  it('el precio que viaja es el de Skool ($38), no el viejo de $40', () => {
+    const p = promptV2(HISTORIAL_JENNIFER, '¿cuánto cuesta?');
+    expect(p).toContain('$38 USD al mes');
+    expect(p).not.toContain('$40');
+  });
+
+  it('el precio no se manda desnudo ni minimizado', () => {
+    const p = promptV2(HISTORIAL_JENNIFER, '¿cuánto cuesta?');
+    expect(p).toMatch(/El número solo, sin nada al lado, no lo mandes/i);
+    expect(p).toMatch(/Prohibido minimizarlo/i);
+    // Y sigue prohibido esconderlo:
+    expect(p).toMatch(/Esconderlo mata más que decirlo/i);
+  });
+
+  it('las dos puertas viajan EN ORDEN: la página antes que la plataforma de pago', () => {
+    const p = promptV2(HISTORIAL_JENNIFER, 'cuéntame qué es el programa');
+    const conocer = p.indexOf('https://historiasdelamente.com/apegodetox');
+    const entrar = p.indexOf('https://www.skool.com/historias-de-la-mente-4978');
+    expect(conocer).toBeGreaterThan(-1);
+    expect(entrar).toBeGreaterThan(-1);
+    expect(conocer).toBeLessThan(entrar);
+    expect(p).toMatch(/la PRIMERA que recibe siempre/i);
+  });
+
+  it('el sello de seguridad va pegado al link de ENTRAR, no solo si ella pregunta', () => {
+    const p = promptV2(HISTORIAL_JENNIFER, 'ya voy a entrar');
+    expect(p).toMatch(/cada vez que le das el link de ENTRAR va pegada UNA línea/i);
+    expect(p).toContain('Skool');
+    expect(p).toContain('Stripe');
+  });
+
+  it('el correo viaja como segunda puerta de venta, con la secuencia detrás', () => {
+    const p = promptV2(HISTORIAL_JENNIFER, 'gracias');
+    expect(p).toContain('EL CORREO — la segunda puerta de venta');
+    expect(p).toMatch(/los correos de Javier/i);
+    expect(p).toMatch(/tú no mandas nada a mano/i);
+  });
+
+  it('el preámbulo editorial del canon NO viaja al modelo', () => {
+    // Nombrar el título de corte dentro del preámbulo metía 1.900 caracteres
+    // de notas para Javier en el prompt, sin que nada fallara. 2026-08-15.
+    const p = promptV2(HISTORIAL_JENNIFER, 'hola');
+    expect(p).not.toContain('BORRADOR PARA FIRMA');
+    expect(p).toContain('# QUÉ ES APEGO DETOX');
   });
 });
 

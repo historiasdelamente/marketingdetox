@@ -6,6 +6,57 @@
 
 ---
 
+## 0. LO ÚLTIMO — LA TARDE DEL 2026-08-15: PAULA VUELVE A VENDER ⚠️ SIN DESPLEGAR
+
+Javier: *"el objetivo es que venda Apego Detox (…) no se trata como psicólogo, sino que eres
+el asistente del psicólogo Javier Vieira (…) un trato muy formal (…) muy cercano, no con
+mucha confianza, sino que le dé la seguridad de esto (…) que le informe de las ventajas que
+tiene Skool y Stripe en el momento de hacer el pago (…) debes llevar un paso a paso lógico,
+pero tampoco copiar y pegar siempre lo mismo (…) primero motivas y después vendes"*. Y
+después: *"las clases son el martes a la una pm hora Colombia, y los jueves a las 8 pm"*.
+
+**DOS DATOS ESTABAN MAL EN PRODUCCIÓN, y los dos se le decían a cada mujer:**
+
+| | Decía | Es |
+|---|---|---|
+| Precio | $40 USD/mes | **$38** — leído del botón JOIN de Skool el 2026-08-15 |
+| Taller del martes | 8:00 PM Colombia | **1:00 PM** |
+
+El del precio venía de un dictado de memoria del 2026-08-07; el del horario, de que el modelo
+de datos tenía UNA hora para los dos talleres (`hora24: 20`). Ahora el horario es una lista de
+sesiones con su hora cada una, y la conversión a la zona de ella se hace **por sesión** — el
+caso que lo prueba es Madrid: la 1 PM del martes le cae el martes, y las 8 PM del jueves le
+caen el **viernes** de madrugada. Con la conversión única decía «miércoles y viernes»: los dos
+días mal.
+
+**Lo nuevo en el prompt** (`prompt-v2.ts`): misión de venta explícita · **EL RECORRIDO de
+cinco estaciones** (recibir → escuchar → motivar → presentar → cerrar), una por turno y
+cumplida con las palabras de ella · **la MOTIVACIÓN como estación propia** (no es debilidad ·
+esto se trabaja y hay dónde · una escena suya sin ese peso), sin explicar el mecanismo ·
+**el trato** formal-cercano, sin apodos, espejando el «usted» · **precio nunca escondido ni
+desnudo** y prohibido minimizarlo · **el sello Skool + Stripe pegado al link de ENTRAR
+siempre** · **el correo como segunda puerta de venta** (lo que mete a la que hoy no compra en
+la secuencia del CRM) · y muere la regla que impedía presentar el programa hasta que ella
+preguntara.
+
+**Verificado**: 480 tests, `tsc` limpio, y el simulador contra Gemini real de punta a punta
+(saludo → dolor → motivación → presentación → precio → horario → miedo a la tarjeta → «ya voy
+a entrar» → «no tengo dinero» → correo). Dos defectos que salieron ahí y se arreglaron: la
+presentación llegaba soldada en un ladrillo (ahora son tres renglones, el del link incluido) y
+Paula **inventó que los talleres quedan grabados** — el hecho verdadero («no quedan grabados»)
+ya viaja en 📊.
+
+⚠️ **NADA DE ESTO ESTÁ DESPLEGADO.** El endpoint sigue devolviendo `$40` y `8:00 PM`. Hay que
+bumpear `CACHE_BUST` y darle a *Implementar* en EasyPanel.
+
+**Lo que queda fuera de este repo y hay que mirar:**
+- La web (`desing_web/src/config/apegoDetox.ts`) sigue con `PRECIO_REAL = '40'`, y el canon de
+  Eli con «martes y jueves 8 PM». Ella lee un precio y un horario en la página y otros en el chat.
+- `CRM_CAPTURE_URL` / `CRM_CAPTURE_TOKEN`: sin esas dos variables en EasyPanel, el correo que
+  Paula capta **no entra en la secuencia de correos** y el fallo es silencioso (log y ya).
+
+---
+
 ## 1. QUÉ CAMBIÓ EN ESTAS 24 HORAS
 
 Paula pasó de `gpt-4.1-mini` a **`google/gemini-3.7-flash`** y su sistema conversacional se
@@ -94,7 +145,16 @@ medir con historial corto (19.6k) cuando el test usa el largo de Jennifer (20.07
 
 ## 5. LO PENDIENTE, POR ORDEN
 
-### 5.1 La motivación antes del precio — HECHA Y REVERTIDA 🔴
+### 5.1 La motivación antes del precio — RESUELTA ESA MISMA TARDE ✅ (ver §0)
+
+Javier lo volvió a pedir con sus palabras (*"primero motivas y después vendes"*) y se
+rehízo distinto: **no con reglas de gramática sobre qué es beneficio y qué es catálogo, sino
+con un recorrido de cinco estaciones donde MOTIVAR es una de ellas.** Lo de abajo queda como
+registro de la primera versión, la que él mandó revertir.
+
+<details><summary>Cómo se contó antes del arreglo definitivo</summary>
+
+#### La motivación antes del precio — HECHA Y REVERTIDA 🔴
 
 Javier, 2026-08-15: *"el objetivo es VENDER Apego Detox, y si están interesadas, la terapia.
 Pero de forma amable, DAR BENEFICIOS (…) no des el precio sin antes hacer una motivación
@@ -116,6 +176,14 @@ ocurrió ni una vez en agosto (solo 3 de 29 oyeron un número). El fracaso real 
 María del Pilar («ya voy a entrar»), Sandra («reuniré el dinero»). Ninguna compró.
 
 **Lo primero al retomar: preguntarle a Javier qué vio que no le gustó.**
+
+</details>
+
+Lo que dijo al retomar, sin que hubiera que preguntárselo, fue más grande que el detalle del
+precio: *"no estás leyendo lo que dice el usuario, sino que estás hablando por hablar (…) te
+estás dejando llevar por lo que tenemos escrito ahí, como en los MD"*. Por eso el arreglo
+definitivo no añadió reglas: **añadió un camino y recortó papel** — el canon de conocimiento
+se partió por la mitad y cada regla que ya estaba en el prompt se borró de allí.
 
 ### 5.2 Firma de `PAULA-CONOCIMIENTO-V2.md` 🟡
 
