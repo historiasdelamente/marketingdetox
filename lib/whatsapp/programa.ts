@@ -223,6 +223,34 @@ export const APEGO_DETOX = {
 } as const;
 
 // ---------------------------------------------------------------------------
+// EL WHATSAPP DE JAVIER, CON EL MENSAJE SEGÚN POR QUÉ VIENE — 2026-08-14
+//
+// El prefill era el mismo para las cinco razones de handoff: una mujer que
+// preguntó «¿él da terapia?» aterrizaba en el teléfono de Javier diciendo
+// «quiero información sobre Apego Detox» — algo que no quiso decir — y Javier
+// abría el chat sin saber si le llegaba una paciente, una venta atascada o un
+// problema de soporte, cuando el sistema ya lo sabía. Ahora el primer mensaje
+// dice a qué viene, y las dos partes empiezan la conversación ya ubicadas.
+//
+// El «vengo de hablar con Paula» no es decorativo: es la continuidad. Ella no
+// tiene que volver a contar desde cero, y Javier sabe que el contexto está en
+// el chat de Paula.
+// ---------------------------------------------------------------------------
+
+export type MotivoContactoJavier = 'terapia' | 'pago' | 'compra' | 'general';
+
+const PREFILL_JAVIER: Record<MotivoContactoJavier, string> = {
+  terapia: 'Hola Javier, vengo de hablar con Paula y quisiera una consulta contigo',
+  pago: 'Hola Javier, vengo de hablar con Paula, quiero entrar a Apego Detox y el pago no me deja avanzar',
+  compra: 'Hola Javier, ya hice el pago de Apego Detox y necesito ayuda con mi acceso',
+  general: 'Hola Javier, quiero información sobre Apego Detox o una cita contigo',
+};
+
+export function linkJavier(motivo: MotivoContactoJavier = 'general'): string {
+  return `https://wa.me/57${APEGO_DETOX.numeroJavier}?text=${encodeURIComponent(PREFILL_JAVIER[motivo])}`;
+}
+
+// ---------------------------------------------------------------------------
 // 3. LA PRÓXIMA VEZ — SIRVE PARA LA CLASE Y PARA LOS ENCUENTROS
 // ---------------------------------------------------------------------------
 
@@ -361,7 +389,7 @@ function paisDeElla(telefono: string | null | undefined, paisIso?: string | null
  */
 const MONEDAS_TABLA = ['COP', 'MXN', 'ARS', 'CLP', 'PEN', 'EUR', 'BRL', 'DOP', 'CRC', 'GTQ'];
 
-function bloqueMoneda(
+export function bloqueMoneda(
   montoUSD: number,
   telefono: string | null | undefined,
   tasasUSD: TablaTasas | undefined,
@@ -455,7 +483,7 @@ const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', '
  * Se calcula sobre una ocurrencia real (no sobre una tabla de offsets) para que
  * el horario de verano de Chile, España o Estados Unidos salga solo.
  */
-function horarioParaElla(inicio: Date, tz: string): { dias: string; hora: string; cambiaDia: boolean } {
+export function horarioParaElla(inicio: Date, tz: string): { dias: string; hora: string; cambiaDia: boolean } {
   const desplazamiento = diasDeCalendario(
     new Date(`${fechaISO(inicio, TZ_COLOMBIA)}T12:00:00Z`),
     new Date(`${fechaISO(inicio, tz)}T12:00:00Z`),

@@ -140,6 +140,22 @@ describe('conversación manual con Paula', () => {
     const mensajes = [...estado.historial, { role: 'user', content: mensaje }];
     let respuesta = await callOpenRouter(systemPrompt, mensajes);
 
+    // [SILENCIO] (solo v2) — el mismo tratamiento que processPaulaMessage: el
+    // código verifica la doble condición antes de conceder el no-envío.
+    if (process.env.PAULA_PROMPT === 'v2' && respuesta.trim() === '[SILENCIO]') {
+      const { puedeCallar } = await import('@/lib/whatsapp/prompt-v2');
+      if (puedeCallar(estado.historial as Turno[], mensaje)) {
+        out.push(`👩 ELLA: ${mensaje}\n`);
+        out.push('🤫 PAULA: [no envía nada — silencio concedido por código]');
+        estado.historial.push({ role: 'user', content: mensaje });
+        fs.writeFileSync(ESTADO, JSON.stringify(estado, null, 2));
+        fs.writeFileSync(SALIDA, out.join('\n'));
+        console.log(out.join('\n'));
+        return;
+      }
+      respuesta = 'Aquí estoy 💛';
+    }
+
     // Blindaje + reintento, igual que en producción. Los días del taller van en
     // la zona de ELLA: sin esto el simulador audita con las reglas de Colombia y
     // marca como error el día que es correcto para una mujer de Madrid.

@@ -35,7 +35,7 @@ import {
 // el reintento no se disparaba nunca.
 import { globosDe } from './manychat';
 import { PREGUNTA_FRENO } from './guion';
-import { APEGO_DETOX, precioApego } from './programa';
+import { APEGO_DETOX, precioApego, linkJavier as linkJavierPorMotivo, type MotivoContactoJavier } from './programa';
 
 /** En qué está vendiendo Paula. Hoy solo hay una cosa. */
 export type ModoVenta = Escalon;
@@ -57,6 +57,7 @@ export type Hallazgo = {
     | 'conversion_inventada'
     | 'pide_permiso'
     | 'vinetas'
+    | 'javier_a_toda_hora'
     | 'demasiado_largo';
   detalle: string;
 };
@@ -376,7 +377,11 @@ function repararLinks(texto: string, nombreDeElla?: string | null): string {
   out = out.replace(VARIANTE_CHECKOUT_APEGO, APEGO_DETOX.checkout);
   out = out.replace(VARIANTE_LANDING_APEGO, APEGO_DETOX.landing);
 
-  out = out.replace(VARIANTE_WA_JAVIER, linkJavier());
+  // ⚠️ El prefill por motivo se respeta (2026-08-14): si el link ya trae su
+  // ?text= —el de terapia, el del pago atascado—, normalizarlo al genérico
+  // borraría justo lo que le dice a Javier a qué viene ella. Solo se reescriben
+  // las variantes SIN prefill (número a mano, wa.me pelado).
+  out = out.replace(VARIANTE_WA_JAVIER, (m) => (/\?text=/i.test(m) ? m : linkJavier()));
   out = numeroAEnlace(out);
   out = desambiguarEl(out);
   out = apellidarAJavier(out, nombreDeElla);
@@ -492,6 +497,14 @@ export function auditarRespuesta(
         hallazgos.push({ tipo: 'modulos_inventados', detalle: m[0] });
       }
     }
+
+    // 7') Javier no está disponible a cualquier hora — LA COMUNIDAD sí.
+    // Atribuírselo a él en persona es una promesa que se rompe la primera
+    // madrugada que ella escriba y él esté dormido. 2026-08-14.
+    const javier247 = out.match(
+      /javier[^.\n]{0,50}(?:a cualquier hora|24\s*\/\s*7|a las 3 de la ma|te contesta a cualquier|disponible siempre)/i,
+    );
+    if (javier247) hallazgos.push({ tipo: 'javier_a_toda_hora', detalle: javier247[0] });
   }
 
   // 8) Regalos que no existen (los dos escalones).
@@ -689,10 +702,17 @@ const PIDE_HUMANO_RE = new RegExp(
 //    la tarjeta, el acceso). Sin esa exigencia, "¿y si no me funciona?" —la
 //    objeción de venta más común de todas— la sacaba del embudo.
 const COSA_QUE_FALLA = 'link|enlace|p[áa]gina|bot[óo]n|pago|tarjeta|acceso|hotmart|skool|compra|plataforma|correo';
+// ⚠️ AMPLIADO EL 2026-08-14 CON EL CASO MARÍA DEL PILAR. Ella dijo «quiero lo
+// del apego detox» y después «Miré y traté pero no me deja seguir» — fricción
+// de checkout con la tarjeta en la mano — y este regex no la vio porque «no me
+// deja seguir» no nombra ninguna COSA de la lista. Era la compra más caliente
+// del mes y se perdió sin que nadie la recogiera. «No me deja seguir/avanzar/
+// continuar» no tiene otra lectura en este chat: es alguien atascada entrando.
 const PROBLEMA_PAGO_RE = new RegExp(
   `(?:${COSA_QUE_FALLA})[^.!?\\n]{0,30}(?:no\\s+me\\s+(?:deja|carga|funciona|sirve)|no\\s+funciona|no\\s+carga|da\\s+error|est[áa]\\s+ca[íi]d[oa])` +
     `|(?:no\\s+me\\s+(?:deja|carga|funciona|sirve)|error\\s+(?:al|en|con)|fall[óo]|rechaz[óa])[^.!?\\n]{0,30}(?:${COSA_QUE_FALLA}|pagar|comprar|entrar)` +
-    `|no\\s+pude?\\s+pagar|no\\s+me\\s+lleg[óo]\\s+(?:el|la|nada|ning)|ya\\s+pagu[ée]\\s+y\\s+no`,
+    `|no\\s+pude?\\s+pagar|no\\s+me\\s+lleg[óo]\\s+(?:el|la|nada|ning)|ya\\s+pagu[ée]\\s+y\\s+no` +
+    `|no\\s+me\\s+deja\\s+(?:seguir|avanzar|continuar)|no\\s+puedo\\s+(?:avanzar|continuar)\\b`,
   'i',
 );
 
@@ -1143,7 +1163,20 @@ export function instruccionHandoff(
   motivo: Exclude<MotivoHandoff, null>,
   _modo: ModoVenta = MODO_VENTA,
 ): string {
-  const link = linkJavier();
+  // El prefill del wa.me dice A QUÉ VIENE (2026-08-14): la que pide terapia le
+  // llega a Javier pidiendo terapia, la del pago atascado le llega con su
+  // problema de pago — no todas con el texto genérico del producto. Javier lee
+  // el primer mensaje y ya sabe qué conversación le entró.
+  const PREFILL_POR_MOTIVO: Record<Exclude<MotivoHandoff, null>, MotivoContactoJavier> = {
+    crisis: 'general',
+    pide_humano: 'terapia',
+    problema_pago: 'pago',
+    sin_tarjeta: 'pago',
+    compra_cerrada: 'compra',
+    recibo_pago: 'compra',
+    pregunta_clase: 'compra',
+  };
+  const link = linkJavierPorMotivo(PREFILL_POR_MOTIVO[motivo]);
   const landing = APEGO_DETOX.landing;
 
   switch (motivo) {

@@ -49,8 +49,17 @@ export const MAX_GLOBOS = 3;
 
 const URL_RE = /https?:\/\/\S+/g;
 
-/** Una línea de lista: "• Pides perdón…", "- No duermes…", "1. Te despiertas…". */
-const LINEA_VINETA = /^\s*(?:[•·▪◦‣*\-–—]|\d{1,2}[.)])\s+(\S.*)$/;
+/**
+ * Una línea de lista: "• Pides perdón…", "- No duermes…", "1. Te despiertas…".
+ *
+ * ⚠️ SIN «—» NI «–» DESDE EL 2026-08-14. La prosa en español usa la raya para
+ * incisos y diálogos («— eso llega aquí todas las semanas»), y Gemini la abre
+ * a principio de línea con frecuencia. Con las rayas en el set, esa prosa se
+ * leía como lista: `desvinetar` la trituraba y `limitarVinetas` le ponía «• »
+ * delante. El guion corto (-) se queda: en WhatsApp nadie abre un inciso con
+ * guion pegado a espacio, pero las listas hechas a mano sí lo usan.
+ */
+const LINEA_VINETA = /^\s*(?:[•·▪◦‣*\-]|\d{1,2}[.)])\s+(\S.*)$/;
 
 /** Una línea que abre una lista: "…algo de esto:", "…si te pasa esto:". */
 const ABRE_LISTA = /:\s*$/;
@@ -85,6 +94,9 @@ export function tieneVinetas(texto: string): boolean {
  * Si arriba de la lista había una línea que la abría ("…si te pasa algo de
  * esto:"), la viñeta se le cose detrás para que no quede un dos puntos huérfano.
  */
+/** ¿La línea carga un dato que no se puede tirar? Link, cifra u hora. */
+const CARGA_DATO = /https?:\/\/|\d/;
+
 export function desvinetar(texto: string): string {
   const lineas = (texto || '').split('\n');
   const out: string[] = [];
@@ -97,8 +109,14 @@ export function desvinetar(texto: string): string {
       continue;
     }
 
-    // De la segunda viñeta en adelante: fuera.
-    if (yaUse) continue;
+    // De la segunda viñeta en adelante: fuera — SALVO que cargue un dato.
+    // ⚠️ 2026-08-14: tirar viñetas «de más» estaba tirando líneas con el link,
+    // el precio o la hora del taller. Una viñeta de relleno se puede perder;
+    // un dato no. La que carga dato se promueve a frase suelta.
+    if (yaUse) {
+      if (CARGA_DATO.test(m[1])) out.push(`${m[1].trim().replace(/[.;,]+$/, '')}.`);
+      continue;
+    }
     yaUse = true;
 
     const contenido = m[1].trim().replace(/[.;,]+$/, '');
@@ -174,18 +192,22 @@ export function comprimirGlobos(globos: string[], max = MAX_GLOBOS): string[] {
     out = [...out.slice(0, mejor), `${out[mejor]} ${out[mejor + 1]}`, ...out.slice(mejor + 2)];
   }
 
-  // 2) Ya no hay texto seguido: todo el texto en un globo, y los links detrás.
-  const textos = out.filter((g) => !esLink(g));
+  // 2) Ya no hay texto seguido: el texto de prosa en un globo, y los links
+  //    detrás. ⚠️ LAS LISTAS NO ENTRAN AL JOIN (2026-08-14): pegarle la lista
+  //    a la prosa con un espacio fabricaba un ladrillo de 433 caracteres —
+  //    apertura + tres viñetas + cierre soldados en un solo globo, el peor
+  //    mensaje del sistema medido en producción. La lista viaja en su globo.
+  const textos = out.filter((g) => !esLink(g) && !esLista(g));
+  const listas = out.filter((g) => !esLink(g) && esLista(g));
   const links = out.filter(esLink);
-  if (textos.length > 0) {
-    const juntos = [textos.join(' '), ...links];
-    if (juntos.length <= max) return juntos;
-    // 3) Más links que globos: se sueltan los últimos. El primero es el que
-    //    importa (la página o el WhatsApp de Javier, según el momento).
-    return [textos.join(' '), ...links.slice(0, Math.max(0, max - 1))];
-  }
-
-  return links.slice(0, max);
+  const prosa = textos.length > 0 ? [textos.join(' ')] : [];
+  const juntos = [...prosa, ...listas, ...links];
+  if (juntos.length <= max) return juntos;
+  // 3) Aún sobra: se sueltan los últimos links. El primero es el que importa
+  //    (la página o el WhatsApp de Javier, según el momento).
+  const fijos = [...prosa, ...listas];
+  if (fijos.length >= max) return fijos.slice(0, max);
+  return [...fijos, ...links.slice(0, max - fijos.length)];
 }
 
 /** Deja como mucho `max` bloques, sin perder ni una frase ni un link. */

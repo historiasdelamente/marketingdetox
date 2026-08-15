@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { processPaulaMessage } from '@/lib/whatsapp/paula';
 import { encolarMensaje, estadoBuffer } from '@/lib/whatsapp/buffer';
 import { SIN_OIDO, transcribirAudio, transcripcionDisponible } from '@/lib/whatsapp/audio';
+import { higienizarEntrada } from '@/lib/whatsapp/entrada';
 import { APEGO_DETOX, precioApego, proximoEncuentro } from '@/lib/whatsapp/programa';
 import { precioLocal, tasas } from '@/lib/whatsapp/moneda';
 
@@ -51,6 +52,7 @@ function modoHumano(): boolean {
   return Boolean(process.env.MANYCHAT_API_TOKEN);
 }
 
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -77,6 +79,11 @@ export async function POST(request: NextRequest) {
       }
       userMessage = [String(userMessage).trim(), texto].filter(Boolean).join('\n');
     }
+
+    // Higiene de entrada (2026-08-14): placeholders {{...}} fuera, audios que
+    // vienen como URL DENTRO del texto → transcriptor, imágenes → [IMAGEN].
+    // A Magda su nota de voz le llegó así y recibió el folleto por respuesta.
+    userMessage = await higienizarEntrada(String(userMessage));
 
     if (!String(userMessage).trim()) {
       return NextResponse.json(

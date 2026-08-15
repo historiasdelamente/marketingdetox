@@ -310,7 +310,10 @@ describe('handoff a Javier — los cinco casos', () => {
     expect(motivoHandoff('ya pagué')).toBe('compra_cerrada');
     expect(motivoHandoff('acabo de inscribirme 💛')).toBe('compra_cerrada');
     const instruccion = instruccionHandoff('compra_cerrada', 'apego');
-    expect(instruccion).toContain(APEGO_DETOX.whatsappJavier);
+    // Desde el 2026-08-14 el wa.me lleva el prefill del MOTIVO: la que acaba
+    // de pagar le llega a Javier diciendo que pagó, no pidiendo información.
+    expect(instruccion).toContain('https://wa.me/573001681053?text=');
+    expect(instruccion).toContain('ya%20hice%20el%20pago');
     expect(instruccion).toContain('Cero venta');
   });
 

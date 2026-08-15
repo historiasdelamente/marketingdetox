@@ -307,6 +307,26 @@ Responde SOLO con el mensaje final (o NO_ENVIAR). Nada de explicaciones.`;
 }
 
 async function handle(req: NextRequest) {
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ⛔ APAGADO POR DEFECTO DESDE EL 2026-08-14 — NO ENCENDER SIN REESCRIBIR.
+  //
+  // El copy de este cron contiene, textual, «¿Qué es lo que te detiene hoy?» y
+  // «¿Es el dinero, el tiempo o el miedo a que no funcione?» — LA PREGUNTA DEL
+  // FRENO que Javier prohibió el 2026-08-09 con estas palabras: esa pregunta no
+  // existe en este chat, con ninguna palabra. El chat en vivo la tiene vetada
+  // por `quitarPreguntaDeFreno`; este cron la mandaba por la puerta de atrás,
+  // más garantía no pedida y urgencia. La reescritura del follow-up (un solo
+  // toque a +24h, redactado por el modelo con la frase literal de ella) es la
+  // fase 7 del plan v2 y se enciende con RECORDATORIOS_V1=on solo con el OK
+  // explícito de Javier.
+  // ═══════════════════════════════════════════════════════════════════════════
+  if (process.env.RECORDATORIOS_V1 !== 'on') {
+    return NextResponse.json({
+      status: 'apagado',
+      motivo: 'copy con la pregunta del freno prohibida — pendiente de reescritura (fase 7 del plan v2)',
+    });
+  }
+
   // Auth: Bearer token o ?secret= (mismo patrón que enviar-libros-pendientes)
   const authHeader = req.headers.get('authorization');
   const querySecret = req.nextUrl.searchParams.get('secret');

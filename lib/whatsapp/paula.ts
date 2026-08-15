@@ -30,6 +30,7 @@ import {
 import { normalizarCanal, normalizarNegritas, telefonoDeManyChat } from './manychat';
 import { PAISES, detectarPais, esTelefonoReal, paisDeElla, paisPorIso } from './paises';
 import { precioLocal, tasas } from './moneda';
+import { MARCA_SILENCIO, buildSystemPromptV2, esPromptV2, puedeCallar } from './prompt-v2';
 
 // ============================================================================
 // PAULA — CERRADORA DE APEGO DETOX
@@ -1209,6 +1210,23 @@ export function buildSystemPrompt(
     mensajeDeElla?: string;
   } = {},
 ): string {
+  // ═══════════════════════════════════════════════════════════════════════════
+  // 🎚️ LA BIFURCACIÓN V2 — 2026-08-14. Con PAULA_PROMPT=v2 en el panel, el
+  // prompt lo arma `prompt-v2.ts`: principios en vez de guion, hechos en vez
+  // de órdenes. TODO lo de abajo (guion, estilo, saludos, intención) queda
+  // intacto y es lo que corre sin la variable — el rollback es quitar el env.
+  // El borrado físico del v1 es una fase aparte, a +7 días de v2 estable.
+  // ═══════════════════════════════════════════════════════════════════════════
+  if (esPromptV2()) {
+    return buildSystemPromptV2(user, telefono, {
+      ahora: opciones.ahora,
+      handoff: opciones.handoff,
+      tasas: opciones.tasas,
+      historial: opciones.historial,
+      mensajeDeElla: opciones.mensajeDeElla,
+    });
+  }
+
   const ahora = opciones.ahora ?? new Date();
   // Solo hay un escalón desde el 2026-08-05 (ver `escalera.ts`).
   const escalon = opciones.escalon ?? 'apego';
@@ -1597,7 +1615,10 @@ async function extraerDatos(
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) return null;
 
-  const model = process.env.PAULA_EXTRACT_MODEL || 'openai/gpt-4.1-mini';
+  // ⚠️ El default cambió a Gemini el 2026-08-14, cuando producción ya corría
+  // con él (PAULA_EXTRACT_MODEL en EasyPanel). Un default distinto del modelo
+  // real es la bomba de tiempo que ya explotó una vez con el tope de tokens.
+  const model = process.env.PAULA_EXTRACT_MODEL || 'google/gemini-3.7-flash';
   const contexto = [...history.slice(-8), { role: 'user', content: userMessage }]
     .map((m) => `${m.role === 'user' ? 'ELLA' : 'PAULA'}: ${m.content}`)
     .join('\n');
@@ -1639,11 +1660,16 @@ async function extraerDatos(
           { role: 'system', content: sys },
           { role: 'user', content: previo ? `${previo}\n\n---\n\n${contexto}` : contexto },
         ],
-        max_tokens: 300,
+        // ⚠️ 1000 y no 300: los modelos que razonan (Gemini) gastan parte del
+        // presupuesto pensando ANTES de escribir el JSON. Con 300, el JSON
+        // salía cortado, el parse fallaba y extraerDatos devolvía null EN
+        // SILENCIO — se perdían nombre, país y resumen sin ningún síntoma.
+        // Es el mismo fallo del mensaje cortado de Nidia, en versión invisible.
+        max_tokens: 1000,
         temperature: 0,
         response_format: { type: 'json_object' },
       }),
-      signal: AbortSignal.timeout(12000),
+      signal: AbortSignal.timeout(20000),
     });
     if (!response.ok) return null;
     const data = await response.json();
@@ -1682,11 +1708,13 @@ export async function callOpenRouter(systemPrompt: string, messages: Array<{ rol
     throw new Error('OPENROUTER_API_KEY no está configurada en .env.local');
   }
 
-  // mini es la elección del cliente por costo. Es más literal que el modelo
-  // grande: se agarra de los ejemplos y los repite. Por eso el prompt le enseña
-  // la ANATOMÍA del mensaje en vez de una frase, y por eso a cada escalón se le
-  // entrega SOLO su material — con el del otro producto delante, lo mezcla.
-  const model = process.env.PAULA_MODEL || 'openai/gpt-4.1-mini';
+  // ⚠️ EL DEFAULT ES GEMINI DESDE EL 2026-08-14 — el mismo que corre en
+  // producción (PAULA_MODEL en EasyPanel). La nota histórica de que "mini es
+  // la elección del cliente por costo" quedó atrás: el cliente cambió de
+  // modelo desde el panel, y un default desalineado con producción es lo que
+  // dejó el tope de tokens en 512 mientras el modelo real razonaba (mensaje
+  // cortado de Nidia, 2026-08-09).
+  const model = process.env.PAULA_MODEL || 'google/gemini-3.7-flash';
   // ⚠️ EL TOPE TIENE QUE SUBIR SI EL MODELO PIENSA ANTES DE ESCRIBIR.
   //
   // 512 alcanzaba de sobra para gpt-4.1-mini, que escribe directo. Probando
@@ -1732,7 +1760,8 @@ export async function callOpenRouter(systemPrompt: string, messages: Array<{ rol
   });
 
   // Reintento + timeout: OpenRouter (tras Cloudflare) a veces da ConnectTimeout.
-  // Sin esto, cualquier lentitud de red tumbaba el webhook entero. 2 intentos, ~18s c/u.
+  // Sin esto, cualquier lentitud de red tumbaba el webhook entero. 2 intentos, ~25s c/u
+  // (subido de 18s el 2026-08-14: un modelo que razona tarda más en el primer token).
   const MAX_ATTEMPTS = 2;
   let lastErr: unknown;
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
@@ -1746,7 +1775,7 @@ export async function callOpenRouter(systemPrompt: string, messages: Array<{ rol
           'X-Title': 'Paula - Historias de la Mente',
         },
         body,
-        signal: AbortSignal.timeout(18000),
+        signal: AbortSignal.timeout(25000),
       });
 
       if (!response.ok) {
@@ -1785,7 +1814,10 @@ export async function processPaulaMessage(
 ): Promise<string> {
   // 1. Usuaria + historial
   const user = await getOrCreateUser(manychatId);
-  const history = await getConversationHistory(manychatId, 20);
+  // 40 mensajes desde el 2026-08-14: con 20, una conversación de una tarde ya
+  // no cabía y Paula re-preguntaba lo del principio. Gemini tiene 1M de
+  // contexto — el límite real es cuánto merece la pena releer, no cuánto cabe.
+  const history = await getConversationHistory(manychatId, 40);
 
   // EL TELEFONO, SI ES QUE LLEGO DE VERDAD.
   //
@@ -1903,6 +1935,21 @@ export async function processPaulaMessage(
   // 4. Modelo principal
   const messages = [...history, { role: 'user', content: userMessage }];
   let paulaResponse = await callOpenRouter(systemPrompt, messages);
+
+  // 4a. [SILENCIO] — el camino de no-envío (solo v2). El prompt le permite al
+  // modelo proponer silencio cuando ella cierra con un emoji tras un cierre; el
+  // CÓDIGO verifica la doble condición antes de conceder. El sistema viejo
+  // tenía prohibido callarse —la cascada terminaba en un else que siempre
+  // vendía— y así salieron los cinco turnos de features de Jennifer.
+  if (esPromptV2() && paulaResponse.trim() === MARCA_SILENCIO) {
+    if (puedeCallar(history as Turno[], userMessage)) {
+      await saveMessage(manychatId, 'user', userMessage);
+      await updateUser(manychatId, {});
+      return '';
+    }
+    // El modelo pidió silencio sin condiciones: calidez mínima en su lugar.
+    paulaResponse = 'Aquí estoy 💛';
+  }
 
   // 4b. BLINDAJE ANTI-INVENTO — se audita ANTES de que ella lo lea.
   // Si el modelo se inventó una fecha, un precio o un link, se le pide que
