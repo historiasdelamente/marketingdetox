@@ -105,23 +105,21 @@ describe('v2 — el guion viejo no viaja en el prompt', () => {
     expect(p).toMatch(/9:00 PM.*ESA ES LA HORA DE ELLA/);
   });
 
-  it('el prompt renderizado respeta el fusible de tamaño (≤23.500 chars)', () => {
-    // El v1 medía 42.000-47.000 con TRES órdenes contradictorias dentro. El
-    // fusible no es meta estética: es el freno para que el estado no vuelva a
-    // crecer hasta ser guion — para añadir aquí, hay que borrar allá.
+  it('el prompt renderizado respeta el fusible de tamaño (≤20.500 chars)', () => {
+    // El v1 medía 42.000-47.000 y traía TRES órdenes contradictorias en el
+    // mismo prompt. El fusible no es una meta estética: es el freno para que
+    // el estado no vuelva a crecer hasta ser guion — para añadir algo aquí,
+    // hay que borrar algo.
     //
-    // ⚠️ SUBIDO DE 20.000 A 23.500 EL 2026-08-15, CON LA CONTABILIDAD HECHA.
-    // Orden de Javier: «el objetivo es vender (…) no des el precio sin antes
-    // hacer una motivación real». La sección EL PROGRAMA se reescribió entera y
-    // ABSORBIÓ dos secciones que vivían aparte —MODO CONSERJE y TERAPIA
-    // INDIVIDUAL— más el tratamiento del precio que estaba disperso. A cambio
-    // se borraron los argumentos duplicados de PAULA-CONOCIMIENTO-V2.md.
-    // Neto: +3.100 por una reescritura pedida por el dueño, no por acumular.
-    //
-    // El techo se sube con una orden detrás y la cuenta escrita, jamás para que
-    // quepa una idea más. Sigue siendo la mitad del v1.
+    // ⚠️ EL NÚMERO SE MIDIÓ, NO SE ESTIMÓ (2026-08-15). El techo estuvo en
+    // 20.000 con el contenido midiendo 20.071: se recortaron frases buenas dos
+    // veces para ganar 20 caracteres, y aun así quedaba en rojo. El margen se
+    // fija ahora con holgura real (~400) sobre la medida del fixture largo —
+    // el de Jennifer, cuyo bloque 🧾 pesa 460 porque arrastra los últimos
+    // cuatro mensajes de Paula. Medir con un historial corto daba 19.6k y esa
+    // fue la estimación equivocada de la que salió el 20.000.
     const p = promptV2(HISTORIAL_JENNIFER, 'cuéntame qué es el programa');
-    expect(p.length).toBeLessThanOrEqual(23500);
+    expect(p.length).toBeLessThanOrEqual(20500);
   });
 
   it('sin PAULA_PROMPT=v2, el prompt v1 sigue intacto (con su guion)', () => {
