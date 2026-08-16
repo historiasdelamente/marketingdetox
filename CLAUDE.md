@@ -243,6 +243,7 @@ Estos archivos especializan el CLAUDE.md maestro. NO contradicen — profundizan
 | `agents-source/prompts/voiceover/references/topic-bank.md` | 45 temas predefinidos con ángulos y arcos emocionales |
 | `agents-source/prompts/clases/brand-voice.md` | Guía de voz de marca para clases |
 | `content/BASE-CONOCIMIENTO-TALLERES.md` | Índice maestro de 293+ técnicas terapéuticas |
+| `.claude/skills/premium-live/SKILL.md` | **Premium Live** — conferencia de 2h con investigación externa + 8 láminas ilustradas |
 
 ### Jerarquía
 
@@ -263,4 +264,5 @@ Si hay conflicto, la raíz gana.
 | "Crea prompts Sora de X" | Pipeline sora: 5 pasos, output en inglés |
 | "Busca actualizaciones científicas" | Investigador científico: buscar + sintetizar + integrar |
 | "Audita la base de conocimiento" | Guardián: leer todos los prompts, verificar coherencia |
+| "Haz un Premium Live de X" | `/premium-live X` → investigación externa + conferencia de 2h + 8 láminas |
 | "Agrega un nuevo agente" | Seguir los 5 pasos de la sección "Cómo Funciona la Web App" |

@@ -196,6 +196,70 @@
 
 ---
 
+### 15. El Expediente del Narcisista — 5 fases, 62 frases literales de el y su traduccion (2026-08-08)
+**Archivo:** [research-expediente-narcisista-frases-2026.md](research-expediente-narcisista-frases-2026.md)
+- El ciclo completo en 5 fases con duracion tipica y que queda instalado en ella en cada una (idealizacion → enganche → devaluacion → descarte → hoovering)
+- **Los 7 movimientos del bombardeo de amor** (taxonomia propia del canal): espejo · entrevista · velocidad · singularizacion · deuda · cerco suave · prueba — con lo que instala cada uno y en que semana ocurre
+- **Diccionario de 62 frases textuales de el** agrupadas por fase, cada una con la maniobra que ejecuta (fase 1: 15 · enganche: 10 · gaslighting: 17 · descarte: 8 · hoovering: 12)
+- Como engancha HOY (2026): migajas programadas, el "visto" como castigo, ubicacion compartida, triangulacion por redes, cuentas compartidas, stalkerware, ghost-hoovering, tacto como manipulacion
+- Libros con verificacion de calificacion: Durvasula (4,51/5 · 12.030 valoraciones) · Reiser (4,00/5) · Campbell y Stark citados por credencial, sin estrellas verificadas
+- **Nota metodologica:** las frases NO son inventadas — salen del corpus NotebookLM "shorts guiones" (418 videos + banco de gaslighting + destilado anonimizado de consulta) y de `transcripciones-tiktok-virales.md`. Amazon bloquea lectura automatizada; las estrellas verificadas salen de Goodreads.
+
+**Usado en:** `content/live-tiktok/guia-live-expediente-del-narcisista-2h.md` (live de 2h)
+
+---
+
+### 16. TEPT Complejo en Abuso Narcisista — la teoria del expediente sin juez (2026-08-09)
+**Archivo:** [research-tept-complejo-expediente-sin-juez-2026.md](research-tept-complejo-expediente-sin-juez-2026.md)
+- **Teoria propia del canal — el expediente sin juez:** el TEPT complejo no se cronifica solo por el miedo, sino porque el caso nunca fue reconocido. Guardar capturas no es obsesion: es un expediente abierto esperando juez. Sin juez, ella hace de fiscal, testigo y acusada a la vez → **la hipervigilancia es un juicio que no termina**
+- **Los 6 clusters de la CIE-11 releidos como 6 cargos**, cada uno mapeado con la frase de gaslighting que lo instala (tabla de 16 filas). El mapeo cluster ↔ frase no existe en ninguna fuente
+- **Numeros que se pueden decir al aire:** 31,2% TEPT complejo vs 17,1% simple en victimas de violencia de pareja (2026) · Espana 39,5% · Dinamarca 21,1% · ansiedad de apego = factor mas decisivo · recuperacion 68,8% · TEPT complejo 28,9% → 3,3%
+- **Ruta forense (Asensi Perez, Flores Fernandez y Nevado Duarte, Rev Esp Med Legal, 2024):** el mal diagnostico historico (limite, delirante) y **la violencia psicologica como mayor factor de riesgo** — desarma el "no fue para tanto, nunca me pego"
+- **Herman 1992 (3 etapas) + Herman 2023 (la 4.ª: justicia = reconocimiento)** + las 5 tareas de cierre: el acta · el testigo · la frase de fecha · el corte de acceso · la consulta con nombre propio
+- **Escalera del deterioro en 5 estaciones** (alerta → duda → apagon → factura medica → sustitucion de identidad) — **declarada SIEMPRE como no oficial**
+- Peritaje fisico: eje HPA, carga alostatica y marca epigenetica (NR3C1, MAOA, BDNF, telomeros — Carannante et al., *Frontiers in Global Women's Health*, 2025)
+- Instrumento: **ITQ, 18 items** (Cloitre et al. 2018), validado en espanol con supervivientes de violencia de pareja (Fernandez-Fillol et al., 2026)
+
+**Usado en:** `content/live-tiktok/guia-live-expediente-sin-juez-tept-complejo-2h.md` (live de 2h, 28 pags.)
+**Ideas propias 13-19** registradas en `content/live-tiktok/CONOCIMIENTO-PROPIO.md`
+
+---
+
+### 17. Narcisista Encubierto — la teoria de la moneda en el aire (2026-08-11)
+**Archivo:** [research-narcisista-encubierto-2026.md](research-narcisista-encubierto-2026.md)
+- **Teoria propia del canal — la moneda en el aire:** el encubierto no hace dano con lo que hace, sino con lo que ella nunca termina de saber. **No administra el dano: administra la probabilidad.** El sosten es de Berker et al. (*Nature Communications*, 2016): el pico de estres humano —medido en pupila, conductancia de piel y reporte— esta en el **50% de probabilidad de descarga, NO en el 100%**. La certeza del dolor estresa menos que la duda
+- **La vergüenza no explota: gotea.** La linea Hendin-Cheek (HSNS/MCNS) mide que la vergüenza **separa** los dos tipos (r = 0,02 overt vs 0,58 covert) y que la rabia de agravio **los iguala** (0,55 y 0,64). Misma rabia, distinta velocidad de entrega — y el goteo no se puede senalar
+- **Su victimismo es un cobro, no un sintoma** (Ok, Qian, Strejcek & Aquino, 2020, *JPSP*): la senal de victima virtuosa produce **transferencia NO reciproca de recursos**. Las 4 puertas salen de las 4 dimensiones de la TIV (Bedard et al., 2026, n=400): reconocimiento · elitismo moral · falta de empatia · rumiacion
+- **El duelo sin muerto:** Pauline Boss, *Ambiguous Loss* (1999) — presencia fisica + ausencia psicologica = duelo congelado, cierre imposible **por diseno**. Nunca antes aplicado a este cuadro; el corpus del nicho lo dijo primero ("duerme al lado de alguien que no esta")
+- **Escalera del silencio en 5 peldanos** (suspiro → respuesta corta → eficiencia → silencio → **amabilidad excesiva**) — el silencio es el 4; el que desarma es el 5, porque contra el 5 no hay reclamo posible. **Declarada SIEMPRE como no oficial**
+- **Numeros que se pueden decir al aire:** meta-analisis de 22 estudios y 11.520 participantes (Oliver, Coates, Bennett & Willis, 2024, *Trauma Violence Abuse*) — el narcisismo **vulnerable** pesa mas que el grandioso en violencia de pareja, la **fisica NO se relaciona** y la **psicologica y digital SI** · Day et al. (2025, *Personality and Mental Health*, n=135): duracion promedio del vinculo **20,3 anos**, control emocional 2,7/5 como tactica mas alta
+- **La contradiccion que hay que declarar (contra-consenso):** Day et al. encontro que la **severidad** del trastorno predice el control coercitivo (r = 0,53) muy por encima del subtipo (grandiosidad 0,19 · vulnerabilidad 0,13 n.s.) → **la pregunta util no es "que tipo es" sino "cuanto de mi vida ocupa"** (inventario de 9 areas)
+- Marco de subtipos actualizado: Maples et al. (2025, *J Res Pers*) — 4 perfiles latentes, incluido el **grandioso-vulnerable** (no son dos hombres, son dos configuraciones que alternan) · narcisismo comunal (Gebauer et al., 2012): "soy la persona mas servicial que conozco", con brecha medida entre indignacion moral declarada y conducta real
+
+**Usado en:** `content/live-tiktok/guia-live-la-moneda-en-el-aire-narcisista-encubierto-2h.md` (live de 2h, 21 pags.)
+**Ideas propias 20-28** registradas en `content/live-tiktok/CONOCIMIENTO-PROPIO.md`
+
+---
+
+### 18. Psicopatia — deteccion en el vinculo de pareja (2026-08-15)
+**Archivo:** [research-psicopatia-deteccion-2026.md](research-psicopatia-deteccion-2026.md)
+- **Encuadre obligatorio:** "psicopata" NO es diagnostico DSM. Es constructo dimensional, PCL-R de Hare (20 items, 0-40, cuatro facetas: interpersonal · afectiva · estilo de vida · antisocial). Nadie diagnostica a distancia — se ensena a leer patrones
+- **El interruptor, no el hueco (pieza central):** Meffert, Gazzola, den Boer, Bartels y Keysers (2013, *Brain* 136(8):2550; 18 con psicopatia, 26 controles) — activacion empatica **espontanea muy reducida**, pero **bajo instruccion explicita sube a niveles relativamente normales**. Conclusion de los autores: no carecen de empatia, **no la usan automaticamente**. Destruye el "no siente nada" de la calle y explica la contradiccion ternura/indiferencia sin partirlo en dos hombres
+- **Te escogio antes de hablarte:** Book, Costello y Camilleri (2013, *J Interpersonal Violence* 28:2368) — 47 internos de maxima seguridad juzgando videos de personas **caminando**; a mayor Factor 1, mayor **precision**. La seleccion ocurre en segundos y sin palabras → saca la culpa del terreno de "me deje convencer"
+- **Ley del doble canal:** Fowler, Lilienfeld y Patrick (2009) — deteccion apenas superior al azar y **solo** con canal verbal Y visual juntos. *PLoS ONE* (2018): la **confianza general del observador estorba** la deteccion. El chat y los audios son un solo canal — condicion de laboratorio para no detectar nada
+- **No ignoro tu cara, no la leyo:** Dadds y cols. (*Br J Psychiatry* 2006; seguimiento ocular Tobii, 100 adolescentes, media 12,4 anos) — rasgos altos predicen mal reconocimiento del miedo Y menos fijaciones en los ojos; la atencion reducida a los ojos **explica** el deficit. Bajo instruccion mejora; **al retirarla, no se mantiene**
+- **El aburrimiento como motor:** "necesidad de estimulacion / propension al aburrimiento" es item de la PCL-R y **NO esta en los criterios DSM** del antisocial. Explica por que estalla en las buenas epocas: la paz es el detonante, no el premio
+- **Las tres fases (columna vertebral del documento):** Babiak y Hare, *Snakes in Suits* — **evaluacion** (se mide la utilidad: dinero, poder, sexo, notoriedad, reconocimiento) → **manipulacion** → **abandono** (descarte abrupto, corte total de contacto). Babiak, Neumann y Hare (2010, *Behav Sci Law* 28; 203 profesionales): prevalencia **4%** en altos mandos vs **1%** en poblacion general; carisma arriba, desempeno abajo, **ascendian igual**
+- **Numeros que se pueden decir al aire:** Forth, Sezlik, Lee, Ritchie, Logan y Ellingwood (2022, *IJOTCC*, n=457, 89,5% mujeres) — emocional 98% · **engano 95,8%** · **financiero 80,7%** · fisica 50,5% · robo 39,6% · **40,3% SIN ninguna agresion fisica** y aun asi **83,8% sobre umbral de TEPT** · impacto extremo en salud mental 79,4% · promedio **4,57 tipos de dano por persona** · **la polivictimizacion predice mas que la severidad de la psicopatia de el** (6% de varianza en TEPT, 2% en depresion) → el dano es **dosis, no debilidad**
+- **La pregunta que separa narcisista de psicopata:** no "que siente" sino **"para que me queria"**. El narcisista te quiere **para verse**; el psicopata **para sacar algo**. Por eso el narcisista vuelve y el psicopata solo vuelve si queda inventario
+- **Lo que la evidencia NO sostiene (no decir al aire):** "no sienten nada" · "se les ve en la cara" · "esta probado que es la amigdala" (hay revision sistematica 2022 que la cuestiona y el efecto depende de la atencion) · "son todos violentos" · cualquier pronostico o diagnostico de una persona concreta
+- **11 semillas propias** marcadas en el archivo, entre ellas: las tres puertas · el interruptor · el ascenso es el sintoma · el 40% que nadie nombra · el dano es dosis
+
+**Usado en:** `output/deteccion-psicopata-premium-live.md` (conferencia de 2h, 14 movimientos) y `output/prompts-gemini-premium-live-psicopata.md` (11 laminas)
+**Investigacion 100% externa** — no se consulto la base interna, por pedido explicito
+
+---
+
 ## RESUMEN POR HERIDA QUE SANAN
 
 | Herida | Tecnicas clave |
@@ -204,7 +268,7 @@
 | **Gaslighting / perdida de identidad** | Identity Reconstruction, Externalizacion Narrativa, Mirror Work, Felt Sense, **Reclaiming Voice, IFS Identity Parts Work, Reestructuracion Cognitiva Beck, Tecnica del Espejo Gestalt, Terapia Narrativa White/Epston, Imagery Rescripting** |
 | **Codependencia / complacer** | Pia Mellody Inner Child, Nedra Tawwab Boundaries, Somatic Boundary Exercises, Fawn Response Healing, **Fawn Interruption Exercises, Perfectionism Dismantling, Terapia para Codependencia, Entrevista Motivacional, Aceptacion Radical** |
 | **Apego ansioso** | DARe (Diane Poole Heller), Hold Me Tight, Earned Security, Co-regulacion, **ABFT Diamond, EFT Parejas Johnson, Evaluacion Apego AAI, Apego Desorganizado Adultos, Psicologia del Self Kohut** |
-| **C-PTSD / flashbacks** | Pete Walker 13 Steps, Window of Tolerance, Safe Container, Pendulacion, **CPT, Exposicion Prolongada, Sensoriomotriz Ogden, ART, Estabilizacion Trauma Complejo Fase 1, Protocolo Unificado Barlow** |
+| **C-PTSD / flashbacks** | Pete Walker 13 Steps, Window of Tolerance, Safe Container, Pendulacion, **CPT, Exposicion Prolongada, Sensoriomotriz Ogden, ART, Estabilizacion Trauma Complejo Fase 1, Protocolo Unificado Barlow** · **cuadro completo, criterios CIE-11, numeros y protocolo de cierre → doc 16** |
 | **Duelo / perdida** | Grief Ritual Ceremony, Empty Chair, Fire Ceremony, Pennebaker Writing, **Duelo Complicado Shear, Silla Vacia Gestalt/EFT, Escritura Expresiva Pennebaker, Carta Terapeutica Narrativa** |
 | **Rabia reprimida** | Sacred Rage Ritual, Primal Scream, Bioenergetica, Exageracion Gestalt, **Core Energetics, Danza Movimiento DMT, Role-Playing Terapeutico, Terapia Feminista** |
 | **Desconexion del cuerpo** | TCTSY, Body Scan, Somatic Experiencing, Breathwork, Vagal Toning, **Mapa Corporal del Trauma, Reich 7 Segmentos, TRE Berceli, Feldenkrais, Tecnica Alexander, Biosintesis, Craneosacral, Hakomi, Relajacion Muscular Progresiva Jacobson, Entrenamiento Autogeno Schultz** |
