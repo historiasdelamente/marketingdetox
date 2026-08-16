@@ -1,193 +1,204 @@
-# PREMIUM LIVE · ADN visual de las 8 láminas
+# PREMIUM LIVE · ADN visual de las láminas
 
-> Referencia viva: `output/prompts-gemini-premium-live-psicopata.md` (2026-08-15).
-> Herramienta: Gemini / Nano Banana. Siempre **8 láminas: 5 de conferencia + 3 de Apego Detox.**
+> **v2 · 2026-08-16 — estilo confirmado contra imágenes reales generadas.**
+> Referencia viva: `output/prompts-gemini-premium-live-psicopata.md` (19 láminas).
+> Antecedente que validó el estilo: las láminas del narcisista encubierto (la balanza del
+> interrogatorio y la postal del martes).
+> Herramienta: Gemini / Nano Banana.
 
 ---
 
 ## EL LOOK EN UNA FRASE
 
-**Muñequito a lápiz sobre papel crema, contando una historia en tres tiempos de izquierda a derecha,
-sin una sola línea que divida la lámina.**
+**Página de cuaderno de trabajo de un psicólogo:** papel crema, muñequitos a lápiz muy simples,
+objetos dibujados con volumen y sombreado, nubes de pensamiento, flechas curvas a mano, y las frases
+clave pasadas con **resaltador dorado**.
 
 ---
 
-## POR QUÉ SON SIMPLES — LA RAZÓN CLÍNICA
+## LOS 6 ELEMENTOS QUE HACEN EL ESTILO
 
-La audiencia tiene **memoria de trabajo comprometida**. No es suposición: en Forth y cols. (2022,
-n=457), las consecuencias cognitivas —concentración, memoria, flashbacks— tienen 68 menciones.
-**Un cerebro en hipervigilancia no puede leer y escuchar al mismo tiempo.** Si la lámina la obliga a
-leer, deja de oír al expositor.
+Son los que se confirmaron mirando las láminas que salieron bien. Si falta alguno, la lámina se ve
+pobre.
 
-De ahí las reglas:
+1. **El resaltador dorado.** Una franja de marcador dorado mostaza `#C9A84C` pintada a mano detrás de
+   las frases clave, con los bordes irregulares. **Es la marca de la casa.** Los títulos llevan
+   además un subrayado dorado grueso hecho a mano.
+2. **Muñequitos simples, objetos con volumen.** Las personas son stick figures —cabeza redonda, ojos
+   de punto, boca de línea—. Los OBJETOS en cambio van dibujados con sombreado, rayado cruzado, peso
+   y sombra propia. **Los objetos se ven sólidos; la gente se ve dibujada.** Ese contraste es lo que
+   le da oficio.
+3. **Nubes de pensamiento** con letra manuscrita pequeña. Es donde entra la voz de ella y la de él
+   sin ocupar espacio de título.
+4. **Flechas curvas dibujadas a mano** conectando cada etiqueta con su elemento. Nunca una etiqueta
+   suelta: siempre con su flecha.
+5. **Marcas en rojo vino apagado `#8E2433`** —equis, círculos, contornos— para señalar el mecanismo
+   oculto. Escasas: dos o tres por lámina.
+6. **La banda dorada al pie**, de ancho completo, con el DETECTOR. Siempre en la misma posición en
+   todas las láminas.
 
-1. **Una sola idea por lámina**, contada en tres tiempos.
-2. **Cuatro bloques de texto en total:** una frase por tiempo + la banda del pie. Nada más.
-3. **Frases de una línea.** Nunca párrafos en la pared.
-4. **Cero tablas, cero columnas comparativas.** Se leen en dos direcciones y agotan.
-5. **Un solo número grande por lámina.** Cinco números no son cinco veces más fuertes: son ruido.
-6. **La banda dorada siempre en la misma posición.** La previsibilidad calma.
-7. **Pocas láminas que duran mucho.** Cada una se queda 20-35 minutos en pantalla. Cambiar de imagen
-   cada dos minutos activa la alerta; un ancla quieta la baja.
-
-**El contenido no se pierde: se mueve a la voz.** Cada prompt va acompañado de un bloque
-**"MIENTRAS ESTÁ PROYECTADA, TÚ DICES"** con los datos, las citas y los detectores en viñetas.
-La imagen carga la metáfora; la voz carga el argumento.
-
-Beneficio colateral: con cuatro bloques de texto en vez de ocho, **Gemini escribe bien mucho más
-seguido**.
+Y un séptimo recurso muy potente: **las listas tachadas** a mano (lo que se prometió y no se cumplió).
 
 ---
 
-## LOS TRES TIEMPOS
+## CUÁNTAS LÁMINAS
 
-Cada lámina se lee de izquierda a derecha en tres momentos: **dolor → mecanismo escondido → verdad
-que libera.**
-
-- **Los tiempos NO se ven.** Sin líneas, sin marcos, sin recuadros, sin viñetas de cómic. Se separan
-  **solo por aire en blanco**, sobre papel continuo. Esto es lo que más le cuesta a Gemini: si salen
-  marcos, repetir el prompt con la línea correctiva del final de este archivo.
-- Cada tiempo lleva **una frase corta manuscrita arriba** y **el muñequito abajo actuando** — no
-  posando: haciendo algo.
-- Algunas láminas funcionan en **dos** tiempos en vez de tres. Se permite cuando la idea es una
-  comparación pura.
+**Una por cada parte importante del documento.** Un Premium Live de 14 movimientos da unas
+**16 láminas de conferencia + las 3 fijas de Apego Detox ≈ 19**. No se resume el documento en cinco
+imágenes: se recorre parte por parte.
 
 ---
 
-## LAS MARCAS DE SENSACIÓN
+## LA REGLA DE LA VARIEDAD
 
-Son lo que hace que la lámina se **sienta** y no solo se lea. Van dibujadas a lápiz junto a los
-cuerpos:
+**Cada lámina usa un recurso visual distinto.** Si dos láminas seguidas usan una balanza, el deck se
+siente repetido y la sala se desconecta. Antes de escribir, se reparte el catálogo:
 
-| Sensación | Cómo se dibuja |
+| Recurso | Para qué sirve |
 |---|---|
-| El nudo del estómago | Una espiral apretada |
-| El peso | Líneas cortas presionando los hombros hacia abajo |
-| La alarma | Líneas de vibración saliendo del pecho |
-| El agotamiento | Líneas colgando hacia abajo |
-| La calma | Aire limpio y vacío alrededor de la figura |
-| Lo que salva | Resplandor dorado dibujado a mano |
+| Balanza desnivelada | Comparar peso: lo que ella dio vs lo que él dio |
+| Portapapeles con casillas | El inventario, la evaluación |
+| Escalera de peldaños | Escalada: favores, módulos, límites |
+| Velocímetro / medidor de aguja | Intensidad, estímulo, detección |
+| Ficha con renglones en blanco | Lo que ella NO sabía |
+| Libreta de días con lista | Acumulación: mentiras, incidentes |
+| Interruptor de pared + dos escenas | Estados opuestos de la misma persona |
+| Dos filas comparadas + reloj | Antes / después, "3 horas después" |
+| Mapa de seguimiento ocular | Dónde mira y dónde no |
+| Calendario de semanas + explosión | El patrón temporal |
+| Carpeta sellada + archivador | El descarte, el expediente |
+| Documento de firma + extracto | El daño financiero |
+| Número gigante con resaltador | El dato que valida |
+| Megáfono vs tres sillas | La narrativa pública vs los testigos reales |
+| Postal / objeto grande con escenas dentro | La película prometida |
+| Silueta con flechas radiales | Los síntomas en el cuerpo |
+| Pantalla de video + línea de tiempo | La selección, el orden real |
+| Madeja enredada → ovillo | Antes y después del acompañamiento |
+| Círculo con fogata y linternas | La comunidad |
+| Puerta con luz | La salida |
 
-Y el cuerpo del muñequito **actúa**: hombros caídos, espalda encorvada, rodillas al suelo, brazos
-abiertos, mentón alto. La postura es la que cuenta el sentimiento, no la cara.
+---
+
+## POR QUÉ NO SE AMONTONA — LA RAZÓN CLÍNICA
+
+La audiencia tiene la **memoria de trabajo comprometida**: en Forth y cols. (2022, n=457) las
+consecuencias cognitivas —concentración, memoria, flashbacks— tienen 68 menciones. Un cerebro en
+hipervigilancia **no puede leer y escuchar a la vez**.
+
+La lámina es rica en dibujo pero **pobre en texto largo**:
+
+- **Un título**, una **frase con resaltador**, tres o cuatro **etiquetas cortas**, una o dos **notas
+  manuscritas pequeñas**, y la **banda del pie**. Nada más.
+- **Cero tablas y cero columnas comparativas de texto.** Comparar se hace con la balanza o con las
+  dos filas, no con una tabla.
+- **Un solo número grande por lámina.**
+- Si una lámina se ve cargada, **el elemento sacrificable es la nota manuscrita pequeña**. El título,
+  la frase con resaltador y la banda del pie no se tocan.
+
+Y cada prompt va acompañado del contenido que NO está en la imagen, para que el expositor lo diga.
 
 ---
 
 ## 🎨 BLOQUE DE ESTILO — va idéntico arriba de cada prompt
 
 ```
-Lámina de conferencia dibujada a mano sobre papel claro color crema hueso (#F5F1E8), con textura
-suave de papel de cuaderno.
+Lámina educativa dibujada a mano sobre papel claro color crema hueso (#F5F1E8), textura suave de
+papel de cuaderno. Estilo cuaderno de trabajo de un psicólogo: dibujado, cálido, hecho a mano.
 
-TRAZO: lápiz de grafito y tinta negra fina. Los personajes son monigotes sencillos tipo stick
-figure — líneas simples, cabeza redonda, sin rostro detallado: solo cejas y boca para la emoción.
-Pero el CUERPO actúa: hombros caídos, espalda encorvada, brazos abiertos, cabeza baja, rodillas al
-suelo. La postura es la que cuenta el sentimiento.
+TRAZO: lápiz de grafito y tinta negra. Los personajes son monigotes muy sencillos tipo stick figure
+—cabeza redonda, líneas simples, ojos de punto, boca de línea— pero con emoción legible. Los OBJETOS
+en cambio van dibujados con volumen: sombreado de lápiz, rayado cruzado, peso, sombra propia. Los
+objetos se ven sólidos; la gente se ve dibujada.
 
-COMPOSICIÓN EN TRES TIEMPOS: la lámina se lee de izquierda a derecha en tres momentos seguidos.
-IMPORTANTE: los tres momentos NO están separados por líneas, ni marcos, ni recuadros, ni viñetas de
-cómic. Se separan SOLO por espacio en blanco. Todo ocurre sobre el mismo papel continuo.
-Cada momento lleva una frase corta manuscrita ARRIBA y el monigote actuando ABAJO.
+RESALTADOR DORADO: las frases clave llevan detrás una franja de resaltador dorado mostaza #C9A84C
+pintada a mano, como pasada con marcador, con los bordes irregulares. Es la marca de la casa.
+Los títulos llevan además un subrayado dorado grueso hecho a mano.
 
-MARCAS DE SENSACIÓN, dibujadas a lápiz junto a los cuerpos: el nudo del estómago como una espiral
-apretada, el peso como líneas cortas presionando los hombros, la alarma como líneas de vibración
-saliendo del pecho, el agotamiento como líneas colgando hacia abajo, la calma como aire limpio y
-vacío alrededor de la figura.
+RECURSOS QUE APARECEN: nubes de pensamiento con letra manuscrita pequeña, flechas curvas dibujadas a
+mano que conectan cada etiqueta con su elemento, etiquetas en MAYÚSCULAS subrayadas, listas escritas
+a mano con renglones tachados, marcas de equis en rojo vino apagado #8E2433 para señalar lo que está
+pasando por debajo.
 
-COLOR: casi todo en grafito sobre el papel claro. Un ÚNICO acento, dorado mostaza #C9A84C, para la
-luz, lo que salva y la banda del pie. Un segundo acento muy escaso, rojo ladrillo apagado #B4443A,
-solo para señalar el mecanismo oculto — lo que está pasando de verdad por debajo.
+TIPOGRAFÍA: todo escrito a mano. Título en MAYÚSCULAS grandes de trazo grueso. Etiquetas en
+mayúsculas medianas. Notas y nubes en manuscrita pequeña pero nítida. Español con las tildes
+correctas. Legible a cinco metros.
 
-TIPOGRAFÍA: letra manuscrita clara tipo marcador, GRANDE, en español, con las tildes correctas.
-Legible a cinco metros. Frases de una sola línea, nunca párrafos.
+BANDA DORADA AL PIE: franja horizontal dorada de ancho completo cruzando el pie de la lámina, con el
+DETECTOR escrito en negro, siempre en la misma posición.
 
-BANDA DORADA AL PIE: una franja horizontal dorada cruzando el pie de la lámina, con una sola frase.
-Siempre en la misma posición en las ocho láminas.
-
-MEMBRETE: línea horizontal dorada fina cruzando la parte superior, y sobre ella, a la izquierda, en
-letra pequeña y espaciada: "PREMIUM LIVE".
+MEMBRETE: línea dorada fina cruzando arriba, y sobre ella a la izquierda, en letra pequeña y
+espaciada: "PREMIUM LIVE".
 
 PROHIBIDO: fotorrealismo, 3D, anime, caras detalladas, colores saturados, gradientes, logotipos,
-marcas de agua, texto en inglés, fondos oscuros, fondos en tono piel, líneas o marcos que dividan la
-lámina, viñetas de cómic, texto amontonado, párrafos.
+marcas de agua, texto en inglés, fondos oscuros, fondos en tono piel, marcos que dividan la lámina.
 
 Formato 16:9 horizontal, alta resolución, calidad de proyección.
 ```
 
 ---
 
-## LAS TRES MARCAS DEL FORMATO
+## LA ESTRUCTURA DE CADA PROMPT
 
-Van en las ocho, siempre iguales:
+Se escribe **en español**, por zonas, así (es el formato que produjo las láminas buenas):
 
-1. **Membrete** — línea dorada arriba con `PREMIUM LIVE` a la izquierda.
-2. **Banda dorada al pie** — una sola frase, siempre en la misma posición.
-3. **Numeración** abajo a la derecha, muy pequeña (`FASE II`, `CIERRE`, `2 / 3`).
+```
+ARRIBA, título grande con subrayado dorado a mano:
+"…"
 
----
+IZQUIERDA: <el recurso visual dibujado con volumen> + <qué hace el monigote>
+Etiqueta con flecha curva: "…"
 
-## EL REPARTO DE LAS 8
+DERECHA: <el otro elemento> + <qué hace el otro monigote>
+Etiqueta con flecha curva: "…"
 
-| # | Qué es | Función |
-|---|--------|---------|
-| 1 | Apertura | Desmonta la premisa que ella trae puesta |
-| 2 | Bloque I | Quita la culpa de raíz |
-| 3 | **La central** | El hallazgo que reordena todo. Si solo se proyecta una, es esta |
-| 4 | Bloque III | La que valida. Lleva **el** número de la conferencia |
-| 5 | Cierre | La pregunta nueva. Aquí entra la primera luz sobre ella |
-| 6 | **Apego Detox — el camino** | 17 módulos, un escalón por semana |
-| 7 | **Apego Detox — la compañía** | Dos terapias en vivo cada semana |
-| 8 | **Apego Detox — la tribu** | Comunidad de mujeres sanadoras |
+Frase grande sobre resaltador dorado:
+"…"
+
+Nota manuscrita pequeña: "…"
+
+Banda dorada al pie:
+"DETECTOR: …"
+```
 
 ---
 
 ## EL ARCO — SE CUMPLE SIEMPRE
 
-**De color:** ella apagada, encogida y a contraluz en las láminas 1 a 4 → **la primera luz sobre su
-cara en la 5** → cálida, iluminada y de pie en la 6, 7 y 8. En las tres últimas el dorado deja de
-ser resaltador y pasa a ser **luz**: rayos suaves, chispas, polvo de estrellas. Cero rojo ladrillo
-ahí.
+**De color:** ella apagada y encogida en las láminas de diagnóstico → **la primera luz sobre ella en
+la del cierre** → cálida, iluminada y de pie en las tres de Apego Detox. En esas tres el dorado deja
+de ser resaltador y pasa a ser **luz**: rayos, chispas, resplandor. **Cero rojo vino ahí.**
 
-**De personaje:** él aparece en las primeras tres láminas. En la cuarta ya solo queda el daño. **De
-la quinta en adelante no vuelve a salir.** Que desaparezca del papel es parte del argumento.
+**De personaje:** él aparece en las láminas de las primeras fases. En la del cuerpo ya solo queda el
+daño. **De la del cierre en adelante no vuelve a salir.** Que desaparezca del papel es parte del
+argumento.
 
-**El giro de la 5 a la 6 es el momento comercial de la conferencia.** La sala siente el cambio de
-temperatura antes de que se diga una palabra de venta. **Tres segundos de silencio al pasar la 6.**
+**El giro a la primera lámina de Apego Detox es el momento comercial.** Tres segundos de silencio al
+pasarla.
 
 ---
 
 ## LAS TRES DE APEGO DETOX — SON FIJAS
 
-No se rediseñan en cada Premium Live. Solo se les cambia el bloque de "mientras está proyectada, tú
-dices" para que enganche con el tema del día.
+No se rediseñan en cada Premium Live. Solo cambia el enganche hablado.
 
-- **Lámina 6 — El camino.** Tiempo 1: "hoy aprendiste a verlo". Tiempo 2: "pero verlo no alcanza".
-  Tiempo 3: la escalera de 17 escalones con las herramientas y la puerta con luz. Banda: *"No vas a
-  olvidarlo. Vas a dejar de necesitarlo."*
-- **Lámina 7 — La compañía.** Tiempo 1: la madeja enredada. Tiempo 2: las dos sillas, la lámpara y
-  la pantalla con las otras conectadas. Tiempo 3: sale con el ovillo ordenado y el hilo dorado.
-  Banda: *"Lo que sola se enreda, acompañada se desata."*
-- **Lámina 8 — La tribu.** Tiempo 1: llega apagada, linterna sin encender. Tiempo 2: el círculo con
-  la fogata y la mano estirada. Tiempo 3: sentada dentro del círculo con su linterna prendida.
-  Banda: *"Ninguna luz se gasta por prender otra."*
+- **El camino** — escalera de 17 escalones con una herramienta en cada uno, cadena rota abajo, puerta
+  con luz arriba. Banda: *"No vas a olvidarlo. Vas a dejar de necesitarlo."*
+- **La compañía** — madeja enredada → dos sillas con lámpara y pantalla con las otras conectadas →
+  sale con el ovillo y el hilo dorado. Banda: *"Lo que sola se enreda, acompañada se desata."*
+- **La tribu** — círculo con fogata y linternas, la recién llegada con la linterna apagada y la mano
+  estirada. Banda: *"Ninguna luz se gasta por prender otra."*
 
 **Nunca poner precio en las láminas** salvo que el usuario lo pida.
 
 ---
 
-## NOTA TÉCNICA
+## NOTA TÉCNICA — errores reales observados
 
-- **Generar primero la lámina 1** y usarla como referencia de trazo y personajes para las siete restantes.
-- Si Gemini dibuja marcos o viñetas, agregar al final del prompt:
-  ```
-  Sin ninguna línea, marco, borde ni viñeta que divida la lámina. Los tres momentos se separan solo
-  por espacio en blanco sobre papel continuo.
-  ```
-- Si rompe tildes o números dos veces seguidas, agregar:
-  ```
-  No escribas ningún texto en la imagen. Deja los espacios de texto y la banda del pie vacíos, solo
-  con su borde dibujado a lápiz, listos para escribir encima después.
-  ```
-  y montar el texto en Canva. Con láminas de cuatro bloques, eso toma dos minutos por lámina.
-- Revisar siempre a mano: **él · está · qué · más · aquí · psicópata** y todos los porcentajes.
-- Para redes en vez de proyección: cambiar la última línea por `Formato 4:5 vertical`.
+- **Generar primero la lámina central** (la del hallazgo que reordena) y usarla como referencia de
+  trazo y personajes para las demás.
+- **Palabras largas:** Gemini duplica letras. En la prueba salió *"LEVANTAMMIENTO"*. Si una palabra
+  sale mal, repetir agregando: `Escribe EXACTAMENTE, letra por letra: "…"`.
+- **Los porcentajes son lo que más falla.** Verificar uno por uno en cada lámina donde aparezcan.
+- Si rompe el texto dos veces seguidas: generar sin texto (`No escribas ningún texto en la imagen,
+  deja los espacios y la banda del pie vacíos`) y montarlo en Canva.
+- Para redes en vez de proyección: `Formato 4:5 vertical` y subir la banda del pie unos 70 px.
