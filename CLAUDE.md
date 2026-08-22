@@ -244,6 +244,7 @@ Estos archivos especializan el CLAUDE.md maestro. NO contradicen — profundizan
 | `agents-source/prompts/clases/brand-voice.md` | Guía de voz de marca para clases |
 | `content/BASE-CONOCIMIENTO-TALLERES.md` | Índice maestro de 293+ técnicas terapéuticas |
 | `.claude/skills/premium-live/SKILL.md` | **Premium Live** — conferencia de 2h con investigación externa + 8 láminas ilustradas |
+| `agents-source/prompts/fotografias/MASTER-PROMPT-FOTOS.md` | **Master prompt de fotos** — estilo a lápiz de profesor para las series de 5 fotos horizontales |
 
 ### Jerarquía
 
@@ -265,4 +266,5 @@ Si hay conflicto, la raíz gana.
 | "Busca actualizaciones científicas" | Investigador científico: buscar + sintetizar + integrar |
 | "Audita la base de conocimiento" | Guardián: leer todos los prompts, verificar coherencia |
 | "Haz un Premium Live de X" | `/premium-live X` → investigación externa + conferencia de 2h + 8 láminas |
+| "Haz las fotos de X" | Master prompt de fotos → serie de 5 horizontales, output a `output/fotos-{tema}.md` |
 | "Agrega un nuevo agente" | Seguir los 5 pasos de la sección "Cómo Funciona la Web App" |
